@@ -72,4 +72,18 @@ public interface PceService {
      * @return tunnel if path exists, otherwise null
      */
     Tunnel queryPath(TunnelId tunnelId);
+
+    /**
+     * Returns default LSP type.
+     *
+     * @return default lsp type
+     */
+    LspType defaultLspType();
+
+    /**
+     * Sets default LSP type
+     *
+     * @param default lspType lsp type
+     */
+    void setdefaultLspType(LspType lspType);
 }

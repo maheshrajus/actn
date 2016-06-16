@@ -161,6 +161,8 @@ public class PceManager implements PceService {
     private static final String END_OF_SYNC_IP_PREFIX = "0.0.0.0/32";
     public static final int PCEP_PORT = 4189;
 
+    private LspType defaultLspType;
+
     private IdGenerator localLspIdIdGen;
     protected DistributedSet<Short> localLspIdFreeList;
 
@@ -235,6 +237,16 @@ public class PceManager implements PceService {
      * Creates new instance of PceManager.
      */
     public PceManager() {
+    }
+
+    @Override
+    public LspType defaultLspType() {
+        return defaultLspType;
+    }
+
+    @Override
+    public void setdefaultLspType(LspType defaultLspType) {
+        this.defaultLspType = defaultLspType;
     }
 
     @Activate
@@ -324,7 +336,10 @@ public class PceManager implements PceService {
         checkNotNull(src);
         checkNotNull(dst);
         checkNotNull(tunnelName);
-        checkNotNull(lspType);
+        //checkNotNull(lspType);
+        if (lspType == null) {
+            lspType = defaultLspType();
+        }
 
         // Convert from DeviceId to TunnelEndPoint
         Device srcDevice = deviceService.getDevice(src);

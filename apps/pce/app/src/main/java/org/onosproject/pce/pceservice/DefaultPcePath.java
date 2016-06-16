@@ -36,6 +36,7 @@ public final class DefaultPcePath implements PcePath {
     private String source; // Ingress
     private String destination; // Egress
     private LspType lspType; // LSP type
+    private LspType defaultLspType; // Default LSP type
     private String name; // symbolic-path-name
     private Constraint costConstraint; // cost constraint
     private Constraint bandwidthConstraint; // bandwidth constraint
@@ -52,12 +53,13 @@ public final class DefaultPcePath implements PcePath {
      * @param bandwidthConstrnt bandwidth constraint
      */
     private DefaultPcePath(TunnelId id, String src, String dst, LspType lspType,
-                           String name, Constraint costConstrnt, Constraint bandwidthConstrnt) {
+                           LspType defaultLspType, String name, Constraint costConstrnt, Constraint bandwidthConstrnt) {
 
         this.id = id;
         this.source = src;
         this.destination = dst;
         this.lspType = lspType;
+        this.defaultLspType = defaultLspType;
         this.name = name;
         this.costConstraint = costConstrnt;
         this.bandwidthConstraint = bandwidthConstrnt;
@@ -94,6 +96,11 @@ public final class DefaultPcePath implements PcePath {
     }
 
     @Override
+    public LspType defaultLspType() {
+        return defaultLspType;
+    }
+
+    @Override
     public LspType lspType() {
         return lspType;
     }
@@ -123,6 +130,7 @@ public final class DefaultPcePath implements PcePath {
         }
 
         this.lspType = path.lspType();
+        this.defaultLspType = path.defaultLspType();
 
         if (null != path.name()) {
             this.name = path.name();
@@ -138,7 +146,8 @@ public final class DefaultPcePath implements PcePath {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, source, destination, lspType, name, costConstraint, bandwidthConstraint);
+        return Objects.hash(id, source, destination, lspType, defaultLspType, name, costConstraint,
+                            bandwidthConstraint);
     }
 
     @Override
@@ -152,6 +161,7 @@ public final class DefaultPcePath implements PcePath {
                     && Objects.equals(source, that.source)
                     && Objects.equals(destination, that.destination)
                     && Objects.equals(lspType, that.lspType)
+                    && Objects.equals(defaultLspType, that.defaultLspType)
                     && Objects.equals(name, that.name)
                     && Objects.equals(costConstraint, that.costConstraint)
                     && Objects.equals(bandwidthConstraint, that.bandwidthConstraint);
@@ -166,6 +176,7 @@ public final class DefaultPcePath implements PcePath {
                 .add("source", source)
                 .add("destination", destination)
                 .add("lsptype", lspType)
+                .add("defaultLspType", defaultLspType)
                 .add("name", name)
                 .add("costConstraint", costConstraint.toString())
                 .add("bandwidthConstraint", bandwidthConstraint.toString())
@@ -189,6 +200,7 @@ public final class DefaultPcePath implements PcePath {
         private String source;
         private String destination;
         private LspType lspType;
+        private LspType defaultLspType;
         private String name;
         private Constraint costConstraint;
         private Constraint bandwidthConstraint;
@@ -215,6 +227,14 @@ public final class DefaultPcePath implements PcePath {
         public Builder lspType(String type) {
             if (null != type) {
                 this.lspType = LspType.values()[Integer.valueOf(type)];
+            }
+            return this;
+        }
+
+        @Override
+        public Builder defaultLspType(String type) {
+            if (null != type) {
+                this.defaultLspType = LspType.values()[Integer.valueOf(type)];
             }
             return this;
         }
@@ -265,8 +285,14 @@ public final class DefaultPcePath implements PcePath {
         }
 
         @Override
+        public Builder of(LspType lspType) {
+            this.defaultLspType = lspType;
+            return this;
+        }
+
+        @Override
         public PcePath build() {
-            return new DefaultPcePath(id, source, destination, lspType, name,
+            return new DefaultPcePath(id, source, destination, lspType, defaultLspType, name,
                                       costConstraint, bandwidthConstraint);
         }
     }

@@ -27,5 +27,11 @@
     <command>
       <action class="org.onosproject.pce.cli.PceDeletePathCommand"/>
     </command>
+    <command>
+      <action class="org.onosproject.pce.cli.PceLspTypeCommand"/>
+    </command>
+    <command>
+      <action class="org.onosproject.pce.cli.PceQueryLspTypeCommand"/>
+    </command>
   </command-bundle>
 </blueprint>

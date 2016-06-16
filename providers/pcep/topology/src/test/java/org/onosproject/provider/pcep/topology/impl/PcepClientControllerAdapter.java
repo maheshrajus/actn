@@ -27,6 +27,7 @@ import org.apache.felix.scr.annotations.Deactivate;
 import org.onlab.packet.IpAddress;
 import org.onosproject.pcep.controller.ClientCapability;
 import org.onosproject.pcep.controller.PccId;
+import org.onosproject.pcep.controller.PcepCfg;
 import org.onosproject.pcep.controller.PcepClient;
 import org.onosproject.pcep.controller.PcepClientController;
 import org.onosproject.pcep.controller.PcepClientListener;
@@ -200,6 +201,11 @@ public class PcepClientControllerAdapter implements PcepClientController {
             pc = getClient(id);
             pc.disconnectClient();
         }
+    }
+
+    @Override
+    public PcepCfg getConfig() {
+        return null;
     }
 
     private PcepErrorMsg getErrMsg(PcepFactory factory, byte errorType, byte errorValue) {

@@ -76,6 +76,13 @@ public interface PcePath {
     LspType lspType();
 
     /**
+     * Returns the attribute default lspType.
+     *
+     * @return default lspType
+     */
+    LspType defaultLspType();
+
+    /**
      * Returns the attribute symbolic-path-name.
      *
      * @return symbolic-path-name
@@ -142,6 +149,14 @@ public interface PcePath {
         Builder lspType(String lspType);
 
         /**
+         * Returns the builder object of default lspType.
+         *
+         * @param lspType lsp type
+         * @return builder object of default lsp type
+         */
+        Builder defaultLspType(String lspType);
+
+        /**
          * Returns the builder object of symbolic-path-name.
          *
          * @param n symbolic-path-name
@@ -172,6 +187,14 @@ public interface PcePath {
          * @return object of pce-path
          */
         Builder of(Tunnel tunnel);
+
+        /**
+         * Copies lspType info to local.
+         *
+         * @param lspType lspType
+         * @return object of lspType
+         */
+        Builder of(LspType lspType);
 
         /**
          * Builds object of pce path.

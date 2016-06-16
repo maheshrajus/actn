@@ -74,9 +74,12 @@ public class PcePathWebResource extends AbstractWebResource {
         Iterable<Tunnel> tunnels = get(PceService.class).queryAllPath();
         ObjectNode result = mapper().createObjectNode();
         ArrayNode pathEntry = result.putArray("paths");
+
+        PcePath path = DefaultPcePath.builder().of(get(PceService.class).defaultLspType()).build();
+        pathEntry.add(codec(PcePath.class).encode(path, this));
         if (tunnels != null) {
             for (final Tunnel tunnel : tunnels) {
-                PcePath path = DefaultPcePath.builder().of(tunnel).build();
+                path = DefaultPcePath.builder().of(tunnel).build();
                 pathEntry.add(codec(PcePath.class).encode(path, this));
             }
         }

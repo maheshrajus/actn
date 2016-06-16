@@ -49,5 +49,15 @@
             <artifactId>onos-bgp-provider-topology</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.onosproject</groupId>
+            <artifactId>onos-bgp-provider-linkcfg</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.onosproject</groupId>
+            <artifactId>onos-bgp-provider-cli</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 </project>

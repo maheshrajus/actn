@@ -15,6 +15,9 @@
  */
 package org.onosproject.bgp.controller;
 
+import org.onlab.packet.IpAddress;
+import org.onosproject.net.DeviceId;
+
 import java.util.TreeMap;
 
 /**
@@ -345,4 +348,41 @@ public interface BgpCfg {
      * @param rpdCapability flow specification RPD capability
      */
     void setFlowSpecRpdCapability(boolean rpdCapability);
+
+    /**
+     * Return the links added for intra domain.
+     *
+     * @return return links added for intra domain
+     */
+    TreeMap<String, BgpLinkCfg> getLinks();
+
+    /**
+     * Add the BGP link.
+     *
+     * @param srcDeviceId source device ID
+     * @param srcInterface source interface
+     * @param srcPort source port
+     * @param dstDeviceId destination device ID
+     * @param dstInterface destination interface
+     * @param dstPort destination port
+     * @return true if added successfully else false
+     */
+    void addLink(DeviceId srcDeviceId, IpAddress srcInterface,
+                    Integer srcPort, DeviceId dstDeviceId, IpAddress dstInterface, Integer dstPort,
+                    Double maxReservedbandWidth);
+
+    /**
+     * Deletes BGP link.
+     *
+     * @param srcDeviceId source device ID
+     */
+    void deleteLink(DeviceId srcDeviceId, IpAddress srcInterface, Integer srcPort, DeviceId dstDeviceId, IpAddress
+            dstInterface, Integer dstPort);
+
+    /**
+     * Returns BGP link.
+     *
+     * @param srcDeviceId source device ID
+     */
+    BgpLinkCfg link(DeviceId srcDeviceId);
 }

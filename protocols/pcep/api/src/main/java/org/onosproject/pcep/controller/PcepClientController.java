@@ -118,4 +118,11 @@ public interface PcepClientController {
      * Close all connected PCC clients.
      */
     void closeConnectedClients();
+
+    /**
+     * Get the PCEP configuration class to the caller.
+     *
+     * @return configuration object
+     */
+    PcepCfg getConfig();
 }

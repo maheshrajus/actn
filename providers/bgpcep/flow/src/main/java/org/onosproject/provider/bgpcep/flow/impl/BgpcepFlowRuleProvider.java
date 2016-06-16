@@ -131,7 +131,7 @@ public class BgpcepFlowRuleProvider extends AbstractProvider
     public static final long IDENTIFIER_SET = 0x100000000L;
     public static final long SET = 0xFFFFFFFFL;
     private static final String LSRID = "lsrId";
-
+    private static final String AS_NUMBER = "asNumber";
     private enum PcepFlowType {
         ADD,
         MODIFY,
@@ -251,6 +251,15 @@ public class BgpcepFlowRuleProvider extends AbstractProvider
         String lsrId = device.annotations().value(LSRID);
 
         PcepClient pcc = pcepController.getClient(PccId.pccId(IpAddress.valueOf(lsrId)));
+
+        if (pcc == null) {
+            String asNumber = device.annotations().value(AS_NUMBER);
+            if (asNumber == null) {
+                return pcc;
+            }
+            IpAddress ipAddress = pcepController.getConfig().pcepDomainMap().get(Integer.valueOf(asNumber)).ipAddress();
+            pcc = pcepController.getClient(PccId.pccId(ipAddress));
+        }
         return pcc;
     }
 

@@ -41,6 +41,7 @@ import org.onosproject.incubator.net.tunnel.Tunnel.State;
 import org.onosproject.net.device.DeviceService;
 import org.onosproject.pcep.controller.LspKey;
 import org.onosproject.pcep.controller.PccId;
+import org.onosproject.pcep.controller.PcepCfg;
 import org.onosproject.pcep.controller.PcepClient;
 import org.onosproject.pcep.controller.PcepClientController;
 import org.onosproject.pcep.controller.PcepClientListener;
@@ -102,7 +103,7 @@ public class PcepClientControllerImpl implements PcepClientController {
     protected Set<PcepPacketListener> pcepPacketListener = Sets.newHashSet();
 
     private final Controller ctrl = new Controller();
-
+    private PcepConfig pcepconfig = new PcepConfig();
     public static final String BANDWIDTH = "bandwidth";
     public static final String LSP_SIG_TYPE = "lspSigType";
     public static final String PCC_TUNNEL_ID = "PccTunnelId";
@@ -306,6 +307,11 @@ public class PcepClientControllerImpl implements PcepClientController {
             pc = getClient(id);
             pc.disconnectClient();
         }
+    }
+
+    @Override
+    public PcepCfg getConfig() {
+        return this.pcepconfig;
     }
 
     /**

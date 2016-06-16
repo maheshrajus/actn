@@ -34,6 +34,7 @@ public final class PcePathCodec extends JsonCodec<PcePath> {
     private final Logger log = LoggerFactory.getLogger(PcePathCodec.class);
     private static final String SOURCE = "source";
     private static final String DESTINATION = "destination";
+    private static final String DEFAULT_LSP_TYPE = "defaultPathType";
     private static final String LSP_TYPE = "pathType";
     private static final String SYMBOLIC_PATH_NAME = "name";
     private static final String CONSTRAINT = "constraint";
@@ -51,6 +52,13 @@ public final class PcePathCodec extends JsonCodec<PcePath> {
 
         // build pce-path
         PcePath.Builder resultBuilder = new DefaultPcePath.Builder();
+
+        // retrieve default lsp-type
+        JsonNode jDefaultNode = json.get(DEFAULT_LSP_TYPE);
+        if (jDefaultNode != null) {
+            String lspType = jDefaultNode.asText();
+            resultBuilder.lspType(lspType);
+        }
 
         // retrieve source
         JsonNode jNode = json.get(SOURCE);
@@ -110,6 +118,7 @@ public final class PcePathCodec extends JsonCodec<PcePath> {
                 .put(SOURCE, path.source())
                 .put(DESTINATION, path.destination())
                 .put(LSP_TYPE, path.lspType().type())
+                .put(DEFAULT_LSP_TYPE, path.defaultLspType().type())
                 .put(SYMBOLIC_PATH_NAME, path.name());
 
         ObjectNode constraintNode = context.mapper()

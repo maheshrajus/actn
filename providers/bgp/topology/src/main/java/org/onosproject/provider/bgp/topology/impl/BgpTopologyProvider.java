@@ -44,6 +44,7 @@ import org.onosproject.bgpio.protocol.linkstate.BgpNodeLSIdentifier;
 import org.onosproject.bgpio.protocol.linkstate.BgpNodeLSNlriVer4;
 import org.onosproject.bgpio.protocol.linkstate.NodeDescriptors;
 import org.onosproject.bgpio.protocol.linkstate.PathAttrNlriDetails;
+import org.onosproject.bgpio.types.AreaIDTlv;
 import org.onosproject.bgpio.types.AutonomousSystemTlv;
 import org.onosproject.bgpio.types.BgpLSIdentifierTlv;
 import org.onosproject.bgpio.types.BgpValueType;
@@ -146,7 +147,9 @@ public class BgpTopologyProvider extends AbstractProvider implements DeviceProvi
     public static final long IDENTIFIER_SET = 0x100000000L;
     public static final String AS_NUMBER = "asNumber";
     public static final String DOMAIN_IDENTIFIER = "domainIdentifier";
+    public static final String AREA_IDENTIFIER = "areaIdentifier";
     public static final String ROUTING_UNIVERSE = "routingUniverse";
+    public static final String PROTOCOL = "protocol";
 
     public static final String EXTERNAL_BIT = "externalBit";
     public static final String ABR_BIT = "abrBit";
@@ -241,22 +244,27 @@ public class BgpTopologyProvider extends AbstractProvider implements DeviceProvi
                 } else if (tlv instanceof BgpLSIdentifierTlv) {
                     newBuilder.set(DOMAIN_IDENTIFIER,
                             Integer.toString(((BgpLSIdentifierTlv) tlv).getBgpLsIdentifier()));
+                } else if (tlv instanceof AreaIDTlv) {
+                    newBuilder.set(AREA_IDENTIFIER,
+                            Integer.toString(((AreaIDTlv) tlv).getAreaID()));
                 }
                 if (tlv.getType() == NodeDescriptors.IGP_ROUTERID_TYPE) {
                     if (tlv instanceof IsIsPseudonode) {
                         deviceType = VIRTUAL;
-                        newBuilder.set(AnnotationKeys.ROUTER_ID, nodeUri.isoNodeIdString(((IsIsPseudonode) tlv)
-                                .getIsoNodeId()));
+                        newBuilder.set(AnnotationKeys.ROUTER_ID, new String(((IsIsPseudonode) tlv).getIsoNodeId()));
+                        newBuilder.set(PROTOCOL, Integer.toString(NodeDescriptors.IS_IS_LEVEL_1_PROTOCOL_ID));
                     } else if (tlv instanceof OspfPseudonode) {
                         deviceType = VIRTUAL;
                         newBuilder
                                 .set(AnnotationKeys.ROUTER_ID, Integer.toString(((OspfPseudonode) tlv).getrouterID()));
+                        newBuilder.set(PROTOCOL, Integer.toString(NodeDescriptors.OSPF_V2_PROTOCOL_ID));
                     } else if (tlv instanceof IsIsNonPseudonode) {
-                        newBuilder.set(AnnotationKeys.ROUTER_ID, nodeUri.isoNodeIdString(((IsIsNonPseudonode) tlv)
-                                .getIsoNodeId()));
+                        newBuilder.set(AnnotationKeys.ROUTER_ID, new String(((IsIsNonPseudonode) tlv).getIsoNodeId()));
+                        newBuilder.set(PROTOCOL, Integer.toString(NodeDescriptors.IS_IS_LEVEL_1_PROTOCOL_ID));
                     } else if (tlv instanceof OspfNonPseudonode) {
                         newBuilder.set(AnnotationKeys.ROUTER_ID,
                                 Integer.toString(((OspfNonPseudonode) tlv).getrouterID()));
+                        newBuilder.set(PROTOCOL, Integer.toString(NodeDescriptors.OSPF_V2_PROTOCOL_ID));
                     }
                 }
             }

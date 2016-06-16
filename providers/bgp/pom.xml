@@ -28,6 +28,8 @@
         <module>topology</module>
         <module>cfg</module>
         <module>app</module>
+        <module>linkcfg</module>
+        <module>cli</module>
   </modules>
     <dependencies>
 
