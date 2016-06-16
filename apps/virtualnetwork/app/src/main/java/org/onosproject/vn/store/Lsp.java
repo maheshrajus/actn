@@ -18,7 +18,6 @@ package org.onosproject.vn.store;
 import com.google.common.base.MoreObjects;
 import org.onosproject.net.DeviceId;
 
-import java.util.List;
 import java.util.Objects;
 
 //import org.onosproject.net.DeviceId;

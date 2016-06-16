@@ -42,7 +42,7 @@ public class PcepConfigData implements PcepCfgData {
     public int asNumber() {
         return this.asNumber;
     }
-    
+
     @Override
     public IpAddress ipAddress() {
         if (this.ipAddress != null) {

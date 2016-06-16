@@ -56,14 +56,15 @@ public class VnSetupCommand extends AbstractShellCommand {
     String vnName = null;
 
     @Argument(index = 1, name = "endPoint", description = "End Point source and destination " +
-            "should be split with '/' delimiter (e.g., L3:device1 L3:device2 / L3:device3 L3:device4).", required = true, multiValued = true)
+            "should be split with '/' delimiter (e.g., L3:device1 L3:device2 / L3:device3 L3:device4).",
+                                                                        required = true, multiValued = true)
     List<String> endPoint = null;
 
     @Override
     protected void execute() {
         log.info("executing vn-setup");
         boolean updateSource = true;
-        
+
         List<DeviceId> src = new LinkedList<>();
         List<DeviceId> dst = new LinkedList<>();
         List<VnConstraint> constraints = new LinkedList<>();

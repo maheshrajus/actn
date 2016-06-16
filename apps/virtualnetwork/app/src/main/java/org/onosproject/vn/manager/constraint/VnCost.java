@@ -138,7 +138,7 @@ public final class VnCost implements VnConstraint {
 
         if (obj instanceof VnCost) {
             VnCost other = (VnCost) obj;
-            return Objects.equals(this.type, other.type) && 
+            return Objects.equals(this.type, other.type) &&
                    Objects.equals(this.cost, other.cost);
         }
 

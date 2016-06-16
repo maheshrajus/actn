@@ -48,7 +48,7 @@ public class BgpAppLinkConfig extends Config<ApplicationId> {
     public static final String MAX_RESERVED_BANDWIDTH = "maxReservedbandwidth";
 
     public static final String BGP_LINK = "bgpLink";
-    
+
     @Override
     public boolean isValid() {
         boolean fields = false;
@@ -154,8 +154,10 @@ public class BgpAppLinkConfig extends Config<ApplicationId> {
 
         nodes = bgpLinks();
         for (int i = 0; i < nodes.size(); i++) {
-            if ((nodes.get(i).srcDeviceId == null) || (nodes.get(i).srcInterface == null) || (nodes.get(i).srcPort == null)
-              || (nodes.get(i).dstDeviceId == null) || (nodes.get(i).dstInterface == null) || (nodes.get(i).dstPort == null)) {
+            if ((nodes.get(i).srcDeviceId == null) || (nodes.get(i).srcInterface == null)
+              || (nodes.get(i).srcPort == null)
+              || (nodes.get(i).dstDeviceId == null) || (nodes.get(i).dstInterface == null)
+              || (nodes.get(i).dstPort == null)) {
                 return false;
             }
         }
@@ -192,7 +194,6 @@ public class BgpAppLinkConfig extends Config<ApplicationId> {
      * Configuration for Bgp link nodes.
      */
     public static class BgpLinkConfig {
-        
 
         private final String srcDeviceId;
         private final IpAddress srcInterface;
@@ -239,6 +240,6 @@ public class BgpAppLinkConfig extends Config<ApplicationId> {
 
         public Double maxReservedBandwidth() {
             return maxReservedBandwidth;
-        }    
+        }
     }
 }

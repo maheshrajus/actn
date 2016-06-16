@@ -35,11 +35,13 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class VnUpdateEndPointsCommand extends AbstractShellCommand {
     private final Logger log = getLogger(getClass());
 
-    @Argument(index = 0, name = "vnName", description = "virtual network name.", required = true, multiValued = false)
+    @Argument(index = 0, name = "vnName", description = "virtual network name.", required = true,
+                                                                                 multiValued = false)
     String vnName = null;
 
     @Argument(index = 1, name = "endPoint", description = "End Point source and destination " +
-            "should be split with '/' delimiter (e.g., L3:device1 L3:device2 / L3:device3 L3:device4).", required = true, multiValued = true)
+            "should be split with '/' delimiter (e.g., L3:device1 L3:device2 / L3:device3 L3:device4).",
+            required = true, multiValued = true)
     List<String> endPoint = null;
 
     @Override
@@ -70,6 +72,6 @@ public class VnUpdateEndPointsCommand extends AbstractShellCommand {
             error("Virtual network updation failed.");
             return;
         }
- 
+
     }
 }

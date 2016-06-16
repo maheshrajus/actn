@@ -33,7 +33,7 @@ public class BgpLinkConfig implements BgpLinkCfg {
     private DeviceId dstDeviceId;
     private IpAddress dstInterface;
     private Integer dstPort;
-    private Double maxReservedBandwidth; 
+    private Double maxReservedBandwidth;
 
     /*
      * Constructor to initialize the values.
@@ -42,12 +42,12 @@ public class BgpLinkConfig implements BgpLinkCfg {
                          IpAddress dstInterface,
                          Integer dstPort, Double maxReservedBandwidth) {
     this.srcDeviceId = srcDeviceId;
-	this.srcInterface = srcInterface;
-	this.srcPort = srcPort;
+    this.srcInterface = srcInterface;
+    this.srcPort = srcPort;
     this.dstDeviceId = dstDeviceId;
-	this.dstInterface = dstInterface;
-	this.dstPort = dstPort;
-	this.maxReservedBandwidth = maxReservedBandwidth;
+    this.dstInterface = dstInterface;
+    this.dstPort = dstPort;
+    this.maxReservedBandwidth = maxReservedBandwidth;
     }
 
     @Override

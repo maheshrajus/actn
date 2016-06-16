@@ -35,17 +35,23 @@ public class BgpLinkDeleteCommand extends AbstractShellCommand {
     private static final Logger log = LoggerFactory.getLogger(BgpLinkDeleteCommand.class);
 
     protected BgpController bgpController;
-    @Argument(index = 0, name = "sourceDeviceId", description = "Source device ID", required = true, multiValued = false)
+    @Argument(index = 0, name = "sourceDeviceId", description = "Source device ID", required = true,
+                                                                                    multiValued = false)
     String srcDeviceId = null;
-    @Argument(index = 1, name = "sourceInterface", description = "Source interface address", required = true, multiValued = false)
+    @Argument(index = 1, name = "sourceInterface", description = "Source interface address", required = true,
+                                                                                    multiValued = false)
     String srcInterface = null;
-    @Argument(index = 2, name = "sourcePort", description = "Source port", required = true, multiValued = false)
+    @Argument(index = 2, name = "sourcePort", description = "Source port", required = true,
+                                                                                     multiValued = false)
     Integer srcPort = null;
-    @Argument(index = 3, name = "destinationDeviceId", description = "Destination device ID", required = true, multiValued = false)
+    @Argument(index = 3, name = "destinationDeviceId", description = "Destination device ID",
+                                                                    required = true, multiValued = false)
     String dstDeviceId = null;
-    @Argument(index = 4, name = "destinationInterface", description = "Destination interface", required = true, multiValued = false)
+    @Argument(index = 4, name = "destinationInterface", description = "Destination interface",
+                                                                    required = true, multiValued = false)
     String dstInterface = null;
-    @Argument(index = 5, name = "destinationPort", description = "Destination port", required = true, multiValued = false)
+    @Argument(index = 5, name = "destinationPort", description = "Destination port", required = true,
+                                                                                     multiValued = false)
     Integer dstPort = null;
 
     @Activate

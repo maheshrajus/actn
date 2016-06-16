@@ -84,6 +84,7 @@ public class BgpLinkQueryCommand extends AbstractShellCommand {
                       "Interface " +
                       ": %s, DestinationPort : %d, maxReservedBandWidth : %f", cfg.srcDeviceId().toString(), cfg
                 .srcInterface().toString(),
-              cfg.srcPort(), cfg.dstDeviceId(), cfg.dstInterface().toString(), cfg.dstPort(), cfg.maxReservedBandwidth());
+              cfg.srcPort(), cfg.dstDeviceId(), cfg.dstInterface().toString(), cfg.dstPort(),
+                                                                               cfg.maxReservedBandwidth());
     }
 }

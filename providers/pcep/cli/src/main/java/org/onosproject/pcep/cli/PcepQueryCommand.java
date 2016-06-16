@@ -75,8 +75,8 @@ public class PcepQueryCommand extends AbstractShellCommand {
             Iterator it = set.iterator();
 
             // Display elements
-            while(it.hasNext()) {
-                Map.Entry me = (Map.Entry)it.next();
+            while (it.hasNext()) {
+                Map.Entry me = (Map.Entry) it.next();
                 PcepCfgData cfg = (PcepCfgData) me.getValue();
                 display(cfg);
             }

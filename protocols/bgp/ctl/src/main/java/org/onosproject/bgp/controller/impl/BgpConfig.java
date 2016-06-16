@@ -415,18 +415,17 @@ public class BgpConfig implements BgpCfg {
     public List<BgpValueType> getNodeDescriptor(Device device) {
         List<BgpValueType> subTlvsLocal = new LinkedList<>();
         if (device.annotations().value("asNumber") != null) {
-            AutonomousSystemTlv asNum = new AutonomousSystemTlv(Integer.valueOf(device.annotations().value
-                    ("asNumber")));
+            AutonomousSystemTlv asNum = new AutonomousSystemTlv(Integer.valueOf(device.annotations()
+                                                                      .value("asNumber")));
             subTlvsLocal.add(asNum);
         }
         if (device.annotations().value("domainIdentifier") != null) {
-            BgpLSIdentifierTlv identifier = new BgpLSIdentifierTlv(Integer.valueOf(device.annotations().value
-                    ("domainIdentifier")));
+            BgpLSIdentifierTlv identifier = new BgpLSIdentifierTlv(Integer.valueOf(device.annotations()
+                                                                          .value("domainIdentifier")));
             subTlvsLocal.add(identifier);
         }
         if (device.annotations().value("areaIdentifier") != null) {
-            AreaIDTlv areaId = new AreaIDTlv(Integer.valueOf(device.annotations().value
-                    ("areaIdentifier")));
+            AreaIDTlv areaId = new AreaIDTlv(Integer.valueOf(device.annotations().value("areaIdentifier")));
             subTlvsLocal.add(areaId);
         }
 
@@ -436,11 +435,12 @@ public class BgpConfig implements BgpCfg {
             if (device.annotations().value(AnnotationKeys.ROUTER_ID) != null) {
                 if (protocolId == NodeDescriptors.IS_IS_LEVEL_1_PROTOCOL_ID || protocolId == NodeDescriptors
                         .IS_IS_LEVEL_2_PROTOCOL_ID) {
-                    subTlvsLocal.add(new IsIsNonPseudonode(device.annotations().value(AnnotationKeys.ROUTER_ID).getBytes()));
+                    subTlvsLocal.add(new IsIsNonPseudonode(device.annotations()
+                                                                 .value(AnnotationKeys.ROUTER_ID).getBytes()));
                 } else if (protocolId == NodeDescriptors.OSPF_V2_PROTOCOL_ID || protocolId ==
                         NodeDescriptors.OSPF_V3_PROTOCOL_ID) {
-                    subTlvsLocal.add(new OspfNonPseudonode(Integer.valueOf(device.annotations().value(AnnotationKeys
-                                                                                                                 .ROUTER_ID))));
+                    subTlvsLocal.add(new OspfNonPseudonode(Integer.valueOf(device.annotations()
+                                                                  .value(AnnotationKeys.ROUTER_ID))));
                 }
             }
         }
@@ -448,8 +448,8 @@ public class BgpConfig implements BgpCfg {
         return subTlvsLocal;
     }
 
-    public BgpLinkLsNlriVer4 getNlri(Device srcDevice, IpAddress srcInterface, Integer srcPort, Device dstDevice, IpAddress
-            dstInterface, Integer dstPort) {
+    public BgpLinkLsNlriVer4 getNlri(Device srcDevice, IpAddress srcInterface, Integer srcPort,
+                                      Device dstDevice, IpAddress dstInterface, Integer dstPort) {
 
 
 
@@ -473,8 +473,8 @@ public class BgpConfig implements BgpCfg {
                                                                        remoteNodeDescriptors, linkDescriptor);
 
         BgpLinkLsNlriVer4 nlri = new BgpLinkLsNlriVer4(Byte.valueOf(srcDevice.annotations().value("protocol")),
-                                                       (Integer.valueOf(srcDevice.annotations().value("domainIdentifier"))),
-                                                       linkLSIdentifier, null, false);
+                                                       (Integer.valueOf(srcDevice.annotations()
+                                                       .value("domainIdentifier"))), linkLSIdentifier, null, false);
         return nlri;
     }
 
@@ -490,9 +490,8 @@ public class BgpConfig implements BgpCfg {
         }
 
         if (this.getLinks().containsKey(srcDeviceId.toString())) {
-            this.bgpLinks.replace(srcDeviceId.toString(), new BgpLinkConfig(srcDeviceId, srcInterface, srcPort, dstDeviceId,
-                                                                dstInterface,
-                                                dstPort, maxReservedBandwidth));
+            this.bgpLinks.replace(srcDeviceId.toString(), new BgpLinkConfig(srcDeviceId, srcInterface, srcPort,
+                                  dstDeviceId, dstInterface, dstPort, maxReservedBandwidth));
         } else {
             this.bgpLinks.put(srcDeviceId.toString(), new BgpLinkConfig(srcDeviceId, srcInterface, srcPort,
                                                                         dstDeviceId,
@@ -520,8 +519,8 @@ public class BgpConfig implements BgpCfg {
     }
 
     @Override
-    public void deleteLink(DeviceId srcDeviceId, IpAddress srcInterface, Integer srcPort, DeviceId dstDeviceId, IpAddress
-            dstInterface, Integer dstPort) {
+    public void deleteLink(DeviceId srcDeviceId, IpAddress srcInterface, Integer srcPort, DeviceId dstDeviceId,
+                           IpAddress dstInterface, Integer dstPort) {
 
         Device srcDevice = deviceService.getDevice(srcDeviceId);
         Device dstDevice = deviceService.getDevice(dstDeviceId);

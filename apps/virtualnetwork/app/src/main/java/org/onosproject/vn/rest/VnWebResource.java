@@ -56,7 +56,7 @@ import static org.onlab.util.Tools.nullIsNotFound;
 public class VnWebResource extends AbstractWebResource {
 
     private final Logger log = LoggerFactory.getLogger(VnWebResource.class);
-    public static final String VIRTUAL_NETWORk_NOT_FOUND = "virtual network not found";
+    public static final String VIRTUAL_NETWORK_NOT_FOUND = "virtual network not found";
     public static final String VIRTUAL_NETWORK_SETUP_FAILED = "Vitrual network setup has failed.";
 
     /**
@@ -94,7 +94,7 @@ public class VnWebResource extends AbstractWebResource {
     public Response queryVn(@PathParam("VnName") String vnName) {
         log.debug("Query virtual network by identifier {}.", vnName);
         VirtualNetworkInfo virtualNetwork = nullIsNotFound(get(VnService.class).queryVn(vnName),
-                                       VIRTUAL_NETWORk_NOT_FOUND);
+                                       VIRTUAL_NETWORK_NOT_FOUND);
         VirtualNetwork vn = DefaultVirtualNetwork.builder().of(virtualNetwork).build();
         ObjectNode result = mapper().createObjectNode();
         result.set("vn", codec(VirtualNetwork.class).encode(vn, this));
@@ -165,7 +165,7 @@ public class VnWebResource extends AbstractWebResource {
             ObjectNode jsonTree = (ObjectNode) mapper().readTree(stream);
             JsonNode vn = jsonTree.get("vn");
             VirtualNetwork virtualNetwork = codec(VirtualNetwork.class).decode((ObjectNode) vn, this);
-            List<VnConstraint> Constraints = new LinkedList<>();
+            List<VnConstraint> constraints = new LinkedList<>();
             boolean updateEndPoints = false;
 
             if ((virtualNetwork.endPoint().src().size() != 0)
@@ -181,12 +181,12 @@ public class VnWebResource extends AbstractWebResource {
 
             if (updateEndPoints) {
                 Boolean result = nullIsNotFound(get(VnService.class).updateVn(vnName, virtualNetwork.endPoint()),
-                                                VIRTUAL_NETWORk_NOT_FOUND);
+                                                VIRTUAL_NETWORK_NOT_FOUND);
                 return Response.status(OK).entity(result.toString()).build();
             }
             // Assign bandwidth
             if (virtualNetwork.bandwidth() != null) {
-                Constraints.add(virtualNetwork.bandwidth());
+                constraints.add(virtualNetwork.bandwidth());
             }
 
             // Assign cost
@@ -195,11 +195,11 @@ public class VnWebResource extends AbstractWebResource {
                 if ((vnCost.type().type() != 1) && (vnCost.type().type() != 2)) {
                     throw new IOException("Invalid cost type");
                 }
-                Constraints.add(virtualNetwork.cost());
+                constraints.add(virtualNetwork.cost());
             }
 
-            Boolean result = nullIsNotFound(get(VnService.class).updateVn(vnName, Constraints),
-                                            VIRTUAL_NETWORk_NOT_FOUND);
+            Boolean result = nullIsNotFound(get(VnService.class).updateVn(vnName, constraints),
+                                            VIRTUAL_NETWORK_NOT_FOUND);
             return Response.status(OK).entity(result.toString()).build();
         } catch (IOException e) {
             log.error("Update virtual network failed because of exception {}.", e.toString());
@@ -221,7 +221,7 @@ public class VnWebResource extends AbstractWebResource {
         log.debug("Deletes virtual network by name {}.", vnName);
 
         Boolean isSuccess = nullIsNotFound(get(VnService.class).deleteVn(vnName),
-                                           VIRTUAL_NETWORk_NOT_FOUND);
+                                           VIRTUAL_NETWORK_NOT_FOUND);
         if (!isSuccess) {
             log.debug("Virtual network {} does not exist", vnName);
         }

@@ -59,8 +59,8 @@ public final class VirtualNetworkInfo {
         this.lsp = new LinkedList<>();
 
         for (DeviceId source : src) {
-            lsp.addAll(dst.stream().filter(destination -> !source.equals(destination)).map(destination -> new Lsp
-                    (source, destination)).collect(Collectors.toList()));
+            lsp.addAll(dst.stream().filter(destination -> !source.equals(destination))
+                       .map(destination -> new Lsp(source, destination)).collect(Collectors.toList()));
         }
         return;
     }
@@ -85,8 +85,7 @@ public final class VirtualNetworkInfo {
        return endPoint;
     }
 
-    public void setEndPoint(EndPoint endPoint)
-    {
+    public void setEndPoint(EndPoint endPoint) {
         this.endPoint = endPoint;
         lsp(endPoint);
     }

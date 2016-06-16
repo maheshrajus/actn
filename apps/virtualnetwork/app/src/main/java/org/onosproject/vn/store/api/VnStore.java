@@ -62,7 +62,7 @@ public interface VnStore {
      * @param endPoint virtual network endpoint
      * @return success or failure
      */
-    boolean updateVn(String vnName, EndPoint endPoint) ;
+    boolean updateVn(String vnName, EndPoint endPoint);
 
     /**
      * Removes virtual network.

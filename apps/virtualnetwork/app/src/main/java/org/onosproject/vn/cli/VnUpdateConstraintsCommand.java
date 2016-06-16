@@ -95,6 +95,6 @@ public class VnUpdateConstraintsCommand extends AbstractShellCommand {
         if (!service.updateVn(vnName, constraint)) {
             error("Virtual network update constraints failed.");
         }
- 
+
     }
 }

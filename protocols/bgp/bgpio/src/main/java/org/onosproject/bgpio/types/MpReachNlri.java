@@ -334,7 +334,7 @@ public class MpReachNlri implements BgpValueType {
             cb.writeShort(afi);
             cb.writeByte(safi);
             //next hop address
-            cb.writeInt(0);
+            cb.writeByte(0);
             //sub network points of attachment
             cb.writeByte(0);
 
@@ -373,8 +373,7 @@ public class MpReachNlri implements BgpValueType {
             cb.writeShort(afi);
             cb.writeByte(safi);
             //next hop address
-            cb.writeByte(4);
-            //cb.writeBytes(InetAddress.getByAddress(ipNextHop.toOctets()).toString().getBytes());
+
             cb.writeBytes(ipNextHop.toOctets());
 
             //sub network points of attachment
