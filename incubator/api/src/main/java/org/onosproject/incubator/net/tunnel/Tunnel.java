@@ -59,7 +59,15 @@ public interface Tunnel extends Annotated, Provided, NetworkResource {
         /**
          * Signifies that this is a L0 OCH tunnel.
          */
-        OCH
+        OCH,
+        /**
+         * Signifies multi domain MPLS tunnel.
+         */
+        MDMPLS,
+        /**
+         * Signifies single domain MPLS tunnel.
+         */
+        SDMPLS,
     }
 
     /**

@@ -224,4 +224,29 @@ public interface PceStore {
      * @return success or failure
      */
     boolean removeFailedPathInfo(PcePathInfo failedPathInfo);
+
+    /**
+     * Add lsrid to device id mapping.
+     *
+     * @param lsrId lsrId of the device
+     * @param deviceId device id
+     * @return success or failure
+     */
+    boolean addLsrIdDevice(String lsrId, DeviceId deviceId);
+
+    /**
+     * Remove lsrid to device id mapping.
+     *
+     * @param lsrId lsrId of the device
+     * @return success or failure
+     */
+    boolean removeLsrIdDevice(String lsrId);
+
+    /**
+     * Get lsrid to device id mapping.
+     *
+     * @param lsrId lsrId of the device
+     * @return device id of the lsrId
+     */
+    DeviceId getLsrIdDevice(String lsrId);
 }

@@ -16,8 +16,11 @@
 package org.onosproject.pce.pceservice.api;
 
 import java.util.List;
+import java.util.Set;
 
+import org.onlab.packet.IpAddress;
 import org.onosproject.net.DeviceId;
+import org.onosproject.net.Path;
 import org.onosproject.net.intent.Constraint;
 import org.onosproject.pce.pceservice.LspType;
 import org.onosproject.incubator.net.tunnel.Tunnel;
@@ -28,6 +31,16 @@ import org.onosproject.incubator.net.tunnel.TunnelId;
  * update path with new constraints and query existing tunnels.
  */
 public interface PceService {
+
+    /**
+     * Compute new path based on constraints and LSP type.
+     *
+     * @param src source device
+     * @param dst destination device
+     * @param constraints list of constraints to be applied on path
+     * @return set of path on successful computation or empty set if no path
+     */
+    Set<Path> computePath(DeviceId src, DeviceId dst, List<Constraint> constraints);
 
     /**
      * Creates new path based on constraints and LSP type.
@@ -42,6 +55,20 @@ public interface PceService {
     boolean setupPath(DeviceId src, DeviceId dst, String tunnelName, List<Constraint> constraints, LspType lspType);
 
     /**
+     * Creates new path based on constraints and LSP type.
+     *
+     * @param vnName virtual network name
+     * @param srcLsrId source device LSRId
+     * @param dstLsrId destination device LSRId
+     * @param tunnelName name of the tunnel
+     * @param constraints list of constraints to be applied on path
+     * @param lspType type of path to be setup
+     * @return false on failure and true on successful path creation
+     */
+    boolean setupPath(String vnName, IpAddress srcLsrId, IpAddress dstLsrId, String tunnelName,
+                      List<Constraint> constraints, LspType lspType);
+
+    /**
      * Updates an existing path.
      *
      * @param tunnelId tunnel identifier
@@ -51,12 +78,29 @@ public interface PceService {
     boolean updatePath(TunnelId tunnelId, List<Constraint> constraints);
 
     /**
+     * Updates an existing path.
+     *
+     * @param plspId plspId of the path
+     * @param constraints list of constraints to be applied on path
+     * @return false on failure and true on successful path update
+     */
+    boolean updatePath(String plspId, List<Constraint> constraints);
+
+    /**
      * Releases an existing path.
      *
      * @param tunnelId tunnel identifier
      * @return false on failure and true on successful path removal
      */
     boolean releasePath(TunnelId tunnelId);
+
+    /**
+     * Releases an existing path.
+     *
+     * @param plspId plspId of the path
+     * @return false on failure and true on successful path removal
+     */
+    boolean releasePath(String plspId);
 
     /**
      * Queries all paths.
@@ -73,6 +117,20 @@ public interface PceService {
      */
     Tunnel queryPath(TunnelId tunnelId);
 
+    /**
+     * Register a listener for PCE path update events.
+     *
+     * @param listener the listener to notify
+     */
+    void addListener(PcePathUpdateListener listener);
+
+    /**
+     * Unregister a listener for PCE path update events.
+     *
+     * @param listener the listener to unregister
+     */
+    void removeListener(PcePathUpdateListener listener);
+	
     /**
      * Returns default LSP type.
      *

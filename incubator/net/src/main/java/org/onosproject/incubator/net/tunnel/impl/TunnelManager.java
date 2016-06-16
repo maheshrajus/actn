@@ -310,6 +310,11 @@ public class TunnelManager
     }
 
     @Override
+    public Collection<Tunnel> queryTunnel(TunnelName tunnelName) {
+        return store.queryTunnel(tunnelName);
+    }
+
+    @Override
     public Collection<Tunnel> queryTunnel(TunnelEndPoint src, TunnelEndPoint dst) {
         return store.queryTunnel(src, dst);
     }

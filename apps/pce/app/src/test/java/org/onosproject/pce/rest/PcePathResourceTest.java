@@ -250,7 +250,7 @@ public class PcePathResourceTest extends PceResourceTest {
      */
     @Test
     public void testPut() {
-        expect(pceService.updatePath(anyObject(), anyObject()))
+        expect(pceService.updatePath((TunnelId) anyObject(), anyObject()))
                          .andReturn(true)
                          .anyTimes();
         replay(pceService);
@@ -269,9 +269,9 @@ public class PcePathResourceTest extends PceResourceTest {
      */
     @Test
     public void testDelete() {
-        expect(pceService.releasePath(anyObject()))
-                         .andReturn(true)
-                         .anyTimes();
+        expect(pceService.releasePath((TunnelId) anyObject()))
+                .andReturn(true)
+                .anyTimes();
         replay(pceService);
 
         WebTarget wt = target();

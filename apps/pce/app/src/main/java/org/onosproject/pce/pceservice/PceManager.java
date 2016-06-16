@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -81,14 +82,15 @@ import org.onosproject.net.link.LinkListener;
 import org.onosproject.net.link.LinkEvent;
 import org.onosproject.net.link.LinkService;
 import org.onosproject.net.MastershipRole;
+import org.onosproject.pce.pceservice.api.PcePathUpdateListener;
 import org.onosproject.pce.pceservice.constraint.CapabilityConstraint;
 import org.onosproject.pce.pceservice.constraint.CapabilityConstraint.CapabilityType;
 import org.onosproject.pce.pceservice.constraint.CostConstraint;
+import org.onosproject.pce.pceservice.constraint.ExcludeDeviceConstraint;
 import org.onosproject.pce.pceservice.constraint.SharedBandwidthConstraint;
 import org.onosproject.net.resource.Resource;
 import org.onosproject.net.resource.ResourceAllocation;
 import org.onosproject.net.resource.ResourceConsumer;
-import org.onosproject.net.resource.ResourceQueryService;
 import org.onosproject.net.resource.ResourceService;
 import org.onosproject.net.resource.Resources;
 import org.onosproject.net.topology.LinkWeight;
@@ -128,6 +130,7 @@ import static org.onosproject.pce.pceservice.PcepAnnotationKeys.PLSP_ID;
 import static org.onosproject.pce.pceservice.PcepAnnotationKeys.PCC_TUNNEL_ID;
 import static org.onosproject.pce.pceservice.PcepAnnotationKeys.DELEGATE;
 import static org.onosproject.pce.pceservice.PcepAnnotationKeys.COST_TYPE;
+import static org.onosproject.pce.pceservice.PcepAnnotationKeys.VN_NAME;
 
 import org.onosproject.net.packet.InboundPacket;
 import org.onosproject.net.packet.PacketContext;
@@ -148,8 +151,6 @@ public class PceManager implements PceService {
     private static final String LINK_NULL = "Link-cannot be null";
     public static final String PCE_SERVICE_APP = "org.onosproject.pce";
     private static final String LOCAL_LSP_ID_GEN_TOPIC = "pcep-local-lsp-id";
-    public static final String DEVICE_TYPE = "type";
-    public static final String L3_DEVICE = "L3";
     private static final int PREFIX_LENGTH = 32;
 
     private static final String TUNNEL_CONSUMER_ID_GEN_TOPIC = "pcep-tunnel-consumer-id";
@@ -170,14 +171,14 @@ public class PceManager implements PceService {
     // having its capability
     private Map<String, DeviceId> lsrIdDeviceIdMap = new HashMap<>();
 
+    // PCE path update listener set
+    protected Set<PcePathUpdateListener> pcePathUpdateListener = new CopyOnWriteArraySet<>();
+
     @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
     protected CoreService coreService;
 
     @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
     protected ResourceService resourceService;
-
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
-    protected ResourceQueryService resourceQueryService;
 
     @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
     protected PathService pathService;
@@ -311,35 +312,18 @@ public class PceManager implements PceService {
     }
 
     /**
-     * Computes a path between two devices.
+     * Creates new path based on virtual network name, constraints and LSP type.
      *
-     * @param src ingress device
-     * @param dst egress device
-     * @param constraints path constraints
-     * @return computed path based on constraints
+     * @param vnName virtual network name
+     * @param src source device
+     * @param dst destination device
+     * @param tunnelName name of the tunnel
+     * @param constraints list of constraints to be applied on path
+     * @param lspType type of path to be setup
+     * @return false on failure and true on successful path creation
      */
-    protected Set<Path> computePath(DeviceId src, DeviceId dst, List<Constraint> constraints) {
-        if (pathService == null) {
-            return ImmutableSet.of();
-        }
-        Set<Path> paths = pathService.getPaths(src, dst, weight(constraints));
-        if (!paths.isEmpty()) {
-            return paths;
-        }
-        return ImmutableSet.of();
-    }
-
-    //[TODO:] handle requests in queue
-    @Override
-    public boolean setupPath(DeviceId src, DeviceId dst, String tunnelName, List<Constraint> constraints,
-                             LspType lspType) {
-        checkNotNull(src);
-        checkNotNull(dst);
-        checkNotNull(tunnelName);
-        //checkNotNull(lspType);
-        if (lspType == null) {
-            lspType = defaultLspType();
-        }
+    private boolean setupPath(String vnName, DeviceId src, DeviceId dst, String tunnelName,
+                              List<Constraint> constraints, LspType lspType) {
 
         // Convert from DeviceId to TunnelEndPoint
         Device srcDevice = deviceService.getDevice(src);
@@ -414,9 +398,15 @@ public class PceManager implements PceService {
         if (bwConstraintValue != 0) {
             annotationBuilder.set(BANDWIDTH, String.valueOf(bwConstraintValue));
         }
+
         if (costConstraint != null) {
             annotationBuilder.set(COST_TYPE, String.valueOf(costConstraint.type()));
         }
+
+        if (vnName != null) {
+            annotationBuilder.set(VN_NAME, vnName);
+        }
+
         annotationBuilder.set(LSP_SIG_TYPE, lspType.name());
         annotationBuilder.set(PCE_INIT, TRUE);
         annotationBuilder.set(DELEGATE, TRUE);
@@ -471,6 +461,55 @@ public class PceManager implements PceService {
             pceStore.addTunnelInfo(tunnelId, pceccTunnelInfo);
         }
         return true;
+    }
+
+    @Override
+    public Set<Path> computePath(DeviceId src, DeviceId dst, List<Constraint> constraints) {
+        if (pathService == null) {
+            return ImmutableSet.of();
+        }
+
+        if (constraints == null) {
+            constraints = new LinkedList<>();
+            constraints.add(CapabilityConstraint.of(CapabilityType.WITH_SIGNALLING));
+        } else {
+            if (constraints.stream().filter(con -> con instanceof CapabilityConstraint).count() == 0) {
+                constraints.add(CapabilityConstraint.of(CapabilityType.WITH_SIGNALLING));
+            }
+        }
+
+        Set<Path> paths = pathService.getPaths(src, dst, weight(constraints));
+        if (!paths.isEmpty()) {
+            return paths;
+        }
+        return ImmutableSet.of();
+    }
+
+    //[TODO:] handle requests in queue
+    @Override
+    public boolean setupPath(DeviceId src, DeviceId dst, String tunnelName, List<Constraint> constraints,
+                             LspType lspType) {
+        checkNotNull(src);
+        checkNotNull(dst);
+        checkNotNull(tunnelName);
+        checkNotNull(lspType);
+
+        return setupPath(null, src, dst, tunnelName, constraints, lspType);
+    }
+
+    @Override
+    public boolean setupPath(String vnName, IpAddress srcLsrId, IpAddress dstLsrId, String tunnelName,
+                             List<Constraint> constraints, LspType lspType) {
+        checkNotNull(srcLsrId);
+        checkNotNull(dstLsrId);
+        checkNotNull(tunnelName);
+        checkNotNull(lspType);
+
+        // Get the devices from lsrId's
+        DeviceId srcDeviceId = pceStore.getLsrIdDevice(srcLsrId.toString());
+        DeviceId dstDeviceId = pceStore.getLsrIdDevice(dstLsrId.toString());
+
+        return setupPath(vnName, srcDeviceId, dstDeviceId, tunnelName, constraints, lspType);
     }
 
     @Override
@@ -621,6 +660,20 @@ public class PceManager implements PceService {
     }
 
     @Override
+    public boolean updatePath(String plspId, List<Constraint> constraints) {
+        checkNotNull(plspId);
+        Collection<Tunnel> tunnels = tunnelService.queryTunnel(MPLS);
+        Optional<Tunnel> tunnel = tunnels.stream()
+                .filter(t -> t.annotations().value(PLSP_ID).equals(plspId))
+                .findFirst();
+
+        if (tunnel.isPresent()) {
+            return updatePath(tunnel.get().tunnelId(), constraints);
+        }
+        return false;
+    }
+
+    @Override
     public boolean releasePath(TunnelId tunnelId) {
         checkNotNull(tunnelId);
         // 1. Query Tunnel from Tunnel manager.
@@ -635,6 +688,21 @@ public class PceManager implements PceService {
     }
 
     @Override
+    public boolean releasePath(String plspId) {
+        checkNotNull(plspId);
+        Collection<Tunnel> tunnels = tunnelService.queryTunnel(MPLS);
+        Optional<Tunnel> tunnel = tunnels.stream()
+                .filter(t -> t.annotations().value(PLSP_ID).equals(plspId))
+                .findFirst();
+
+        if (tunnel.isPresent()) {
+            return tunnelService.downTunnel(appId, tunnel.get().tunnelId());
+        }
+
+        return false;
+    }
+
+    @Override
     public Iterable<Tunnel> queryAllPath() {
         return tunnelService.queryTunnel(MPLS);
     }
@@ -642,6 +710,16 @@ public class PceManager implements PceService {
     @Override
     public Tunnel queryPath(TunnelId tunnelId) {
         return tunnelService.queryTunnel(tunnelId);
+    }
+
+    @Override
+    public void addListener(PcePathUpdateListener listener) {
+        this.pcePathUpdateListener.add(listener);
+    }
+
+    @Override
+    public void removeListener(PcePathUpdateListener listener) {
+        this.pcePathUpdateListener.remove(listener);
     }
 
     /**
@@ -695,6 +773,8 @@ public class PceManager implements PceService {
                 if (constraint instanceof CapabilityConstraint) {
                     cost = ((CapabilityConstraint) constraint).isValidLink(edge.link(), deviceService,
                                                                            netCfgService) ? 1 : -1;
+                } else if (constraint instanceof ExcludeDeviceConstraint) {
+                    cost = ((ExcludeDeviceConstraint) constraint).isValidLink(edge.link(), deviceService) ? 1 : -1;
                 } else {
                     cost = constraint.cost(edge.link(), resourceService::isAvailable);
                 }
@@ -1059,6 +1139,9 @@ public class PceManager implements PceService {
                 // Node-label allocation is being done during Label DB Sync.
                 // So, when device is detected, no need to do node-label
                 // allocation.
+                if (specificDevice.annotations().value(LSRID) != null) {
+                    pceStore.addLsrIdDevice(specificDevice.annotations().value(LSRID), specificDevice.id());
+                }
                 break;
 
             case DEVICE_REMOVED:
@@ -1066,6 +1149,11 @@ public class PceManager implements PceService {
                 if (mastershipService.getLocalRole(specificDevice.id()) == MastershipRole.MASTER) {
                     releaseNodeLabel(specificDevice);
                 }
+
+                if (specificDevice.annotations().value(LSRID) != null) {
+                    pceStore.removeLsrIdDevice(specificDevice.annotations().value(LSRID));
+                }
+
                 break;
 
             default:

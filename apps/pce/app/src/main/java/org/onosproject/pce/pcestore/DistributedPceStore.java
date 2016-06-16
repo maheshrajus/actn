@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.collect.ImmutableSet;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -88,6 +89,9 @@ public class DistributedPceStore implements PceStore {
 
     // List of Failed path info
     private DistributedSet<PcePathInfo> failedPathSet;
+
+    // Locally maintain LSRID to device id mapping for better performance.
+    private Map<String, DeviceId> lsrIdDeviceIdMap = new HashMap<>();
 
     @Activate
     protected void activate() {
@@ -340,5 +344,30 @@ public class DistributedPceStore implements PceStore {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public boolean addLsrIdDevice(String lsrId, DeviceId deviceId) {
+        checkNotNull(lsrId);
+        checkNotNull(deviceId);
+
+        lsrIdDeviceIdMap.put(lsrId, deviceId);
+        return true;
+    }
+
+    @Override
+    public boolean removeLsrIdDevice(String lsrId) {
+        checkNotNull(lsrId);
+
+        lsrIdDeviceIdMap.remove(lsrId);
+        return true;
+    }
+
+    @Override
+    public DeviceId getLsrIdDevice(String lsrId) {
+        checkNotNull(lsrId);
+
+        return lsrIdDeviceIdMap.get(lsrId);
+
     }
 }

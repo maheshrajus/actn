@@ -452,6 +452,20 @@ public class DistributedTunnelStore
     }
 
     @Override
+    public Collection<Tunnel> queryTunnel(TunnelName tunnelName) {
+        Collection<Tunnel> result = new HashSet<Tunnel>();
+        Set<TunnelId> tunnelIds = tunnelNameAsKeyMap.get(tunnelName);
+        if (tunnelIds == null) {
+            return Collections.emptySet();
+        }
+        for (TunnelId id : tunnelIds) {
+            result.add(tunnelIdAsKeyStore.get(id));
+        }
+        return result.size() == 0 ? Collections.emptySet() : ImmutableSet
+                .copyOf(result);
+    }
+
+    @Override
     public Collection<Tunnel> queryTunnel(TunnelEndPoint src, TunnelEndPoint dst) {
         Collection<Tunnel> result = new HashSet<Tunnel>();
         TunnelKey key = TunnelKey.tunnelKey(src, dst);

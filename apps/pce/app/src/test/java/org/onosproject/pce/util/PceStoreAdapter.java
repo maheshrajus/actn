@@ -208,4 +208,20 @@ public class PceStoreAdapter implements PceStore {
         }
         return true;
     }
+
+
+    @Override
+    public boolean addLsrIdDevice(String lsrId, DeviceId deviceId) {
+        return true;
+    }
+
+    @Override
+    public boolean removeLsrIdDevice(String lsrId) {
+        return true;
+    }
+
+    @Override
+    public DeviceId getLsrIdDevice(String lsrId) {
+        return null;
+    }
 }

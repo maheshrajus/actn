@@ -103,6 +103,11 @@ public class TunnelServiceAdapter implements TunnelService {
     }
 
     @Override
+    public Collection<Tunnel> queryTunnel(TunnelName tunnelName) {
+        return Collections.emptySet();
+    }
+
+    @Override
     public Collection<Tunnel> queryTunnel(TunnelEndPoint src, TunnelEndPoint dst) {
         return Collections.emptySet();
     }

@@ -67,4 +67,9 @@ public final class PcepAnnotationKeys {
      * Whether LSPs are delegated or not.
      */
     public static final String DELEGATE = "delegate";
+
+    /**
+     * Annotation key for the virtual network name.
+     */
+    public static final String VN_NAME = "vnName";
 }

@@ -16,6 +16,7 @@
 package org.onosproject.pce.util;
 
 import java.util.Collection;
+import java.util.Collections;
 
 import org.onosproject.core.ApplicationId;
 import org.onosproject.incubator.net.tunnel.Tunnel;
@@ -112,6 +113,11 @@ public class TunnelServiceAdapter implements TunnelService {
     @Override
     public Collection<Tunnel> queryTunnel(Type type) {
         return null;
+    }
+
+    @Override
+    public Collection<Tunnel> queryTunnel(TunnelName tunnelName) {
+        return Collections.emptySet();
     }
 
     @Override

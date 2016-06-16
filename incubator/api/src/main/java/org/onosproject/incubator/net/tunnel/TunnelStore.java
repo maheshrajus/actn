@@ -216,6 +216,14 @@ public interface TunnelStore extends Store<TunnelEvent, TunnelStoreDelegate> {
     Collection<Tunnel> queryTunnel(Type type);
 
     /**
+     * Returns all specified tunnel name tunnels.
+     *
+     * @param tunnelName tunnel name
+     * @return Collection of tunnels
+     */
+    Collection<Tunnel> queryTunnel(TunnelName tunnelName);
+
+    /**
      * Returns all tunnels between source point and destination point.
      *
      * @param src a source point of tunnel.
