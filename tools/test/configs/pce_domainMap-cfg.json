@@ -1,0 +1,14 @@
+http://127.0.0.1:8181/onos/v1/network/configuration/
+
+{
+    "apps": {
+        "org.onosproject.provider.pcep.cfg": {
+                "pcepDomainMap": {
+                     "pcepDomainMap":[ {"ipAddress": "172.16.2.12", "asNumber": "100"},
+                                 {"ipAddress": "172.16.2.13", "asNumber": "200"},
+                                 {"ipAddress": "172.16.2.14", "asNumber": "300"}
+                     ]
+                }
+        }
+    }
+}

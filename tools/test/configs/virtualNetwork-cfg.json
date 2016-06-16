@@ -1,0 +1,13 @@
+http://127.0.0.1:8181/onos/virtualnetwork/vn/abce
+{"vn": {"vnName":"abce",
+        "constraint":
+               { "costType":2,
+                 "cost":22.0,
+                 "bandwidth":200.0
+               },
+        "endPoint":
+               { "source":["deviceId1", "deviceId2"],
+                 "destination":["deviceId3", "deviceId4"]
+               }    
+       }      
+}

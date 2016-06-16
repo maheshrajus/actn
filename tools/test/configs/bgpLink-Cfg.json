@@ -1,0 +1,12 @@
+http://127.0.0.1:8181/onos/v1/network/configuration/
+{
+    "apps": {
+        "org.onosproject.provider.bgp.linkcfg": {
+                "bgpapp": {
+                     "bgpLink":[ {"sourceDeviceId": "abcd", "sourceInterface": "1.1.1.1", "sourcePort": "100", 
+                                 "destinationDeviceId": "abc", "destinationInterface": "2.2.2.2", "destinationPort": "200", 
+                                 "maxReservedbandwidth": 2.0}]
+                }
+        }
+    }
+}
