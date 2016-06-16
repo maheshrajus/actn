@@ -159,8 +159,21 @@ public class BgpLinkAttrIgpMetric implements BgpValueType {
 
     @Override
     public int write(ChannelBuffer cb) {
-        // TODO This will be implemented in the next version
-        return 0;
+        int iLenStartIndex = cb.writerIndex();
+        cb.writeShort(ATTRLINK_IGPMETRIC);
+
+        if (igpMetricLen == ISIS_SMALL_METRIC) {
+            cb.writeByte(1); // Length
+            cb.writeByte(igpMetric);
+        } else if (igpMetricLen == OSPF_LINK_METRIC) {
+            cb.writeShort(2); // Length
+            cb.writeShort(igpMetric);
+        } else if (igpMetricLen == ISIS_WIDE_METRIC) {
+            cb.writeShort(3); // Length
+            cb.writeByte(igpMetric >> 8);
+            cb.writeShort(igpMetric);
+        }
+        return cb.writerIndex() - iLenStartIndex;
     }
 
     @Override

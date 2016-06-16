@@ -207,6 +207,43 @@ public class NodeDescriptors {
         return new NodeDescriptors(subTlvs, desLength, desType);
     }
 
+    public int write(ChannelBuffer cb, short nodeType) {
+        int iLenStartIndex = cb.writerIndex();
+        cb.writeShort(nodeType);
+        int nodeIndxLen = cb.writerIndex();
+        cb.writeShort(0); // Length
+        ListIterator<BgpValueType> iterator = getSubTlvs().listIterator();
+        while (iterator.hasNext()) {
+            BgpValueType attr = iterator.next();
+            if (attr instanceof AutonomousSystemTlv) {
+                AutonomousSystemTlv autonomousSystemTlv = (AutonomousSystemTlv) attr;
+                autonomousSystemTlv.write(cb);
+            } else if (attr instanceof BgpLSIdentifierTlv) {
+                BgpLSIdentifierTlv bgpLSIdentifierTlv = (BgpLSIdentifierTlv) attr;
+                bgpLSIdentifierTlv.write(cb);
+            } else if (attr instanceof AreaIDTlv) {
+                AreaIDTlv areaIDTlv = (AreaIDTlv) attr;
+                areaIDTlv.write(cb);
+            } else if (attr instanceof IsIsPseudonode) {
+                IsIsPseudonode isIsPseudonode = (IsIsPseudonode) attr;
+                isIsPseudonode.write(cb);
+            } else if (attr instanceof IsIsNonPseudonode) {
+                IsIsNonPseudonode isIsNonPseudonode = (IsIsNonPseudonode) attr;
+                isIsNonPseudonode.write(cb);
+            } else if (attr instanceof OspfPseudonode) {
+                OspfPseudonode ospfPseudonode = (OspfPseudonode) attr;
+                ospfPseudonode.write(cb);
+            } else if (attr instanceof OspfNonPseudonode) {
+                OspfNonPseudonode ospfNonPseudonode = (OspfNonPseudonode) attr;
+                ospfNonPseudonode.write(cb);
+            }
+        }
+
+        int nodeLen = cb.writerIndex() - nodeIndxLen;
+        cb.setShort(nodeIndxLen, (short) (nodeLen - 2));
+
+        return cb.writerIndex() - iLenStartIndex;
+    }
     /**
      * Returns node descriptors length.
      *

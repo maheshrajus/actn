@@ -24,6 +24,7 @@ import org.onlab.packet.IpAddress;
 import org.onosproject.bgp.controller.BgpController;
 import org.onosproject.bgp.controller.BgpLocalRib;
 import org.onosproject.bgp.controller.BgpPeer;
+import org.onosproject.bgp.controller.BgpPeerCfg;
 import org.onosproject.bgp.controller.BgpSessionInfo;
 import org.onosproject.bgpio.exceptions.BgpParseException;
 import org.onosproject.bgpio.protocol.BgpFactories;
@@ -32,12 +33,16 @@ import org.onosproject.bgpio.protocol.BgpLSNlri;
 import org.onosproject.bgpio.protocol.BgpMessage;
 import org.onosproject.bgpio.protocol.flowspec.BgpFlowSpecNlri;
 import org.onosproject.bgpio.protocol.flowspec.BgpFlowSpecRouteKey;
+import org.onosproject.bgpio.protocol.linkstate.BgpLinkLSIdentifier;
 import org.onosproject.bgpio.protocol.linkstate.BgpLinkLsNlriVer4;
+import org.onosproject.bgpio.protocol.linkstate.BgpNodeLSIdentifier;
 import org.onosproject.bgpio.protocol.linkstate.BgpNodeLSNlriVer4;
 import org.onosproject.bgpio.protocol.linkstate.BgpPrefixIPv4LSNlriVer4;
+import org.onosproject.bgpio.protocol.linkstate.BgpPrefixLSIdentifier;
 import org.onosproject.bgpio.protocol.linkstate.PathAttrNlriDetails;
 import org.onosproject.bgpio.types.AsPath;
 import org.onosproject.bgpio.types.As4Path;
+import org.onosproject.bgpio.protocol.linkstate.PathAttrNlriDetailsLocalRib;
 import org.onosproject.bgpio.types.BgpExtendedCommunity;
 import org.onosproject.bgpio.types.BgpValueType;
 import org.onosproject.bgpio.types.LocalPref;
@@ -48,6 +53,7 @@ import org.onosproject.bgpio.types.MultiProtocolExtnCapabilityTlv;
 import org.onosproject.bgpio.types.Origin;
 import org.onosproject.bgpio.types.attr.WideCommunity;
 import org.onosproject.bgpio.types.RpdCapabilityTlv;
+import org.onosproject.bgpio.types.RouteDistinguisher;
 import org.onosproject.bgpio.util.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,6 +65,8 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.RejectedExecutionException;
 
 /**
@@ -153,6 +161,88 @@ public class BgpPeerImpl implements BgpPeer {
             }
         }
         return false;
+    }
+
+    /**
+     * Send BGP LS update message to peer.
+     *
+     */
+    public final void sendBgpLsUpdateMessageToPeer(PathAttrNlriDetails details) {
+
+        BgpPeerCfg peerCfg = bgpController.getConfig().displayPeers(sessionInfo.remoteBgpId().ipAddress().toString());
+        if (!peerCfg.exportRoute()) {
+            return;
+        }
+
+        BgpMessage msg = Controller.getBgpMessageFactory4().updateMessageBuilder()
+                                   .setBgpPathAttributes(details.pathAttributes()).build();
+
+        log.info("Sending BGP LS Update message to {}", channel.getRemoteAddress());
+        channel.write(Collections.singletonList(msg));
+    }
+
+    @Override
+    public final void updateRoutesToPeer() {
+        BgpLocalRibImpl bgplocalRibImpl = (BgpLocalRibImpl) bgplocalRib;
+        Set<BgpNodeLSIdentifier> nodes;
+        Set<BgpLinkLSIdentifier> links;
+        Set<BgpPrefixLSIdentifier> prefixes;
+
+        nodes = bgplocalRibImpl.nodeTree().keySet();
+        for (BgpNodeLSIdentifier node : nodes) {
+            PathAttrNlriDetailsLocalRib pathAttrNlri = bgplocalRibImpl.nodeTree().get(node);
+            sendBgpLsUpdateMessageToPeer(pathAttrNlri.localRibNlridetails());
+        }
+
+        links = bgplocalRibImpl.linkTree().keySet();
+        for (BgpLinkLSIdentifier link : links) {
+            PathAttrNlriDetailsLocalRib pathAttrNlri = bgplocalRibImpl.linkTree().get(link);
+            sendBgpLsUpdateMessageToPeer(pathAttrNlri.localRibNlridetails());
+        }
+
+        prefixes = bgplocalRibImpl.prefixTree().keySet();
+        for (BgpPrefixLSIdentifier prefix : prefixes) {
+            PathAttrNlriDetailsLocalRib pathAttrNlri = bgplocalRibImpl.prefixTree().get(prefix);
+            sendBgpLsUpdateMessageToPeer(pathAttrNlri.localRibNlridetails());
+        }
+
+        BgpLocalRibImpl bgplocalRibVpnImpl = (BgpLocalRibImpl) bgplocalRibVpn;
+
+        Set<RouteDistinguisher> vpnNodeTree = bgplocalRibVpnImpl.vpnNodeTree().keySet();
+        Map<BgpNodeLSIdentifier, PathAttrNlriDetailsLocalRib> nodeTree;
+        for (RouteDistinguisher routeDistinguisher : vpnNodeTree) {
+            nodeTree = bgplocalRibVpnImpl.vpnNodeTree().get(routeDistinguisher);
+
+            nodes = nodeTree.keySet();
+            for (BgpNodeLSIdentifier node : nodes) {
+                PathAttrNlriDetailsLocalRib pathAttrNlri = nodeTree.get(node);
+                sendBgpLsUpdateMessageToPeer(pathAttrNlri.localRibNlridetails());
+            }
+        }
+
+        Set<RouteDistinguisher> vpnLinkTree = bgplocalRibVpnImpl.vpnLinkTree().keySet();
+        Map<BgpLinkLSIdentifier, PathAttrNlriDetailsLocalRib> linkTree;
+        for (RouteDistinguisher routeDistinguisher : vpnLinkTree) {
+            linkTree = bgplocalRibVpnImpl.vpnLinkTree().get(routeDistinguisher);
+
+            links = linkTree.keySet();
+            for (BgpLinkLSIdentifier link : links) {
+                PathAttrNlriDetailsLocalRib pathAttrNlri = linkTree.get(link);
+                sendBgpLsUpdateMessageToPeer(pathAttrNlri.localRibNlridetails());
+            }
+        }
+
+        Set<RouteDistinguisher> vpnPrefixTree = bgplocalRibVpnImpl.vpnPrefixTree().keySet();
+        Map<BgpPrefixLSIdentifier, PathAttrNlriDetailsLocalRib> prefixTree;
+        for (RouteDistinguisher routeDistinguisher : vpnPrefixTree) {
+            prefixTree = bgplocalRibVpnImpl.vpnPrefixTree().get(routeDistinguisher);
+
+            prefixes = prefixTree.keySet();
+            for (BgpPrefixLSIdentifier prefix : prefixes) {
+                PathAttrNlriDetailsLocalRib pathAttrNlri = prefixTree.get(prefix);
+                sendBgpLsUpdateMessageToPeer(pathAttrNlri.localRibNlridetails());
+            }
+        }
     }
 
     /**
@@ -262,7 +352,7 @@ public class BgpPeerImpl implements BgpPeer {
             }
             if (attr instanceof MpUnReachNlri) {
                 List<BgpLSNlri> nlri = ((MpUnReachNlri) attr).mpUnReachNlri();
-                callRemove(this, nlri);
+                callRemove(this, nlri, attr);
             }
         }
     }
@@ -338,33 +428,34 @@ public class BgpPeerImpl implements BgpPeer {
      * @param nlri NLRI information
      * @throws BgpParseException BGP parse exception
      */
-    public void callRemove(BgpPeerImpl peerImpl, List<BgpLSNlri> nlri) throws BgpParseException {
+    public void callRemove(BgpPeerImpl peerImpl, List<BgpLSNlri> nlri, BgpValueType attr) throws BgpParseException {
         ListIterator<BgpLSNlri> listIterator = nlri.listIterator();
         while (listIterator.hasNext()) {
             BgpLSNlri nlriInfo = listIterator.next();
             if (nlriInfo instanceof BgpNodeLSNlriVer4) {
                 if (!((BgpNodeLSNlriVer4) nlriInfo).isVpnPresent()) {
                     adjRib.remove(nlriInfo);
-                    bgplocalRib.delete(nlriInfo);
+                    bgplocalRib.delete(nlriInfo, attr);
                 } else {
                     vpnAdjRib.removeVpn(nlriInfo, ((BgpNodeLSNlriVer4) nlriInfo).getRouteDistinguisher());
-                    bgplocalRibVpn.delete(nlriInfo, ((BgpNodeLSNlriVer4) nlriInfo).getRouteDistinguisher());
+                    bgplocalRibVpn.delete(nlriInfo, ((BgpNodeLSNlriVer4) nlriInfo).getRouteDistinguisher(), attr);
                 }
             } else if (nlriInfo instanceof BgpLinkLsNlriVer4) {
                 if (!((BgpLinkLsNlriVer4) nlriInfo).isVpnPresent()) {
                     adjRib.remove(nlriInfo);
-                    bgplocalRib.delete(nlriInfo);
+                    bgplocalRib.delete(nlriInfo, attr);
                 } else {
                     vpnAdjRib.removeVpn(nlriInfo, ((BgpLinkLsNlriVer4) nlriInfo).getRouteDistinguisher());
-                    bgplocalRibVpn.delete(nlriInfo, ((BgpLinkLsNlriVer4) nlriInfo).getRouteDistinguisher());
+                    bgplocalRibVpn.delete(nlriInfo, ((BgpLinkLsNlriVer4) nlriInfo).getRouteDistinguisher(), attr);
                 }
             } else if (nlriInfo instanceof BgpPrefixIPv4LSNlriVer4) {
                 if (!((BgpPrefixIPv4LSNlriVer4) nlriInfo).isVpnPresent()) {
                     adjRib.remove(nlriInfo);
-                    bgplocalRib.delete(nlriInfo);
+                    bgplocalRib.delete(nlriInfo, attr);
                 } else {
                     vpnAdjRib.removeVpn(nlriInfo, ((BgpPrefixIPv4LSNlriVer4) nlriInfo).getRouteDistinguisher());
-                    bgplocalRibVpn.delete(nlriInfo, ((BgpPrefixIPv4LSNlriVer4) nlriInfo).getRouteDistinguisher());
+                    bgplocalRibVpn.delete(nlriInfo,
+                                          ((BgpPrefixIPv4LSNlriVer4) nlriInfo).getRouteDistinguisher(), attr);
                 }
             }
         }

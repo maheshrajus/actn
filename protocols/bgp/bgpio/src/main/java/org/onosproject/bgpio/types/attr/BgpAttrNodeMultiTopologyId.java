@@ -124,8 +124,19 @@ public class BgpAttrNodeMultiTopologyId implements BgpValueType {
 
     @Override
     public int write(ChannelBuffer cb) {
-        // TODO This will be implemented in the next version
-        return 0;
+        int iLenStartIndex = cb.writerIndex();
+        cb.writeShort(ATTRNODE_MULTITOPOLOGY);
+        int multiTopoIndxLen = cb.writerIndex();
+        cb.writeShort(0); // Length
+
+        ListIterator<Short> listIterator = multiTopologyId.listIterator();
+        while (listIterator.hasNext()) {
+            short id = listIterator.next();
+            cb.writeShort(id);
+        }
+        int len = cb.writerIndex() - multiTopoIndxLen;
+        cb.setShort(multiTopoIndxLen, (short) (len - 2));
+        return cb.writerIndex() - iLenStartIndex;
     }
 
     @Override

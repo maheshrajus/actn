@@ -120,8 +120,12 @@ public class BgpLinkAttrTeDefaultMetric implements BgpValueType {
 
     @Override
     public int write(ChannelBuffer cb) {
-        // TODO This will be implemented in the next version
-        return 0;
+        int iLenStartIndex = cb.writerIndex();
+        cb.writeShort(ATTRLINK_TEDEFAULTMETRIC);
+
+        cb.writeShort(TE_DATA_LEN); // Length
+        cb.writeInt(linkTeMetric);
+        return cb.writerIndex() - iLenStartIndex;
     }
 
     @Override

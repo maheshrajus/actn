@@ -27,8 +27,12 @@ import org.onosproject.bgpio.exceptions.BgpParseException;
 import org.onosproject.bgpio.protocol.BgpLSNlri;
 import org.onosproject.bgpio.protocol.flowspec.BgpFlowSpecNlri;
 import org.onosproject.bgpio.protocol.linkstate.BgpPrefixIPv4LSNlriVer4;
+import org.onosproject.bgpio.protocol.linkstate.BgpNodeLSIdentifier;
 import org.onosproject.bgpio.protocol.linkstate.BgpNodeLSNlriVer4;
 import org.onosproject.bgpio.protocol.linkstate.BgpLinkLsNlriVer4;
+import org.onosproject.bgpio.protocol.linkstate.BgpPrefixLSIdentifier;
+import org.onosproject.bgpio.protocol.linkstate.NodeDescriptors;
+import org.onosproject.bgpio.types.attr.BgpAttrNodeMultiTopologyId;
 import org.onosproject.bgpio.util.Constants;
 import org.onosproject.bgpio.util.Validation;
 import org.slf4j.Logger;
@@ -330,7 +334,7 @@ public class MpReachNlri implements BgpValueType {
             cb.writeShort(afi);
             cb.writeByte(safi);
             //next hop address
-            cb.writeByte(0);
+            cb.writeInt(0);
             //sub network points of attachment
             cb.writeByte(0);
 
@@ -358,8 +362,100 @@ public class MpReachNlri implements BgpValueType {
             int fsNlriLen = cb.writerIndex() - mpReachDataIndx;
             cb.setShort(mpReachDataIndx, (short) (fsNlriLen - 2));
 
-        }
+        } else if ((afi == Constants.AFI_VALUE) && ((safi == Constants.SAFI_VALUE)
+            || (safi == Constants.VPN_SAFI_VALUE))) {
+            cb.writeByte(FLAGS);
+            cb.writeByte(MPREACHNLRI_TYPE);
 
+            int mpReachDataIndx = cb.writerIndex();
+            cb.writeShort(0);
+
+            cb.writeShort(afi);
+            cb.writeByte(safi);
+            //next hop address
+            cb.writeByte(4);
+            //cb.writeBytes(InetAddress.getByAddress(ipNextHop.toOctets()).toString().getBytes());
+            cb.writeBytes(ipNextHop.toOctets());
+
+            //sub network points of attachment
+            cb.writeByte(0);
+
+            ListIterator<BgpLSNlri> listIterator = mpReachNlri().listIterator();
+            while (listIterator.hasNext()) {
+                BgpLSNlri nlriInfo = listIterator.next();
+                cb.writeShort(nlriInfo.getNlriType().getType());
+                int nlriIndxLen = cb.writerIndex();
+                cb.writeShort(0); // Length
+
+                if ((safi == Constants.VPN_SAFI_VALUE) && (nlriInfo.getRouteDistinguisher() != null)) {
+                    RouteDistinguisher routeDistinguisher = nlriInfo.getRouteDistinguisher();
+                    cb.writeLong(nlriInfo.getRouteDistinguisher().getRouteDistinguisher());
+                }
+
+                try {
+                    cb.writeByte(nlriInfo.getProtocolId().getType());
+                } catch (BgpParseException e) {
+                    e.printStackTrace();
+                }
+                cb.writeLong(nlriInfo.getIdentifier());
+
+                if (nlriInfo instanceof BgpNodeLSNlriVer4) {
+                    BgpNodeLSIdentifier nodeDescriptor = ((BgpNodeLSNlriVer4) nlriInfo).getLocalNodeDescriptors();
+                    nodeDescriptor.getNodedescriptors().write(cb, NodeDescriptors.LOCAL_NODE_DES_TYPE);
+                } else if (nlriInfo instanceof BgpLinkLsNlriVer4) {
+                    NodeDescriptors nodeDescriptor = ((BgpLinkLsNlriVer4) nlriInfo).localNodeDescriptors();
+                    nodeDescriptor.write(cb, NodeDescriptors.LOCAL_NODE_DES_TYPE);
+
+                    nodeDescriptor = ((BgpLinkLsNlriVer4) nlriInfo).remoteNodeDescriptors();
+                    nodeDescriptor.write(cb, NodeDescriptors.REMOTE_NODE_DES_TYPE);
+
+                    //List<BgpValueType> tlvs = ((BgpLinkLsNlriVer4) nlriInfo).linkDescriptors();
+                    ListIterator<BgpValueType> iterator = ((BgpLinkLsNlriVer4) nlriInfo).linkDescriptors()
+                                                                                        .listIterator();
+                    while (iterator.hasNext()) {
+                        BgpValueType valueType = iterator.next();
+                        if (valueType instanceof LinkLocalRemoteIdentifiersTlv) {
+                            LinkLocalRemoteIdentifiersTlv linkLocalAddr = (LinkLocalRemoteIdentifiersTlv) valueType;
+                            linkLocalAddr.write(cb);
+                        } else if (valueType instanceof IPv4AddressTlv) {
+                            IPv4AddressTlv addr = (IPv4AddressTlv) valueType;
+                            addr.write(cb);
+                        } else if (valueType instanceof IPv6AddressTlv) {
+                            IPv6AddressTlv ipV6Addr = (IPv6AddressTlv) valueType;
+                            ipV6Addr.write(cb);
+                        } else if (valueType instanceof BgpAttrNodeMultiTopologyId) {
+                            BgpAttrNodeMultiTopologyId topoId = (BgpAttrNodeMultiTopologyId) valueType;
+                            topoId.write(cb);
+                        }
+                    }
+                } else if (nlriInfo instanceof BgpPrefixIPv4LSNlriVer4) {
+                    BgpPrefixLSIdentifier prefixIdentifier = ((BgpPrefixIPv4LSNlriVer4) nlriInfo).getPrefixIdentifier();
+                    prefixIdentifier.getLocalNodeDescriptors().write(cb, NodeDescriptors.LOCAL_NODE_DES_TYPE);
+
+                    List<BgpValueType> prefixDescriptor = prefixIdentifier.getPrefixdescriptor();
+                    ListIterator<BgpValueType> iterator = prefixDescriptor.listIterator();
+                    while (iterator.hasNext()) {
+                        BgpValueType attr = iterator.next();
+                        if (attr instanceof OspfRouteTypeTlv) {
+                            OspfRouteTypeTlv ospfRouteTypeTlv = (OspfRouteTypeTlv) attr;
+                            ospfRouteTypeTlv.write(cb);
+                        } else if (attr instanceof IPReachabilityInformationTlv) {
+                            IPReachabilityInformationTlv iPReachabilityInformationTlv = (IPReachabilityInformationTlv)
+                                                                                             attr;
+                            iPReachabilityInformationTlv.write(cb);
+                        } else if (attr instanceof BgpAttrNodeMultiTopologyId) {
+                            BgpAttrNodeMultiTopologyId bgpAttrNodeMultiTopologyId = (BgpAttrNodeMultiTopologyId) attr;
+                            bgpAttrNodeMultiTopologyId.write(cb);
+                        }
+                    }
+                }
+
+                int nlriLen = cb.writerIndex() - nlriIndxLen;
+                cb.setShort(nlriIndxLen, (short) (nlriLen - 2));
+            }
+            int mpReachLen = cb.writerIndex() - mpReachDataIndx;
+            cb.setShort(mpReachDataIndx, (short) (mpReachLen - 2));
+        }
         return cb.writerIndex() - iLenStartIndex;
     }
 

@@ -123,6 +123,20 @@ public interface BgpPeerCfg {
     void setHoldtime(short holdTime);
 
     /**
+     * Returns route export flag.
+     *
+     * @return true if peer is enabled to import route otherwise false
+     */
+    boolean exportRoute();
+
+    /**
+     * Sets export route flag.
+     *
+     * @param exportRoute export route to peer
+     */
+    void setExportRoute(boolean exportRoute);
+
+    /**
      * Return the connection type eBGP or iBGP.
      *
      * @return

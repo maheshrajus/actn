@@ -296,7 +296,7 @@ class BgpChannelHandler extends IdleStateAwareChannelHandler {
                      * time value is zero, then the HoldTimer and KeepaliveTimer are not started. A reasonable maximum
                      * time between KEEPALIVE messages would be one third of the Hold Time interval.
                      */
-
+                    h.sendKeepAliveMessage();
                     if (h.negotiatedHoldTime != 0) {
                         h.keepAliveTimer = new BgpKeepAliveTimer(h,
                                                                 (h.negotiatedHoldTime / BGP_MAX_KEEPALIVE_INTERVAL));
@@ -314,6 +314,7 @@ class BgpChannelHandler extends IdleStateAwareChannelHandler {
                     } else {
                         h.setState(ESTABLISHED);
                         h.bgpconfig.setPeerConnState(h.peerAddr, BgpPeerCfg.State.ESTABLISHED);
+                        h.bgpPeer.updateRoutesToPeer();
                     }
                 }
             }

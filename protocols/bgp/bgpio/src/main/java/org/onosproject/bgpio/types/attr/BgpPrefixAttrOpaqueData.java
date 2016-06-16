@@ -120,8 +120,11 @@ public final class BgpPrefixAttrOpaqueData implements BgpValueType {
 
     @Override
     public int write(ChannelBuffer cb) {
-        // TODO This will be implemented in the next version
-        return 0;
+        int iLenStartIndex = cb.writerIndex();
+        cb.writeShort(ATTR_PREFIX_OPAQUEDATA);
+        cb.writeShort(opaquePrefixAttribute.length);
+        cb.writeBytes(opaquePrefixAttribute);
+        return cb.writerIndex() - iLenStartIndex;
     }
 
     @Override

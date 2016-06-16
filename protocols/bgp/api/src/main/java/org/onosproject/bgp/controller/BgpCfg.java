@@ -222,10 +222,11 @@ public interface BgpCfg {
      * @param routerid IP address in string format
      * @param remoteAs AS number to which it belongs
      * @param holdTime keep alive time for the connection
+     * @param exportRoute export route flag
      *
      * @return true if added successfully else false
      */
-    boolean addPeer(String routerid, int remoteAs, short holdTime);
+    boolean addPeer(String routerid, int remoteAs, short holdTime, boolean exportRoute);
 
     /**
      * Remove the BGP peer with this IP address.

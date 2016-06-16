@@ -24,9 +24,13 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.onosproject.bgpio.exceptions.BgpParseException;
 import org.onosproject.bgpio.protocol.BgpLSNlri;
 import org.onosproject.bgpio.protocol.flowspec.BgpFlowSpecNlri;
+import org.onosproject.bgpio.protocol.linkstate.BgpNodeLSIdentifier;
 import org.onosproject.bgpio.protocol.linkstate.BgpNodeLSNlriVer4;
 import org.onosproject.bgpio.protocol.linkstate.BgpPrefixIPv4LSNlriVer4;
 import org.onosproject.bgpio.protocol.linkstate.BgpLinkLsNlriVer4;
+import org.onosproject.bgpio.protocol.linkstate.BgpPrefixLSIdentifier;
+import org.onosproject.bgpio.protocol.linkstate.NodeDescriptors;
+import org.onosproject.bgpio.types.attr.BgpAttrNodeMultiTopologyId;
 import org.onosproject.bgpio.util.Constants;
 import org.onosproject.bgpio.util.Validation;
 import org.slf4j.Logger;
@@ -326,6 +330,95 @@ public class MpUnReachNlri implements BgpValueType {
             }
             int fsNlriLen = cb.writerIndex() - mpUnReachIndx;
             cb.setShort(mpUnReachIndx, (short) (fsNlriLen - 2));
+        } else if ((afi == Constants.AFI_VALUE) && ((safi == Constants.SAFI_VALUE)
+            || (safi == Constants.VPN_SAFI_VALUE))) {
+            cb.writeByte(FLAGS);
+            cb.writeByte(MPUNREACHNLRI_TYPE);
+
+            int mpUnReachDataIndx = cb.writerIndex();
+            cb.writeShort(0);
+
+            cb.writeShort(afi);
+            cb.writeByte(safi);
+
+            //int withDrawIndx = cb.writerIndex();
+            //cb.writeShort(0);
+
+            ListIterator<BgpLSNlri> listIterator = mpUnReachNlri().listIterator();
+            while (listIterator.hasNext()) {
+                BgpLSNlri nlriInfo = listIterator.next();
+                cb.writeShort(nlriInfo.getNlriType().getType());
+                int nlriIndxLen = cb.writerIndex();
+                cb.writeShort(0); // Length
+
+                if ((safi == Constants.VPN_SAFI_VALUE) && (nlriInfo.getRouteDistinguisher() != null)) {
+                    RouteDistinguisher routeDistinguisher = nlriInfo.getRouteDistinguisher();
+                    cb.writeLong(nlriInfo.getRouteDistinguisher().getRouteDistinguisher());
+                }
+
+                try {
+                    cb.writeByte(nlriInfo.getProtocolId().getType());
+                } catch (BgpParseException e) {
+                    e.printStackTrace();
+                }
+                cb.writeLong(nlriInfo.getIdentifier());
+
+                if (nlriInfo instanceof BgpNodeLSNlriVer4) {
+                    BgpNodeLSIdentifier nodeDescriptor = ((BgpNodeLSNlriVer4) nlriInfo).getLocalNodeDescriptors();
+                    nodeDescriptor.getNodedescriptors().write(cb, NodeDescriptors.LOCAL_NODE_DES_TYPE);
+                } else if (nlriInfo instanceof BgpLinkLsNlriVer4) {
+                    NodeDescriptors nodeDescriptor = ((BgpLinkLsNlriVer4) nlriInfo).localNodeDescriptors();
+                    nodeDescriptor.write(cb, NodeDescriptors.LOCAL_NODE_DES_TYPE);
+
+                    nodeDescriptor = ((BgpLinkLsNlriVer4) nlriInfo).remoteNodeDescriptors();
+                    nodeDescriptor.write(cb, NodeDescriptors.REMOTE_NODE_DES_TYPE);
+
+                    List<BgpValueType> tlvs = ((BgpLinkLsNlriVer4) nlriInfo).linkDescriptors();
+                    for (BgpValueType tlv : tlvs) {
+                        if (tlv instanceof LinkLocalRemoteIdentifiersTlv) {
+                            LinkLocalRemoteIdentifiersTlv linkLocalAddr = (LinkLocalRemoteIdentifiersTlv) tlv;
+                            linkLocalAddr.write(cb);
+                        } else if (tlv instanceof IPv4AddressTlv) {
+                            IPv4AddressTlv addr = (IPv4AddressTlv) tlv;
+                            addr.write(cb);
+                        } else if (tlv instanceof IPv6AddressTlv) {
+                            IPv6AddressTlv ipV6Addr = (IPv6AddressTlv) tlv;
+                            ipV6Addr.write(cb);
+                        } else if (tlv instanceof BgpAttrNodeMultiTopologyId) {
+                            BgpAttrNodeMultiTopologyId topoId = (BgpAttrNodeMultiTopologyId) tlv;
+                            topoId.write(cb);
+                        }
+                    }
+                } else if (nlriInfo instanceof BgpPrefixIPv4LSNlriVer4) {
+                    BgpPrefixLSIdentifier prefixIdentifier = ((BgpPrefixIPv4LSNlriVer4) nlriInfo).getPrefixIdentifier();
+                    prefixIdentifier.getLocalNodeDescriptors().write(cb, NodeDescriptors.LOCAL_NODE_DES_TYPE);
+
+                    List<BgpValueType> prefixDescriptor = prefixIdentifier.getPrefixdescriptor();
+                    ListIterator<BgpValueType> iterator = prefixDescriptor.listIterator();
+                    while (iterator.hasNext()) {
+                        BgpValueType attr = iterator.next();
+                        if (attr instanceof OspfRouteTypeTlv) {
+                            OspfRouteTypeTlv ospfRouteTypeTlv = (OspfRouteTypeTlv) attr;
+                            ospfRouteTypeTlv.write(cb);
+                        } else if (attr instanceof IPReachabilityInformationTlv) {
+                            IPReachabilityInformationTlv iPReachabilityInformationTlv = (IPReachabilityInformationTlv)
+                                                                                                                 attr;
+                            iPReachabilityInformationTlv.write(cb);
+                        } else if (attr instanceof BgpAttrNodeMultiTopologyId) {
+                            BgpAttrNodeMultiTopologyId bgpAttrNodeMultiTopologyId = (BgpAttrNodeMultiTopologyId) attr;
+                            bgpAttrNodeMultiTopologyId.write(cb);
+                        }
+                    }
+                }
+
+                int nlriLen = cb.writerIndex() - nlriIndxLen;
+                cb.setShort(nlriIndxLen, (short) (nlriLen - 2));
+            }
+            //int withDrawLen = cb.writerIndex() - withDrawIndx;
+            //cb.setShort(withDrawIndx, (short) (withDrawLen - 2));
+
+            int mpUnReachLen = cb.writerIndex() - mpUnReachDataIndx;
+            cb.setShort(mpUnReachDataIndx, (short) (mpUnReachLen - 2));
         }
 
         return cb.writerIndex() - iLenStartIndex;

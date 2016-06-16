@@ -127,8 +127,13 @@ public class BgpPrefixAttrExtRouteTag implements BgpValueType {
 
     @Override
     public int write(ChannelBuffer cb) {
-        // TODO This will be implemented in the next version
-        return 0;
+        int iLenStartIndex = cb.writerIndex();
+        cb.writeShort(ATTR_PREFIX_EXTROUTETAG);
+        cb.writeShort(ATTR_PREFIX_EXT_LEN * pfxExtRouteTag.size()); // Length
+        for (Long extRouteTag : pfxExtRouteTag) {
+            cb.writeLong(extRouteTag);
+        }
+        return cb.writerIndex() - iLenStartIndex;
     }
 
     @Override

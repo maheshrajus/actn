@@ -57,6 +57,7 @@ public class BgpAppConfig extends Config<ApplicationId> {
     public static final String PEER_CONNECT_MODE = "connectMode";
     public static final String PEER_CONNECT_PASSIVE = "passive";
     public static final String PEER_CONNECT_ACTIVE = "active";
+    public static final String PEER_EXPORT_ROUTE = "exportRoute";
 
     static final int MAX_SHORT_AS_NUMBER = 65535;
     static final long MAX_LONG_AS_NUMBER = 4294967295L;
@@ -123,6 +124,15 @@ public class BgpAppConfig extends Config<ApplicationId> {
      */
     public boolean lsCapability() {
         return Boolean.parseBoolean(get(LS_CAPABILITY, null));
+    }
+
+    /**
+     * Returns route export flag for the peer.
+     *
+     * @return true if route export flag is enable otherwise false
+     */
+    public boolean exportRoute() {
+        return Boolean.parseBoolean(get(PEER_EXPORT_ROUTE, null));
     }
 
     /**
@@ -327,7 +337,8 @@ public class BgpAppConfig extends Config<ApplicationId> {
                 jsonNode.path(PEER_IP).asText(),
                 jsonNode.path(REMOTE_AS).asInt(),
                 jsonNode.path(PEER_HOLD_TIME).asInt(),
-                jsonNode.path(PEER_CONNECT_MODE).asText())));
+                jsonNode.path(PEER_CONNECT_MODE).asText(),
+                jsonNode.path(PEER_EXPORT_ROUTE).asBoolean())));
 
         return nodes;
     }
@@ -341,12 +352,15 @@ public class BgpAppConfig extends Config<ApplicationId> {
         private final int asNumber;
         private final short holdTime;
         private final String connectMode;
+        private final boolean exportRoute;
 
-        public BgpPeerConfig(String hostname, int asNumber, int holdTime, String connectMode) {
+        public BgpPeerConfig(String hostname, int asNumber, int holdTime, String connectMode,
+                                   boolean exportRoute) {
             this.hostname = checkNotNull(hostname);
             this.asNumber = asNumber;
             this.holdTime = (short) holdTime;
             this.connectMode = connectMode;
+            this.exportRoute = exportRoute;
         }
 
         /**
@@ -383,6 +397,15 @@ public class BgpAppConfig extends Config<ApplicationId> {
          */
         public String connectMode() {
             return this.connectMode;
+        }
+
+        /**
+         * Returns export route flag configured for the peer.
+         *
+         * @return true if export route enabled otherwise false
+         */
+        public boolean exportRoute() {
+            return this.exportRoute;
         }
     }
 }

@@ -155,8 +155,13 @@ public final class BgpLinkAttrProtectionType implements BgpValueType {
 
     @Override
     public int write(ChannelBuffer cb) {
-        // TODO This will be implemented in the next version
-        return 0;
+        int iLenStartIndex = cb.writerIndex();
+        cb.writeShort(ATTRLINK_PROTECTIONTYPE);
+
+        cb.writeShort(LINK_PROTECTION_LEN); // Length
+        cb.writeByte(linkProtectionType);
+        cb.writeByte(0); // reserved
+        return cb.writerIndex() - iLenStartIndex;
     }
 
     @Override

@@ -118,6 +118,15 @@ public final class BgpLinkAttrMaxLinkBandwidth implements BgpValueType {
         return this.type;
     }
 
+    public int write(ChannelBuffer cb, short type) {
+        int iLenStartIndex = cb.writerIndex();
+        cb.writeShort(type);
+
+        cb.writeShort(MAX_BANDWIDTH_LEN); // Length
+        cb.writeFloat(maxBandwidth);
+        return cb.writerIndex() - iLenStartIndex;
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(maxBandwidth);

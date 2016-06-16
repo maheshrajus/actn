@@ -120,6 +120,15 @@ public final class BgpAttrRouterIdV4 implements BgpValueType {
         return false;
     }
 
+    public int write(ChannelBuffer cb, short type) {
+        int iLenStartIndex = cb.writerIndex();
+        cb.writeShort(type);
+
+        cb.writeShort(4); // Length
+        cb.writeBytes(ip4RouterId.toOctets());
+        return cb.writerIndex() - iLenStartIndex;
+    }
+
     @Override
     public int write(ChannelBuffer cb) {
         // TODO This will be implemented in the next version

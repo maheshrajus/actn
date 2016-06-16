@@ -118,8 +118,12 @@ public final class BgpLinkAttrIsIsAdminstGrp implements BgpValueType {
 
     @Override
     public int write(ChannelBuffer cb) {
-        // TODO This will be implemented in the next version
-        return 0;
+        int iLenStartIndex = cb.writerIndex();
+        cb.writeShort(ATTRLINK_PROTECTIONTYPE);
+
+        cb.writeShort(ISIS_ADMIN_DATA_LEN); // Length
+        cb.writeInt((int) isisAdminGrp);
+        return cb.writerIndex() - iLenStartIndex;
     }
 
     @Override

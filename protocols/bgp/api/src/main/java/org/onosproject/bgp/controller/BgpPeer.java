@@ -141,4 +141,10 @@ public interface BgpPeer {
      */
     void updateFlowSpec(FlowSpecOperation operType, BgpFlowSpecRouteKey routeKey,
                                BgpFlowSpecNlri flowSpec, WideCommunity wideCommunity);
+
+    /**
+     * Updates all routes to peer.
+     *
+     */
+    void updateRoutesToPeer();
 }

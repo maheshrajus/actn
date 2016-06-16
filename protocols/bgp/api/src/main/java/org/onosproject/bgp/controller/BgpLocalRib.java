@@ -16,6 +16,7 @@ package org.onosproject.bgp.controller;
 import org.onosproject.bgpio.exceptions.BgpParseException;
 import org.onosproject.bgpio.protocol.BgpLSNlri;
 import org.onosproject.bgpio.protocol.linkstate.PathAttrNlriDetails;
+import org.onosproject.bgpio.types.BgpValueType;
 import org.onosproject.bgpio.types.RouteDistinguisher;
 
 /**
@@ -37,9 +38,10 @@ public interface BgpLocalRib {
      * Removes NLRI identifier if it exists.
      *
      * @param nlri info
+     * @param attribute path attribute
      * @throws BgpParseException while deleting NLRI from local rib
      */
-    void delete(BgpLSNlri nlri) throws BgpParseException;
+    void delete(BgpLSNlri nlri, BgpValueType attribute) throws BgpParseException;
 
     /**
      * Update NLRI identifier mapped with route distinguisher if it exists in tree otherwise add NLRI infomation mapped
@@ -59,7 +61,14 @@ public interface BgpLocalRib {
      *
      * @param nlri info
      * @param routeDistinguisher unique for each VPN
+     * @param attribute path attribute
      * @throws BgpParseException while deleting NLRI from local rib
      */
-    void delete(BgpLSNlri nlri, RouteDistinguisher routeDistinguisher) throws BgpParseException;
+    void delete(BgpLSNlri nlri, RouteDistinguisher routeDistinguisher, BgpValueType attribute) throws BgpParseException;
+
+    /**
+     * Display local RIB details.
+     *
+     */
+    void display(boolean nodeLink);
 }

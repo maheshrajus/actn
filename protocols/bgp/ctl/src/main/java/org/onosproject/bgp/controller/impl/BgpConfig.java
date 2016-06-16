@@ -191,22 +191,23 @@ public class BgpConfig implements BgpCfg {
 
     @Override
     public boolean addPeer(String routerid, int remoteAs) {
-        return addPeer(routerid, remoteAs, DEFAULT_HOLD_TIMER);
+        return addPeer(routerid, remoteAs, DEFAULT_HOLD_TIMER, false);
     }
 
     @Override
     public boolean addPeer(String routerid, short holdTime) {
-        return addPeer(routerid, this.getAsNumber(), holdTime);
+        return addPeer(routerid, this.getAsNumber(), holdTime, false);
     }
 
     @Override
-    public boolean addPeer(String routerid, int remoteAs, short holdTime) {
+    public boolean addPeer(String routerid, int remoteAs, short holdTime, boolean exportRoute) {
         BgpPeerConfig lspeer = new BgpPeerConfig();
         if (this.bgpPeerTree.get(routerid) == null) {
 
             lspeer.setPeerRouterId(routerid);
             lspeer.setAsNumber(remoteAs);
             lspeer.setHoldtime(holdTime);
+            lspeer.setExportRoute(exportRoute);
             lspeer.setState(BgpPeerCfg.State.IDLE);
             lspeer.setSelfInnitConnection(false);
 

@@ -117,8 +117,12 @@ public class BgpAttrNodeName implements BgpValueType {
 
     @Override
     public int write(ChannelBuffer cb) {
-        // TODO This will be implemented in the next version
-        return 0;
+        int iLenStartIndex = cb.writerIndex();
+        cb.writeShort(ATTRNODE_NAME);
+
+        cb.writeShort(nodeName.length); // Length
+        cb.writeBytes(nodeName);
+        return cb.writerIndex() - iLenStartIndex;
     }
 
     @Override

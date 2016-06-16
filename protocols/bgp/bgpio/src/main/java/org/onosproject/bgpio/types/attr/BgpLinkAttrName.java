@@ -116,8 +116,12 @@ public class BgpLinkAttrName implements BgpValueType {
 
     @Override
     public int write(ChannelBuffer cb) {
-        // TODO This will be implemented in the next version
-        return 0;
+        int iLenStartIndex = cb.writerIndex();
+        cb.writeShort(ATTRLINK_NAME);
+        cb.writeShort(linkName.length); // Length
+        cb.writeBytes(linkName);
+
+        return cb.writerIndex() - iLenStartIndex;
     }
 
     @Override

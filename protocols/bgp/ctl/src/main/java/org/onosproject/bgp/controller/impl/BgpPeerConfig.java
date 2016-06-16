@@ -30,6 +30,7 @@ public class BgpPeerConfig  implements BgpPeerCfg {
     private State state;
     private boolean selfInitiated;
     private BgpConnectPeer connectPeer;
+    private boolean exportRoute;
 
     /**
      * Constructor to initialize the values.
@@ -57,6 +58,16 @@ public class BgpPeerConfig  implements BgpPeerCfg {
     @Override
     public void setHoldtime(short holdTime) {
         this.holdTime = holdTime;
+    }
+
+    @Override
+    public boolean exportRoute() {
+        return this.exportRoute;
+    }
+
+    @Override
+    public void setExportRoute(boolean exportRoute) {
+        this.exportRoute = exportRoute;
     }
 
     @Override

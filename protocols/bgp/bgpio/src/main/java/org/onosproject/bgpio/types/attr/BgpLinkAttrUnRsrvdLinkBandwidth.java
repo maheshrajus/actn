@@ -23,6 +23,7 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.onosproject.bgpio.exceptions.BgpParseException;
 import org.onosproject.bgpio.types.BgpErrorType;
 import org.onosproject.bgpio.types.BgpValueType;
+import org.onosproject.bgpio.types.LinkStateAttributes;
 import org.onosproject.bgpio.util.Validation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -146,8 +147,15 @@ public class BgpLinkAttrUnRsrvdLinkBandwidth implements BgpValueType {
 
     @Override
     public int write(ChannelBuffer cb) {
-        // TODO This will be implemented in the next version
-        return 0;
+        int iLenStartIndex = cb.writerIndex();
+        cb.writeShort(LinkStateAttributes.ATTR_LINK_UNRES_BANDWIDTH);
+
+        cb.writeShort(MAX_BANDWIDTH_LEN * maxUnResBandwidth.size()); // Length
+
+        for (Float bandWidth : maxUnResBandwidth) {
+            cb.writeFloat(bandWidth);
+        }
+        return cb.writerIndex() - iLenStartIndex;
     }
 
     @Override

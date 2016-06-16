@@ -127,22 +127,24 @@ public class BgpCfgProvider extends AbstractProvider {
         bgpConfig.setHoldTime(config.holdTime());
         bgpConfig.setMaxSession(config.maxSession());
         bgpConfig.setLargeASCapability(config.largeAsCapability());
-
-        if (config.flowSpecCapability().equals("IPV4")) {
-            bgpConfig.setFlowSpecCapability(BgpCfg.FlowSpec.IPV4);
-        } else if (config.flowSpecCapability().equals("VPNV4")) {
-            bgpConfig.setFlowSpecCapability(BgpCfg.FlowSpec.VPNV4);
-        } else if (config.flowSpecCapability().equals("IPV4_VPNV4")) {
-            bgpConfig.setFlowSpecCapability(BgpCfg.FlowSpec.IPV4_VPNV4);
-        } else {
-            bgpConfig.setFlowSpecCapability(BgpCfg.FlowSpec.NONE);
+        if (config.flowSpecCapability() != null) {
+            if (config.flowSpecCapability().equals("IPV4")) {
+                bgpConfig.setFlowSpecCapability(BgpCfg.FlowSpec.IPV4);
+            } else if (config.flowSpecCapability().equals("VPNV4")) {
+                bgpConfig.setFlowSpecCapability(BgpCfg.FlowSpec.VPNV4);
+            } else if (config.flowSpecCapability().equals("IPV4_VPNV4")) {
+                bgpConfig.setFlowSpecCapability(BgpCfg.FlowSpec.IPV4_VPNV4);
+            } else {
+                bgpConfig.setFlowSpecCapability(BgpCfg.FlowSpec.NONE);
+            }
+            bgpConfig.setFlowSpecRpdCapability(config.rpdCapability());
         }
-        bgpConfig.setFlowSpecRpdCapability(config.rpdCapability());
 
         nodes = config.bgpPeer();
         for (int i = 0; i < nodes.size(); i++) {
             String connectMode = nodes.get(i).connectMode();
-            bgpConfig.addPeer(nodes.get(i).hostname(), nodes.get(i).asNumber(), nodes.get(i).holdTime());
+            bgpConfig.addPeer(nodes.get(i).hostname(), nodes.get(i).asNumber(), nodes.get(i).holdTime(),
+                              nodes.get(i).exportRoute());
             if (connectMode.equals(BgpAppConfig.PEER_CONNECT_ACTIVE)) {
                 bgpConfig.connectPeer(nodes.get(i).hostname());
             }
@@ -177,17 +179,18 @@ public class BgpCfgProvider extends AbstractProvider {
         bgpConfig.setHoldTime(config.holdTime());
         bgpConfig.setMaxSession(config.maxSession());
         bgpConfig.setLargeASCapability(config.largeAsCapability());
-
-        if (config.flowSpecCapability().equals("IPV4")) {
-            bgpConfig.setFlowSpecCapability(BgpCfg.FlowSpec.IPV4);
-        } else if (config.flowSpecCapability().equals("VPNV4")) {
-            bgpConfig.setFlowSpecCapability(BgpCfg.FlowSpec.VPNV4);
-        } else if (config.flowSpecCapability().equals("IPV4_VPNV4")) {
-            bgpConfig.setFlowSpecCapability(BgpCfg.FlowSpec.IPV4_VPNV4);
-        } else {
-            bgpConfig.setFlowSpecCapability(BgpCfg.FlowSpec.NONE);
+        if (config.flowSpecCapability() != null) {
+            if (config.flowSpecCapability().equals("IPV4")) {
+                bgpConfig.setFlowSpecCapability(BgpCfg.FlowSpec.IPV4);
+            } else if (config.flowSpecCapability().equals("VPNV4")) {
+                bgpConfig.setFlowSpecCapability(BgpCfg.FlowSpec.VPNV4);
+            } else if (config.flowSpecCapability().equals("IPV4_VPNV4")) {
+                bgpConfig.setFlowSpecCapability(BgpCfg.FlowSpec.IPV4_VPNV4);
+            } else {
+                bgpConfig.setFlowSpecCapability(BgpCfg.FlowSpec.NONE);
+            }
+            bgpConfig.setFlowSpecRpdCapability(config.rpdCapability());
         }
-        bgpConfig.setFlowSpecRpdCapability(config.rpdCapability());
 
         /* update the peer configuration */
         bgpPeerTree = bgpConfig.getPeerTree();
@@ -209,13 +212,9 @@ public class BgpCfgProvider extends AbstractProvider {
                     String peerIp = nodes.get(j).hostname();
                     if (peerIp.equals(peer.getPeerRouterId())) {
 
-                        if (bgpConfig.isPeerConnectable(peer.getPeerRouterId())) {
-                            peer.setAsNumber(nodes.get(j).asNumber());
-                            peer.setHoldtime(nodes.get(j).holdTime());
-                            log.debug("Peer neighbor IP successfully modified :" + peer.getPeerRouterId());
-                        } else {
-                            log.debug("Peer neighbor IP cannot be modified :" + peer.getPeerRouterId());
-                        }
+                        peer.setAsNumber(nodes.get(j).asNumber());
+                        peer.setHoldtime(nodes.get(j).holdTime());
+                        peer.setExportRoute(nodes.get(j).exportRoute());
 
                         nodes.remove(j);
                         exists = true;
@@ -244,7 +243,8 @@ public class BgpCfgProvider extends AbstractProvider {
         nodes = config.bgpPeer();
         for (int i = 0; i < nodes.size(); i++) {
             String connectMode = nodes.get(i).connectMode();
-            bgpConfig.addPeer(nodes.get(i).hostname(), nodes.get(i).asNumber(), nodes.get(i).holdTime());
+            bgpConfig.addPeer(nodes.get(i).hostname(), nodes.get(i).asNumber(), nodes.get(i).holdTime(),
+                              nodes.get(i).exportRoute());
             if (connectMode.equals(BgpAppConfig.PEER_CONNECT_ACTIVE)) {
                 bgpConfig.connectPeer(nodes.get(i).hostname());
             }

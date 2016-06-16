@@ -48,6 +48,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.MoreObjects;
+import java.util.ListIterator;
 
 /**
  * Implements BGP Link state attribute.
@@ -56,6 +57,7 @@ public class LinkStateAttributes implements BgpValueType {
 
     protected static final Logger log = LoggerFactory
             .getLogger(LinkStateAttributes.class);
+    public static final byte LINK_STATE_ATTR_FLAG = (byte) 0xc0;
 
     /* Node Attributes */
     public static final short ATTR_NODE_MT_TOPOLOGY_ID = 263;
@@ -296,8 +298,162 @@ public class LinkStateAttributes implements BgpValueType {
 
     @Override
     public int write(ChannelBuffer cb) {
-        // TODO This will be implemented in the next version
-        return 0;
+        int iLenStartIndex = cb.writerIndex();
+        cb.writeByte(LINK_STATE_ATTR_FLAG);
+        cb.writeByte(LINKSTATE_ATTRIB_TYPE);
+
+        int linkStateIndx = cb.writerIndex();
+        cb.writeByte(0);
+        ListIterator<BgpValueType> iterator = linkStateAttribList.listIterator();
+        while (iterator.hasNext()) {
+            BgpValueType valueType = iterator.next();
+            switch (valueType.getType()) {
+                case ATTR_NODE_MT_TOPOLOGY_ID: /* 263 Multi-Topology Identifier*/
+                    BgpAttrNodeMultiTopologyId bgpAttrNodeMultiTopologyId = (BgpAttrNodeMultiTopologyId) valueType;
+                    bgpAttrNodeMultiTopologyId.write(cb);
+                    break;
+                case ATTR_NODE_FLAG_BITS: /*Node flag bit TLV*/
+                    BgpAttrNodeFlagBitTlv bgpAttrNodeFlagBitTlv = (BgpAttrNodeFlagBitTlv) valueType;
+                    bgpAttrNodeFlagBitTlv.write(cb);
+                    break;
+
+                case ATTR_NODE_OPAQUE_NODE: /*Opaque Node Attribute*/
+                    BgpAttrOpaqueNode bgpAttrOpaqueNode = (BgpAttrOpaqueNode) valueType;
+                    bgpAttrOpaqueNode.write(cb);
+                    break;
+
+                case ATTR_NODE_NAME: /*Node Name*/
+                    BgpAttrNodeName bgpAttrNodeName = (BgpAttrNodeName) valueType;
+                    bgpAttrNodeName.write(cb);
+                    break;
+
+                case ATTR_NODE_ISIS_AREA_ID: /*IS-IS Area Identifier TLV*/
+                    BgpAttrNodeIsIsAreaId bgpAttrNodeIsIsAreaId = (BgpAttrNodeIsIsAreaId) valueType;
+                    bgpAttrNodeIsIsAreaId.write(cb);
+                    break;
+
+                case ATTR_NODE_IPV4_LOCAL_ROUTER_ID: /*IPv4 Router-ID of Local Node*/
+                    BgpAttrRouterIdV4 bgpAttrRouterIdV4 = (BgpAttrRouterIdV4) valueType;
+                    bgpAttrRouterIdV4.write(cb, ATTR_NODE_IPV4_LOCAL_ROUTER_ID);
+                    break;
+
+                case ATTR_NODE_IPV6_LOCAL_ROUTER_ID: /*IPv6 Router-ID of Local Node*/
+                    BgpAttrRouterIdV6 bgpAttrRouterIdV6 = (BgpAttrRouterIdV6) valueType;
+                    bgpAttrRouterIdV6.write(cb, ATTR_NODE_IPV6_LOCAL_ROUTER_ID);
+                    break;
+
+                /********* 15 LINK ATTRIBUTES ********/
+
+                case ATTR_LINK_IPV4_REMOTE_ROUTER_ID: /*IPv4 Router-ID of Remote Node*/
+                    BgpAttrRouterIdV4 bgpAttrRouter = (BgpAttrRouterIdV4) valueType;
+                    bgpAttrRouter.write(cb, ATTR_LINK_IPV4_REMOTE_ROUTER_ID);
+                    break;
+
+                case ATTR_LINK_IPV6_REMOTE_ROUTER_ID: /*IPv6 Router-ID of Remote Node*/
+                    BgpAttrRouterIdV6 bgpAttrRouterId = (BgpAttrRouterIdV6) valueType;
+                    bgpAttrRouterId.write(cb, ATTR_LINK_IPV6_REMOTE_ROUTER_ID);
+                    break;
+
+                case ATTR_LINK_ADMINISTRATIVE_GRPS: /*ISIS Administrative group STLV 3*/
+                    BgpLinkAttrIsIsAdminstGrp bgpLinkAttrIsIsAdminstGrp = (BgpLinkAttrIsIsAdminstGrp) valueType;
+                    bgpLinkAttrIsIsAdminstGrp.write(cb);
+                    break;
+
+                case ATTR_LINK_MAX_BANDWIDTH: /*Maximum link bandwidth*/
+                    BgpLinkAttrMaxLinkBandwidth bgpLinkAttrMaxLinkBandwidth = (BgpLinkAttrMaxLinkBandwidth) valueType;
+                    bgpLinkAttrMaxLinkBandwidth.write(cb, LinkStateAttributes.ATTR_LINK_MAX_BANDWIDTH);
+                    break;
+
+                case ATTR_LINK_MAX_RES_BANDWIDTH: /* Maximum Reservable link bandwidth */
+                    BgpLinkAttrMaxLinkBandwidth maxLinkBandwidth = (BgpLinkAttrMaxLinkBandwidth) valueType;
+                    maxLinkBandwidth.write(cb, LinkStateAttributes.ATTR_LINK_MAX_RES_BANDWIDTH);
+                    break;
+
+                case ATTR_LINK_UNRES_BANDWIDTH: /* UnReserved link bandwidth */
+                    BgpLinkAttrUnRsrvdLinkBandwidth bgpLinkAttrUnRsrvdLinkBandwidth =
+                            (BgpLinkAttrUnRsrvdLinkBandwidth) valueType;
+                    bgpLinkAttrUnRsrvdLinkBandwidth.write(cb);
+                    break;
+
+                case ATTR_LINK_TE_DEFAULT_METRIC: /* TE Default Metric */
+                    BgpLinkAttrTeDefaultMetric bgpLinkAttrTeDefaultMetric = (BgpLinkAttrTeDefaultMetric) valueType;
+                    bgpLinkAttrTeDefaultMetric.write(cb);
+                    break;
+
+                case ATTR_LINK_PROTECTION_TYPE:/* Link Protection type */
+                    BgpLinkAttrProtectionType bgpLinkAttrProtectionType =
+                            (BgpLinkAttrProtectionType) valueType;
+                    bgpLinkAttrProtectionType.write(cb);
+                    break;
+
+                case ATTR_LINK_MPLS_PROTOCOL_MASK: /* MPLS Protocol Mask */
+                    BgpLinkAttrMplsProtocolMask bgpLinkAttrMplsProtocolMask = (BgpLinkAttrMplsProtocolMask) valueType;
+                    bgpLinkAttrMplsProtocolMask.write(cb);
+                    break;
+
+                case ATTR_LINK_IGP_METRIC: /* IGP Metric */
+                    BgpLinkAttrIgpMetric bgpLinkAttrIgpMetric = (BgpLinkAttrIgpMetric) valueType;
+                    bgpLinkAttrIgpMetric.write(cb);
+                    break;
+
+                case ATTR_LINK_SHR_RISK_GRP: /* Shared Risk Link Group */
+                    BgpLinkAttrSrlg bgpLinkAttrSrlg = (BgpLinkAttrSrlg) valueType;
+                    bgpLinkAttrSrlg.write(cb);
+                    break;
+
+                case ATTR_LINK_OPAQUE_ATTR: /* Opaque link attribute */
+                    BgpLinkAttrOpaqLnkAttrib bgpLinkAttrOpaqLnkAttrib = (BgpLinkAttrOpaqLnkAttrib) valueType;
+                    bgpLinkAttrOpaqLnkAttrib.write(cb);
+                    break;
+
+                case ATTR_LINK_NAME_ATTR: /* Link Name attribute */
+                    BgpLinkAttrName bgpLinkAttrName = (BgpLinkAttrName) valueType;
+                    bgpLinkAttrName.write(cb);
+                    break;
+
+                /********* 6 PREFIX ATTRIBUTES ********/
+
+                case ATTR_PREFIX_IGP_FLAG: /* IGP Flags */
+                    BgpPrefixAttrIgpFlags bgpPrefixAttrIgpFlags = (BgpPrefixAttrIgpFlags) valueType;
+                    bgpPrefixAttrIgpFlags.write(cb);
+                    break;
+
+                case ATTR_PREFIX_ROUTE_TAG: /* Route Tag */
+                    BgpPrefixAttrRouteTag bgpPrefixAttrRouteTag = (BgpPrefixAttrRouteTag) valueType;
+                    bgpPrefixAttrRouteTag.write(cb);
+                    break;
+
+                case ATTR_PREFIX_EXTENDED_TAG: /* Extended Tag */
+                    BgpPrefixAttrExtRouteTag bgpPrefixAttrExtRouteTag = (BgpPrefixAttrExtRouteTag) valueType;
+                    bgpPrefixAttrExtRouteTag.write(cb);
+                    break;
+
+                case ATTR_PREFIX_METRIC: /* Prefix Metric */
+                    BgpPrefixAttrMetric bgpPrefixAttrMetric = (BgpPrefixAttrMetric) valueType;
+                    bgpPrefixAttrMetric.write(cb);
+                    break;
+
+                case ATTR_PREFIX_OSPF_FWD_ADDR: /* OSPF Forwarding Address */
+                    BgpPrefixAttrOspfFwdAddr bgpPrefixAttrOspfFwdAddr = (BgpPrefixAttrOspfFwdAddr) valueType;
+                    bgpPrefixAttrOspfFwdAddr.write(cb);
+                    break;
+
+                case ATTR_PREFIX_OPAQUE_ATTR: /* Opaque Prefix Attribute */
+                    BgpPrefixAttrOpaqueData bgpPrefixAttrOpaqueData = (BgpPrefixAttrOpaqueData) valueType;
+                    bgpPrefixAttrOpaqueData.write(cb);
+
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
+
+        int linkStateLen = cb.writerIndex() - linkStateIndx;
+        cb.setByte(linkStateIndx, (linkStateLen - 1));
+
+        return cb.writerIndex() - iLenStartIndex;
     }
 
     @Override

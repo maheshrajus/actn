@@ -170,8 +170,17 @@ public class BgpPrefixAttrOspfFwdAddr implements BgpValueType {
 
     @Override
     public int write(ChannelBuffer cb) {
-        // TODO This will be implemented in the next version
-        return 0;
+        int iLenStartIndex = cb.writerIndex();
+        cb.writeShort(ATTR_PREFIX_OSPFFWDADDR);
+
+        if (lsAttrLength == IPV4_LEN) {
+            cb.writeShort(IPV4_LEN);
+            cb.writeBytes(ip4RouterId.toOctets());
+        } else if (lsAttrLength == IPV6_LEN) {
+            cb.writeShort(IPV6_LEN);
+            cb.writeBytes(ip6RouterId.toOctets());
+        }
+        return cb.writerIndex() - iLenStartIndex;
     }
 
     @Override

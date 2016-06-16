@@ -159,8 +159,23 @@ public final class BgpPrefixAttrIgpFlags implements BgpValueType {
 
     @Override
     public int write(ChannelBuffer cb) {
-        // TODO This will be implemented in the next version
-        return 0;
+        int iLenStartIndex = cb.writerIndex();
+        cb.writeShort(ATTR_PREFIX_FLAGBIT);
+        byte nodeFlagBits = 0;
+        if (bisisUpDownBit) {
+            nodeFlagBits |= FIRST_BIT;
+        }
+        if (bOspfNoUnicastBit) {
+            nodeFlagBits |= SECOND_BIT;
+        }
+        if (bOspfLclAddrBit) {
+            nodeFlagBits |= THIRD_BIT;
+        }
+        if (ospfNssaBit()) {
+            nodeFlagBits |= FOURTH_BIT;
+        }
+        cb.writeByte(nodeFlagBits);
+        return cb.writerIndex() - iLenStartIndex;
     }
 
     @Override

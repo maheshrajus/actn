@@ -122,11 +122,6 @@ public class BgpUpdateMsgVer4 implements BgpUpdateMsg {
         public BgpUpdateMsg readFrom(ChannelBuffer cb, BgpHeader bgpHeader)
                 throws BgpParseException {
 
-            if (cb.readableBytes() != (bgpHeader.getLength() - MINIMUM_COMMON_HEADER_LENGTH)) {
-                Validation.validateLen(BgpErrorType.UPDATE_MESSAGE_ERROR,
-                        BgpErrorType.BAD_MESSAGE_LENGTH, bgpHeader.getLength());
-            }
-
             LinkedList<IpPrefix> withDrwRoutes = new LinkedList<>();
             LinkedList<IpPrefix> nlri = new LinkedList<>();
             BgpPathAttributes bgpPathAttributes = new BgpPathAttributes();
