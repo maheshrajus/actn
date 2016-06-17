@@ -1,0 +1,14 @@
+/* css for sample app topology overlay  */
+.radioButtonSpace {
+    margin-left:20px;
+}
+
+#ov-topo svg .link.primary.customRed {
+    stroke-width: 6px;
+}
+.light #ov-topo svg .link.primary.customRed {
+    stroke: #FF00CE;
+}
+.dark #ov-topo svg .link.primary.customRed {
+    stroke: #FF00CE;
+}

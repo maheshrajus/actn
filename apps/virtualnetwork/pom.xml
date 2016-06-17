@@ -32,6 +32,7 @@
 
     <modules>
         <module>app</module>
+        <module>vnweb</module>
     </modules>
     <dependencies>
        <dependency>
