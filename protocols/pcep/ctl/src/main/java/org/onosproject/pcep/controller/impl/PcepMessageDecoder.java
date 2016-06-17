@@ -22,11 +22,11 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.frame.FrameDecoder;
-import org.onosproject.pcepio.exceptions.PcepOutOfBoundMessageException;
-import org.onosproject.pcepio.protocol.PcepFactories;
-import org.onosproject.pcepio.protocol.PcepMessage;
-import org.onosproject.pcepio.protocol.PcepMessageReader;
-import org.onosproject.pcepio.util.HexDump;
+import org.onosproject.pcep.pcepio.exceptions.PcepOutOfBoundMessageException;
+import org.onosproject.pcep.pcepio.protocol.PcepFactories;
+import org.onosproject.pcep.pcepio.protocol.PcepMessage;
+import org.onosproject.pcep.pcepio.protocol.PcepMessageReader;
+import org.onosproject.pcep.pcepio.util.HexDump;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

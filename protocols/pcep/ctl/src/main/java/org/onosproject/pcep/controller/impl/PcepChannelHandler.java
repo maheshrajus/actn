@@ -41,24 +41,25 @@ import org.onlab.packet.IpAddress;
 import org.onosproject.pcep.controller.ClientCapability;
 import org.onosproject.pcep.controller.PccId;
 import org.onosproject.pcep.controller.driver.PcepClientDriver;
-import org.onosproject.pcepio.exceptions.PcepParseException;
-import org.onosproject.pcepio.protocol.PcepError;
-import org.onosproject.pcepio.protocol.PcepErrorInfo;
-import org.onosproject.pcepio.protocol.PcepErrorMsg;
-import org.onosproject.pcepio.protocol.PcepErrorObject;
-import org.onosproject.pcepio.protocol.PcepFactory;
-import org.onosproject.pcepio.protocol.PcepMessage;
-import org.onosproject.pcepio.protocol.PcepOpenMsg;
-import org.onosproject.pcepio.protocol.PcepOpenObject;
-import org.onosproject.pcepio.protocol.PcepType;
-import org.onosproject.pcepio.protocol.PcepVersion;
-import org.onosproject.pcepio.types.IPv4RouterIdOfLocalNodeSubTlv;
-import org.onosproject.pcepio.types.NodeAttributesTlv;
-import org.onosproject.pcepio.types.PceccCapabilityTlv;
-import org.onosproject.pcepio.types.SrPceCapabilityTlv;
-import org.onosproject.pcepio.types.StatefulPceCapabilityTlv;
-import org.onosproject.pcepio.types.PcepErrorDetailInfo;
-import org.onosproject.pcepio.types.PcepValueType;
+import org.onosproject.pcep.pcepio.protocol.PcepVersion;
+import org.onosproject.pcep.pcepio.exceptions.PcepParseException;
+import org.onosproject.pcep.pcepio.protocol.PcepError;
+import org.onosproject.pcep.pcepio.protocol.PcepErrorInfo;
+import org.onosproject.pcep.pcepio.protocol.PcepErrorMsg;
+import org.onosproject.pcep.pcepio.protocol.PcepErrorObject;
+import org.onosproject.pcep.pcepio.protocol.PcepFactory;
+import org.onosproject.pcep.pcepio.protocol.PcepMessage;
+import org.onosproject.pcep.pcepio.protocol.PcepOpenMsg;
+import org.onosproject.pcep.pcepio.protocol.PcepOpenObject;
+import org.onosproject.pcep.pcepio.protocol.PcepType;
+
+import org.onosproject.pcep.pcepio.types.IPv4RouterIdOfLocalNodeSubTlv;
+import org.onosproject.pcep.pcepio.types.NodeAttributesTlv;
+import org.onosproject.pcep.pcepio.types.PceccCapabilityTlv;
+import org.onosproject.pcep.pcepio.types.SrPceCapabilityTlv;
+import org.onosproject.pcep.pcepio.types.StatefulPceCapabilityTlv;
+import org.onosproject.pcep.pcepio.types.PcepErrorDetailInfo;
+import org.onosproject.pcep.pcepio.types.PcepValueType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -230,7 +231,7 @@ class PcepChannelHandler extends IdleStateAwareChannelHandler {
                 } else {
                     // Set the client connected status
                     h.pcepPacketStats.addInPacket();
-                    log.debug("sending keep alive message in KEEPWAIT state");
+                    log.info("sending keep alive message in KEEPWAIT state");
                     h.pc = h.controller.getPcepClientInstance(h.thispccId, h.sessionId, h.pcepVersion,
                             h.pcepPacketStats);
                     //Get pc instance and set capabilities
@@ -261,11 +262,10 @@ class PcepChannelHandler extends IdleStateAwareChannelHandler {
                         h.channel.getPipeline().replace("idle", "idle",
                                 new IdleStateHandler(PcepPipelineFactory.TIMER, deadTimer, keepAliveTimer, 0));
                     }
-                    log.debug("Dead timer : " + deadTimer);
-                    log.debug("Keep alive time : " + keepAliveTimer);
+                    log.info("Dead timer : " + deadTimer);
+                    log.info("Keep alive time : " + keepAliveTimer);
 
                     //set the state handshake completion.
-
                     h.sendKeepAliveMessage();
                     h.pcepPacketStats.addOutPacket();
                     h.setHandshakeComplete(true);
@@ -288,7 +288,7 @@ class PcepChannelHandler extends IdleStateAwareChannelHandler {
             void processPcepMessage(PcepChannelHandler h, PcepMessage m) throws IOException, PcepParseException {
 
                 //h.channel.getPipeline().remove("waittimeout");
-                log.debug("Message received in established state " + m.getType());
+                log.info("Message received in established state " + m.getType());
                 //dispatch the message
                 h.dispatchMessage(m);
             }

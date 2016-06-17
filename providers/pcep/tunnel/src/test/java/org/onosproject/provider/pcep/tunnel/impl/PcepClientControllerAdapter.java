@@ -33,18 +33,18 @@ import org.onosproject.pcep.controller.PcepEventListener;
 import org.onosproject.pcep.controller.PcepNodeListener;
 import org.onosproject.pcep.controller.PcepPacketListener;
 import org.onosproject.pcep.controller.driver.PcepAgent;
-import org.onosproject.pcepio.protocol.PcepError;
-import org.onosproject.pcepio.protocol.PcepErrorInfo;
-import org.onosproject.pcepio.protocol.PcepErrorMsg;
-import org.onosproject.pcepio.protocol.PcepErrorObject;
-import org.onosproject.pcepio.protocol.PcepFactory;
-import org.onosproject.pcepio.protocol.PcepMessage;
-import org.onosproject.pcepio.protocol.PcepVersion;
+import org.onosproject.pcep.pcepio.protocol.PcepError;
+import org.onosproject.pcep.pcepio.protocol.PcepErrorInfo;
+import org.onosproject.pcep.pcepio.protocol.PcepErrorMsg;
+import org.onosproject.pcep.pcepio.protocol.PcepErrorObject;
+import org.onosproject.pcep.pcepio.protocol.PcepFactory;
+import org.onosproject.pcep.pcepio.protocol.PcepMessage;
+import org.onosproject.pcep.pcepio.protocol.PcepVersion;
 
 import com.google.common.collect.Sets;
 
-import static org.onosproject.pcepio.types.PcepErrorDetailInfo.ERROR_TYPE_19;
-import static org.onosproject.pcepio.types.PcepErrorDetailInfo.ERROR_VALUE_5;
+import static org.onosproject.pcep.pcepio.types.PcepErrorDetailInfo.ERROR_TYPE_19;
+import static org.onosproject.pcep.pcepio.types.PcepErrorDetailInfo.ERROR_VALUE_5;
 
 /**
  * Representation of PCEP client controller adapter.

@@ -33,9 +33,9 @@ import org.onosproject.pcep.controller.PccId;
 import org.onosproject.pcep.controller.PcepPacketStats;
 import org.onosproject.pcep.controller.driver.PcepAgent;
 import org.onosproject.pcep.controller.driver.PcepClientDriver;
-import org.onosproject.pcepio.protocol.PcepFactories;
-import org.onosproject.pcepio.protocol.PcepFactory;
-import org.onosproject.pcepio.protocol.PcepVersion;
+import org.onosproject.pcep.pcepio.protocol.PcepFactories;
+import org.onosproject.pcep.pcepio.protocol.PcepFactory;
+import org.onosproject.pcep.pcepio.protocol.PcepVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -25,8 +25,15 @@
         <command>
             <action class="org.onosproject.pcep.cli.PcepQueryCommand"/>
         </command>
-
-
+        <command>
+          <action class="org.onosproject.pcep.cli.PceTunnelAddCommand"/>
+        </command>
+        <command>
+          <action class="org.onosproject.pcep.cli.PceTunnelDelCommand"/>
+        </command>
+        <command>
+          <action class="org.onosproject.pcep.cli.PceTunnelUpdCommand"/>
+        </command>
     </command-bundle>
 
 </blueprint>

@@ -52,8 +52,8 @@ import org.onosproject.net.provider.ProviderId;
 import org.onosproject.pcep.controller.ClientCapability;
 import org.onosproject.pcep.controller.LspKey;
 import org.onosproject.pcep.controller.PccId;
-import org.onosproject.pcepio.protocol.PcepVersion;
-import org.onosproject.pcepio.types.StatefulIPv4LspIdentifiersTlv;
+import org.onosproject.pcep.pcepio.protocol.PcepVersion;
+import org.onosproject.pcep.pcepio.types.StatefulIPv4LspIdentifiersTlv;
 
 import static org.onosproject.provider.pcep.tunnel.impl.LspType.WITH_SIGNALLING;
 import static org.onosproject.provider.pcep.tunnel.impl.LspType.SR_WITHOUT_SIGNALLING;

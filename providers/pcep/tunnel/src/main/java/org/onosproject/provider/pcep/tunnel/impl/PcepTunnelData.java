@@ -20,7 +20,7 @@ import java.util.Objects;
 import org.onosproject.incubator.net.tunnel.Tunnel;
 import org.onosproject.net.ElementId;
 import org.onosproject.net.Path;
-import org.onosproject.pcepio.types.StatefulIPv4LspIdentifiersTlv;
+import org.onosproject.pcep.pcepio.types.StatefulIPv4LspIdentifiersTlv;
 
 import com.google.common.base.MoreObjects;
 

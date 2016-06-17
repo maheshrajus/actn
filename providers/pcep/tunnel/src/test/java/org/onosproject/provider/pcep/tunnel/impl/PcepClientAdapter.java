@@ -29,11 +29,11 @@ import org.onosproject.pcep.controller.LspKey;
 import org.onosproject.pcep.controller.PccId;
 import org.onosproject.pcep.controller.PcepClient;
 import org.onosproject.pcep.controller.PcepSyncStatus;
-import org.onosproject.pcepio.protocol.PcepFactories;
-import org.onosproject.pcepio.protocol.PcepFactory;
-import org.onosproject.pcepio.protocol.PcepMessage;
-import org.onosproject.pcepio.protocol.PcepStateReport;
-import org.onosproject.pcepio.protocol.PcepVersion;
+import org.onosproject.pcep.pcepio.protocol.PcepFactories;
+import org.onosproject.pcep.pcepio.protocol.PcepFactory;
+import org.onosproject.pcep.pcepio.protocol.PcepMessage;
+import org.onosproject.pcep.pcepio.protocol.PcepStateReport;
+import org.onosproject.pcep.pcepio.protocol.PcepVersion;
 
 /**
  * Representation of PCEP client adapter.

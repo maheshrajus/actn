@@ -19,7 +19,7 @@ import org.jboss.netty.channel.Channel;
 import org.onosproject.pcep.controller.PccId;
 import org.onosproject.pcep.controller.PcepClient;
 import org.onosproject.pcep.controller.PcepPacketStats;
-import org.onosproject.pcepio.protocol.PcepVersion;
+import org.onosproject.pcep.pcepio.protocol.PcepVersion;
 
 
 /**

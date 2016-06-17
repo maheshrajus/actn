@@ -16,7 +16,7 @@
 package org.onosproject.pcep.controller;
 
 import org.onosproject.incubator.net.tunnel.Tunnel;
-import org.onosproject.pcepio.protocol.PcepMessage;
+import org.onosproject.pcep.pcepio.protocol.PcepMessage;
 /**
  * Notifies providers about PCEP message events.
  */

@@ -54,7 +54,7 @@ import org.onosproject.net.device.DeviceServiceAdapter;
 import org.onosproject.net.provider.ProviderId;
 import org.onosproject.pcep.controller.ClientCapability;
 import org.onosproject.pcep.controller.PccId;
-import org.onosproject.pcepio.types.StatefulIPv4LspIdentifiersTlv;
+import org.onosproject.pcep.pcepio.types.StatefulIPv4LspIdentifiersTlv;
 
 /**
  * Test for PCEP release tunnel.

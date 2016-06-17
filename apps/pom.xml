@@ -49,6 +49,7 @@
         <module>kafka-integration</module>
         <module>pcep-api</module>
         <module>iptopology-api</module>
+        <module>pcc</module>
         <module>pce</module>
         <module>cip</module>
         <module>flowanalyzer</module>

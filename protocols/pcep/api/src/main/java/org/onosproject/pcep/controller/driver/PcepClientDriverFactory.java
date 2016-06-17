@@ -16,7 +16,7 @@
 package org.onosproject.pcep.controller.driver;
 
 import org.onlab.packet.IpAddress;
-import org.onosproject.pcepio.protocol.PcepVersion;
+import org.onosproject.pcep.pcepio.protocol.PcepVersion;
 
 /**
  * Pcc Client factory which returns concrete pcc client objects for the

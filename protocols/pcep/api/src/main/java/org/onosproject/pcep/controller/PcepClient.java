@@ -17,9 +17,9 @@ package org.onosproject.pcep.controller;
 
 import java.util.List;
 
-import org.onosproject.pcepio.protocol.PcepFactory;
-import org.onosproject.pcepio.protocol.PcepMessage;
-import org.onosproject.pcepio.protocol.PcepStateReport;
+import org.onosproject.pcep.pcepio.protocol.PcepFactory;
+import org.onosproject.pcep.pcepio.protocol.PcepMessage;
+import org.onosproject.pcep.pcepio.protocol.PcepStateReport;
 
 /**
  * Represents to provider facing side of a path computation client(pcc).

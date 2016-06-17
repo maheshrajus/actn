@@ -17,7 +17,7 @@ package org.onosproject.pcep.controller.driver;
 
 import org.onosproject.pcep.controller.PccId;
 import org.onosproject.pcep.controller.PcepClient;
-import org.onosproject.pcepio.protocol.PcepMessage;
+import org.onosproject.pcep.pcepio.protocol.PcepMessage;
 
 /**
  * Responsible for keeping track of the current set Pcep clients

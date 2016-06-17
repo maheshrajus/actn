@@ -17,7 +17,7 @@ package org.onosproject.pcep.controller;
 
 import java.util.Collection;
 
-import org.onosproject.pcepio.protocol.PcepMessage;
+import org.onosproject.pcep.pcepio.protocol.PcepMessage;
 
 /**
  * Abstraction of an Pcep client controller. Serves as a one stop

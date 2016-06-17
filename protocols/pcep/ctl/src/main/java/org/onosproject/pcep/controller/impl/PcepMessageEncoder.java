@@ -22,8 +22,8 @@ import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.oneone.OneToOneEncoder;
-import org.onosproject.pcepio.protocol.PcepMessage;
-import org.onosproject.pcepio.util.HexDump;
+import org.onosproject.pcep.pcepio.protocol.PcepMessage;
+import org.onosproject.pcep.pcepio.util.HexDump;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

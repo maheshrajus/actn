@@ -51,21 +51,21 @@ import org.onosproject.pcep.controller.PcepNodeListener;
 import org.onosproject.pcep.controller.PcepPacketListener;
 import org.onosproject.pcep.controller.PcepSyncStatus;
 import org.onosproject.pcep.controller.driver.PcepAgent;
-import org.onosproject.pcepio.exceptions.PcepParseException;
-import org.onosproject.pcepio.protocol.PcInitiatedLspRequest;
-import org.onosproject.pcepio.protocol.PcepError;
-import org.onosproject.pcepio.protocol.PcepErrorInfo;
-import org.onosproject.pcepio.protocol.PcepErrorMsg;
-import org.onosproject.pcepio.protocol.PcepErrorObject;
-import org.onosproject.pcepio.protocol.PcepFactory;
-import org.onosproject.pcepio.protocol.PcepInitiateMsg;
-import org.onosproject.pcepio.protocol.PcepLspObject;
-import org.onosproject.pcepio.protocol.PcepMessage;
-import org.onosproject.pcepio.protocol.PcepReportMsg;
-import org.onosproject.pcepio.protocol.PcepStateReport;
-import org.onosproject.pcepio.types.PcepValueType;
-import org.onosproject.pcepio.types.StatefulIPv4LspIdentifiersTlv;
-import org.onosproject.pcepio.types.SymbolicPathNameTlv;
+import org.onosproject.pcep.pcepio.exceptions.PcepParseException;
+import org.onosproject.pcep.pcepio.protocol.PcInitiatedLspRequest;
+import org.onosproject.pcep.pcepio.protocol.PcepError;
+import org.onosproject.pcep.pcepio.protocol.PcepErrorInfo;
+import org.onosproject.pcep.pcepio.protocol.PcepErrorMsg;
+import org.onosproject.pcep.pcepio.protocol.PcepErrorObject;
+import org.onosproject.pcep.pcepio.protocol.PcepFactory;
+import org.onosproject.pcep.pcepio.protocol.PcepInitiateMsg;
+import org.onosproject.pcep.pcepio.protocol.PcepLspObject;
+import org.onosproject.pcep.pcepio.protocol.PcepMessage;
+import org.onosproject.pcep.pcepio.protocol.PcepReportMsg;
+import org.onosproject.pcep.pcepio.protocol.PcepStateReport;
+import org.onosproject.pcep.pcepio.types.PcepValueType;
+import org.onosproject.pcep.pcepio.types.StatefulIPv4LspIdentifiersTlv;
+import org.onosproject.pcep.pcepio.types.SymbolicPathNameTlv;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,8 +77,8 @@ import static org.onosproject.pcep.controller.PcepLspSyncAction.REMOVE;
 import static org.onosproject.pcep.controller.PcepLspSyncAction.SEND_UPDATE;
 import static org.onosproject.pcep.controller.PcepLspSyncAction.SEND_DELETE;
 import static org.onosproject.pcep.controller.PcepLspSyncAction.UNSTABLE;
-import static org.onosproject.pcepio.types.PcepErrorDetailInfo.ERROR_TYPE_19;
-import static org.onosproject.pcepio.types.PcepErrorDetailInfo.ERROR_VALUE_5;
+import static org.onosproject.pcep.pcepio.types.PcepErrorDetailInfo.ERROR_TYPE_19;
+import static org.onosproject.pcep.pcepio.types.PcepErrorDetailInfo.ERROR_VALUE_5;
 
 /**
  * Implementation of PCEP client controller.
