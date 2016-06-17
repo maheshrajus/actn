@@ -109,7 +109,7 @@ public class VnManager implements VnService {
         VirtualNetworkInfo virtualNetwork = vnStore.queryVn(vnName);
         for (Lsp lsp : virtualNetwork.lsp()) {
             String tunnelName = vnName.toString().concat(Long.toString(tunnelIdIdGen.getNewId()));
-            service.setupPath(lsp.src(), lsp.dst(), tunnelName, null, null);
+            service.setupPath(lsp.src(), lsp.dst(), tunnelName, null, null, null);
         }
         return true;
     }
@@ -123,8 +123,8 @@ public class VnManager implements VnService {
         for (Lsp lsp : virtualNetwork.lsp()) {
             String tunnelName = vnName.toString().concat(Long.toString(tunnelIdIdGen.getNewId()));
 
-            //TODO: currently no interface for updatePath in pceService
-            service.setupPath(lsp.src(), lsp.dst(), tunnelName, null, null);
+            //TODO: currently no interface for updatePath end Point in pceService
+            service.setupPath(lsp.src(), lsp.dst(), tunnelName, null, null, null);
         }
         return true;
     }
@@ -163,7 +163,8 @@ public class VnManager implements VnService {
        for (Lsp lsp : virtualNetwork.lsp()) {
            String tunnelName = vnName.toString().concat(Long.toString(tunnelIdIdGen.getNewId()));
            // TODO:
-           service.updatePath(TunnelId.valueOf(tunnelName), getConstraints(constraint));
+           service.updatePath(tunnelName, getConstraints(constraint));
+           //service.updatePath(TunnelId.valueOf(tunnelName), getConstraints(constraint));
        }
        return true;
     }

@@ -488,7 +488,7 @@ public class PceManager implements PceService {
     //[TODO:] handle requests in queue
     @Override
     public boolean setupPath(DeviceId src, DeviceId dst, String tunnelName, List<Constraint> constraints,
-                             LspType lspType) {
+                             LspType lspType, String vnName) {
         checkNotNull(src);
         checkNotNull(dst);
         checkNotNull(tunnelName);
@@ -710,6 +710,12 @@ public class PceManager implements PceService {
     @Override
     public Tunnel queryPath(TunnelId tunnelId) {
         return tunnelService.queryTunnel(tunnelId);
+    }
+
+    @Override
+    public Iterable<Tunnel> queryPath(String vnName) {
+        // TODO: query tunnels by vn name
+        return tunnelService.queryTunnel(MPLS);
     }
 
     @Override
@@ -1459,7 +1465,7 @@ public class PceManager implements PceService {
          */
         if (mastershipService.isLocalMaster(failedPathInfo.src())) {
             if (setupPath(failedPathInfo.src(), failedPathInfo.dst(), failedPathInfo.name(),
-                    failedPathInfo.constraints(), failedPathInfo.lspType())) {
+                    failedPathInfo.constraints(), failedPathInfo.lspType(), null)) {
                 // If computation is success remove that path
                 pceStore.removeFailedPathInfo(failedPathInfo);
                 return true;

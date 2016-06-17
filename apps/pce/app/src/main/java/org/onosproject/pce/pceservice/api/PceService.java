@@ -50,9 +50,11 @@ public interface PceService {
      * @param tunnelName name of the tunnel
      * @param constraints list of constraints to be applied on path
      * @param lspType type of path to be setup
+     * @param vnName virtual network
      * @return false on failure and true on successful path creation
      */
-    boolean setupPath(DeviceId src, DeviceId dst, String tunnelName, List<Constraint> constraints, LspType lspType);
+    boolean setupPath(DeviceId src, DeviceId dst, String tunnelName, List<Constraint> constraints, LspType lspType,
+                      String vnName);
 
     /**
      * Creates new path based on constraints and LSP type.
@@ -116,6 +118,14 @@ public interface PceService {
      * @return tunnel if path exists, otherwise null
      */
     Tunnel queryPath(TunnelId tunnelId);
+
+    /**
+     * Queries particular path based on virtual network.
+     *
+     * @param vnName virtual network
+     * @return iterable of existing tunnels associated with virtual network, otherwise null
+     */
+    Iterable<Tunnel> queryPath(String vnName);
 
     /**
      * Register a listener for PCE path update events.

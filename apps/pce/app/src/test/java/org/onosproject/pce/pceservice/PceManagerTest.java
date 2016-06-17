@@ -307,7 +307,7 @@ public class PceManagerTest {
         CostConstraint costConstraint = new CostConstraint(COST);
         constraints.add(costConstraint);
 
-        boolean result = pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T123", constraints, WITH_SIGNALLING);
+        boolean result = pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T123", constraints, WITH_SIGNALLING, null);
         assertThat(result, is(true));
     }
 
@@ -321,7 +321,7 @@ public class PceManagerTest {
         CostConstraint costConstraint = new CostConstraint(COST);
         constraints.add(costConstraint);
 
-        boolean result = pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T123", constraints, WITH_SIGNALLING);
+        boolean result = pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T123", constraints, WITH_SIGNALLING, null);
         assertThat(result, is(false));
     }
 
@@ -336,7 +336,7 @@ public class PceManagerTest {
         CostConstraint costConstraint = new CostConstraint(TE_COST);
         constraints.add(costConstraint);
 
-        boolean result = pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T123", constraints, WITH_SIGNALLING);
+        boolean result = pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T123", constraints, WITH_SIGNALLING, null);
         assertThat(result, is(true));
     }
 
@@ -351,7 +351,7 @@ public class PceManagerTest {
         CostConstraint costConstraint = new CostConstraint(TE_COST);
         constraints.add(costConstraint);
 
-        boolean result = pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T123", constraints, WITH_SIGNALLING);
+        boolean result = pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T123", constraints, WITH_SIGNALLING, null);
         assertThat(result, is(false));
     }
 
@@ -367,7 +367,7 @@ public class PceManagerTest {
         constraints.add(costConstraint);
 
         boolean result = pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T123", constraints,
-                                              WITHOUT_SIGNALLING_AND_WITHOUT_SR);
+                                              WITHOUT_SIGNALLING_AND_WITHOUT_SR, null);
         assertThat(result, is(true));
     }
 
@@ -383,7 +383,7 @@ public class PceManagerTest {
         constraints.add(costConstraint);
 
         boolean result = pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T123", constraints,
-                                              WITHOUT_SIGNALLING_AND_WITHOUT_SR);
+                                              WITHOUT_SIGNALLING_AND_WITHOUT_SR, null);
         assertThat(result, is(true));
     }
 
@@ -399,7 +399,7 @@ public class PceManagerTest {
         constraints.add(costConstraint);
 
         boolean result = pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T123", constraints,
-                                              WITHOUT_SIGNALLING_AND_WITHOUT_SR);
+                                              WITHOUT_SIGNALLING_AND_WITHOUT_SR, null);
         assertThat(result, is(false));
     }
 
@@ -416,7 +416,7 @@ public class PceManagerTest {
         constraints.add(costConstraint);
         constraints.add(bwConstraint);
 
-        boolean result = pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T123", constraints, WITH_SIGNALLING);
+        boolean result = pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T123", constraints, WITH_SIGNALLING, null);
         assertThat(result, is(false));
     }
 
@@ -433,7 +433,7 @@ public class PceManagerTest {
         constraints.add(costConstraint);
         constraints.add(bwConstraint);
 
-        boolean result = pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T123", constraints, WITH_SIGNALLING);
+        boolean result = pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T123", constraints, WITH_SIGNALLING, null);
         assertThat(result, is(false));
     }
 
@@ -447,7 +447,8 @@ public class PceManagerTest {
         CostConstraint costConstraint = new CostConstraint(TE_COST);
         constraints.add(costConstraint);
 
-        boolean result = pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T123", constraints, SR_WITHOUT_SIGNALLING);
+        boolean result = pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T123", constraints,
+                                              SR_WITHOUT_SIGNALLING, null);
         assertThat(result, is(false));
     }
 
@@ -470,7 +471,8 @@ public class PceManagerTest {
         pceManager.pceStore.addGlobalNodeLabel(D1.deviceId(), node1Label);
         pceManager.pceStore.addGlobalNodeLabel(D2.deviceId(), node2Label);
 
-        boolean result = pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T123", constraints, SR_WITHOUT_SIGNALLING);
+        boolean result = pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T123", constraints,
+                                              SR_WITHOUT_SIGNALLING, null);
         assertThat(result, is(false));
     }
 
@@ -505,7 +507,8 @@ public class PceManagerTest {
         LabelResourceId link4Label = LabelResourceId.labelResourceId(5205);
         pceManager.pceStore.addAdjLabel(link4, link4Label);
 
-        boolean result = pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T123", constraints, SR_WITHOUT_SIGNALLING);
+        boolean result = pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T123", constraints,
+                                              SR_WITHOUT_SIGNALLING, null);
         assertThat(result, is(true));
     }
 
@@ -516,7 +519,7 @@ public class PceManagerTest {
     public void setupPathTest13() {
         build4RouterTopo(false, false, false, false, 0);
 
-        boolean result = pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T123", null, WITH_SIGNALLING);
+        boolean result = pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T123", null, WITH_SIGNALLING, null);
         assertThat(result, is(true));
     }
 
@@ -534,7 +537,7 @@ public class PceManagerTest {
         CostConstraint costConstraint = new CostConstraint(TE_COST);
         constraints.add(costConstraint);
 
-        boolean result = pceManager.setupPath(D1.deviceId(), D4.deviceId(), "T123", constraints, WITH_SIGNALLING);
+        boolean result = pceManager.setupPath(D1.deviceId(), D4.deviceId(), "T123", constraints, WITH_SIGNALLING, null);
         assertThat(result, is(true));
 
         // Change constraint and update it.
@@ -590,7 +593,8 @@ public class PceManagerTest {
         LabelResourceId link4Label = LabelResourceId.labelResourceId(5205);
         pceManager.pceStore.addAdjLabel(link4, link4Label);
 
-        boolean result = pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T123", constraints, SR_WITHOUT_SIGNALLING);
+        boolean result = pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T123", constraints,
+                                              SR_WITHOUT_SIGNALLING, null);
         assertThat(result, is(true));
 
         // Change constraint and update it.
@@ -618,7 +622,7 @@ public class PceManagerTest {
         build4RouterTopo(false, true, true, true, 100);
 
         // Setup tunnel.
-        boolean result = pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T123", null, WITH_SIGNALLING);
+        boolean result = pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T123", null, WITH_SIGNALLING, null);
         assertThat(result, is(true));
 
         Collection<Tunnel> tunnels = (Collection<Tunnel>) pceManager.queryAllPath();
@@ -643,7 +647,7 @@ public class PceManagerTest {
         CostConstraint costConstraint = new CostConstraint(TE_COST);
         constraints.add(costConstraint);
 
-        pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T123", constraints, WITH_SIGNALLING);
+        pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T123", constraints, WITH_SIGNALLING, null);
 
         Collection<Tunnel> tunnels = (Collection<Tunnel>) pceManager.queryAllPath();
         assertThat(tunnels.size(), is(1));
@@ -666,7 +670,7 @@ public class PceManagerTest {
         CostConstraint costConstraint = new CostConstraint(TE_COST);
         constraints.add(costConstraint);
 
-        pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T123", constraints, WITH_SIGNALLING);
+        pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T123", constraints, WITH_SIGNALLING, null);
 
         Collection<Tunnel> tunnels = (Collection<Tunnel>) pceManager.queryAllPath();
         assertThat(tunnels.size(), is(1));
@@ -792,7 +796,7 @@ public class PceManagerTest {
         LabelResourceId link4Label = LabelResourceId.labelResourceId(5205);
         pceManager.pceStore.addAdjLabel(link4, link4Label);
 
-        pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T1", constraints, SR_WITHOUT_SIGNALLING);
+        pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T1", constraints, SR_WITHOUT_SIGNALLING, null);
         assertThat(pceStore.getTunnelInfoCount(), is(1));
 
         Collection<Tunnel> tunnels = (Collection<Tunnel>) pceManager.queryAllPath();
@@ -823,7 +827,7 @@ public class PceManagerTest {
         constraints.add(costConstraint);
         constraints.add(bwConstraint);
 
-        pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T2", constraints, WITHOUT_SIGNALLING_AND_WITHOUT_SR);
+        pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T2", constraints, WITHOUT_SIGNALLING_AND_WITHOUT_SR, null);
         assertThat(pceStore.getTunnelInfoCount(), is(1));
 
         TunnelEvent event;
@@ -863,7 +867,7 @@ public class PceManagerTest {
         constraints.add(costConstraint);
         constraints.add(bwConstraint);
 
-        pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T2", constraints, WITHOUT_SIGNALLING_AND_WITHOUT_SR);
+        pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T2", constraints, WITHOUT_SIGNALLING_AND_WITHOUT_SR, null);
         assertThat(pceStore.getTunnelInfoCount(), is(1));
         assertThat(pceStore.getFailedPathInfoCount(), is(0));
 
@@ -901,7 +905,7 @@ public class PceManagerTest {
         constraints.add(localBwConst);
 
         //Setup the path , tunnel created
-        boolean result = pceManager.setupPath(D1.deviceId(), D4.deviceId(), "T123", constraints, WITH_SIGNALLING);
+        boolean result = pceManager.setupPath(D1.deviceId(), D4.deviceId(), "T123", constraints, WITH_SIGNALLING, null);
         assertThat(result, is(true));
         assertThat(pceStore.getTunnelInfoCount(), is(1));
         assertThat(pceStore.getFailedPathInfoCount(), is(0));
@@ -943,7 +947,7 @@ public class PceManagerTest {
         constraints.add(localBwConst);
 
         //Setup the path , tunnel created
-        boolean result = pceManager.setupPath(D1.deviceId(), D4.deviceId(), "T123", constraints, WITH_SIGNALLING);
+        boolean result = pceManager.setupPath(D1.deviceId(), D4.deviceId(), "T123", constraints, WITH_SIGNALLING, null);
         assertThat(result, is(true));
 
         List<Event> reasons = new LinkedList<>();
@@ -981,7 +985,7 @@ public class PceManagerTest {
         constraints.add(localBwConst);
 
         //Setup the path , tunnel created
-        boolean result = pceManager.setupPath(D1.deviceId(), D4.deviceId(), "T123", constraints, WITH_SIGNALLING);
+        boolean result = pceManager.setupPath(D1.deviceId(), D4.deviceId(), "T123", constraints, WITH_SIGNALLING, null);
         assertThat(result, is(true));
 
         List<Event> reasons = new LinkedList<>();
@@ -1024,7 +1028,7 @@ public class PceManagerTest {
         constraints.add(localBwConst);
 
         //Setup the path , tunnel created
-        boolean result = pceManager.setupPath(D1.deviceId(), D4.deviceId(), "T123", constraints, WITH_SIGNALLING);
+        boolean result = pceManager.setupPath(D1.deviceId(), D4.deviceId(), "T123", constraints, WITH_SIGNALLING, null);
         assertThat(result, is(true));
 
         List<Event> reasons = new LinkedList<>();
@@ -1062,7 +1066,7 @@ public class PceManagerTest {
         constraints.add(localBwConst);
 
         //Setup the path , tunnel created
-        boolean result = pceManager.setupPath(D1.deviceId(), D4.deviceId(), "T123", constraints, WITH_SIGNALLING);
+        boolean result = pceManager.setupPath(D1.deviceId(), D4.deviceId(), "T123", constraints, WITH_SIGNALLING, null);
         assertThat(result, is(true));
 
         List<Event> reasons = new LinkedList<>();
@@ -1110,7 +1114,7 @@ public class PceManagerTest {
         constraints.add(localBwConst);
 
         //Setup the path , tunnel created
-        boolean result = pceManager.setupPath(D1.deviceId(), D4.deviceId(), "T123", constraints, WITH_SIGNALLING);
+        boolean result = pceManager.setupPath(D1.deviceId(), D4.deviceId(), "T123", constraints, WITH_SIGNALLING, null);
         assertThat(result, is(true));
 
         List<Event> reasons = new LinkedList<>();
@@ -1151,7 +1155,7 @@ public class PceManagerTest {
         constraints.add(localBwConst);
 
         //Setup the path , tunnel created
-        boolean result = pceManager.setupPath(D1.deviceId(), D4.deviceId(), "T123", constraints, WITH_SIGNALLING);
+        boolean result = pceManager.setupPath(D1.deviceId(), D4.deviceId(), "T123", constraints, WITH_SIGNALLING, null);
         assertThat(result, is(true));
 
         List<Event> reasons = new LinkedList<>();
@@ -1192,7 +1196,7 @@ public class PceManagerTest {
         constraints.add(localBwConst);
 
         //Setup the path , tunnel created
-        boolean result = pceManager.setupPath(D1.deviceId(), D4.deviceId(), "T123", constraints, WITH_SIGNALLING);
+        boolean result = pceManager.setupPath(D1.deviceId(), D4.deviceId(), "T123", constraints, WITH_SIGNALLING, null);
         assertThat(result, is(true));
 
         List<Event> reasons = new LinkedList<>();
@@ -1238,7 +1242,7 @@ public class PceManagerTest {
         constraints.add(localBwConst);
 
         //Setup the path , tunnel created
-        boolean result = pceManager.setupPath(D1.deviceId(), D4.deviceId(), "T123", constraints, WITH_SIGNALLING);
+        boolean result = pceManager.setupPath(D1.deviceId(), D4.deviceId(), "T123", constraints, WITH_SIGNALLING, null);
         assertThat(result, is(true));
 
         List<Event> reasons = new LinkedList<>();

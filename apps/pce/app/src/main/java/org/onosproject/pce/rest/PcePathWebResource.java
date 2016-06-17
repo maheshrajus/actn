@@ -133,7 +133,8 @@ public class PcePathWebResource extends AbstractWebResource {
             listConstrnt.add(path.costConstraint());
 
             Boolean issuccess = nullIsNotFound(get(PceService.class)
-                                               .setupPath(srcDevice, dstDevice, path.name(), listConstrnt, lspType),
+                                               .setupPath(srcDevice, dstDevice, path.name(), listConstrnt, lspType,
+                                                          null),
                                                PCE_SETUP_PATH_FAILED);
             return Response.status(OK).entity(issuccess.toString()).build();
         } catch (IOException e) {
