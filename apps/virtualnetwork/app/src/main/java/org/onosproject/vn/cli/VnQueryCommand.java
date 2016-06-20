@@ -18,16 +18,10 @@ package org.onosproject.vn.cli;
 import org.apache.karaf.shell.commands.Command;
 import org.apache.karaf.shell.commands.Option;
 import org.onosproject.cli.AbstractShellCommand;
-import org.onosproject.net.DeviceId;
+import org.onosproject.incubator.net.tunnel.Tunnel;
+import org.onosproject.net.AnnotationKeys;
 import org.onosproject.vn.manager.api.VnService;
-import org.onosproject.vn.manager.constraint.VnBandwidth;
-import org.onosproject.vn.manager.constraint.VnConstraint;
-import org.onosproject.vn.manager.constraint.VnCost;
-import org.onosproject.vn.store.EndPoint;
-import org.onosproject.vn.store.VirtualNetworkInfo;
 import org.slf4j.Logger;
-
-import java.util.List;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -38,7 +32,7 @@ import static org.slf4j.LoggerFactory.getLogger;
         description = "Supports querying virtual network.")
 public class VnQueryCommand extends AbstractShellCommand {
     private final Logger log = getLogger(getClass());
-
+    public static final String COST_TYPE = "costType";
     @Option(name = "-n", aliases = "--name", description = "vnName", required = false,
             multiValued = false)
     String vnName = null;
@@ -49,62 +43,42 @@ public class VnQueryCommand extends AbstractShellCommand {
 
         VnService service = get(VnService.class);
         if (null == vnName) {
-            List<VirtualNetworkInfo> virtualNetworks = service.queryAllVn();
-            if (virtualNetworks != null) {
+            Iterable<Tunnel> vnTunnels = service.queryAllTunnels();
+            if (vnTunnels != null) {
                 /*for (final VirtualNetworkInfo vn : virtualNetworks) {
                     display(vn);
                 }*/
-                virtualNetworks.forEach(this::display);
+                vnTunnels.forEach(this::display);
             } else {
                 print("No virtual network found.");
                 return;
             }
         } else {
-            VirtualNetworkInfo vn = service.queryVn(vnName);
-            if (vn == null) {
+            Iterable<Tunnel> vnTunnels = service.queryVnTunnels(vnName);
+            if (vnTunnels == null) {
                 print("Virtual network doesnot exists.");
                 return;
             }
-            display(vn);
+            vnTunnels.forEach(this::display);
         }
     }
 
     /**
      * Display tunnel information on the terminal.
      *
-     * @param vn virtual network
+     * @param tunnel pce tunnel
      */
-    void display(VirtualNetworkInfo vn) {
-        /*print("\nvnName            : %d \n" +
-                "constraints:            \n" +
-                "   cost            : %d \n" +
-                "   bandwidth       : %.2f" +
-                "Endpoints         : %s \n",
-                vn.vnName(), vn.constraints());*/
-
-        print("vnName            : %s", vn.vnName());
-        print("constraints       :");
-
-        for (VnConstraint c : vn.constraints()) {
-            if (c.getType() == VnBandwidth.TYPE) {
-                VnBandwidth vnBandwidth = (VnBandwidth) c;
-                print("        bandwidth : %f", vnBandwidth.bandWidthValue().bps());
-            } else if (c.getType() == VnCost.TYPE) {
-                VnCost vnCost = (VnCost) c;
-                print("        costType  : %d", vnCost.type().type());
-                print("        cost      : %f", vnCost.cost());
-            }
-        }
-        EndPoint endPoint = vn.endPoint();
-        print("endPoint          :\n      source      : ");
-        for (DeviceId deviceId : endPoint.src()) {
-            print("                    %s ", deviceId.toString());
-        }
-
-        print("      destination : ");
-        for (DeviceId deviceId : endPoint.dst()) {
-            print("                    %s ", deviceId.toString());
-        }
-        print("----------------------------------------");
+    void display(Tunnel tunnel) {
+        print("\npath-id            : %s \n" +
+                      "source             : %s \n" +
+                      "destination        : %s \n" +
+                      "path-type          : %s \n" +
+                      "symbolic-path-name : %s \n" +
+                      "constraints:            \n" +
+                      "   cost            : %s \n" +
+                      "   bandwidth       : %s",
+              tunnel.tunnelId().id(), tunnel.src().toString(), tunnel.dst().toString(),
+              tunnel.type().name(), tunnel.tunnelName(), tunnel.annotations().value(COST_TYPE),
+              tunnel.annotations().value(AnnotationKeys.BANDWIDTH));
     }
 }

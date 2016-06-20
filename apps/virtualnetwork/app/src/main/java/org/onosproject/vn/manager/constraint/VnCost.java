@@ -63,43 +63,30 @@ public final class VnCost implements VnConstraint {
     private Type type;
     public static final String TE_COST = "teCost";
     public static final String COST = "cost";
-    private Double cost;
     public static final byte TYPE = 1;
-
-    public void setCost(Double cost) {
-        this.cost = cost;
-    }
-
-    public Double cost() {
-        return cost;
-    }
 
     // Constructor for serialization
     private VnCost() {
         this.type = null;
-        this.cost = null;
     }
 
     /**
      * Creates a new cost constraint.
      *
      * @param type of a link
-     * @param cost of a link
      */
-    public VnCost(Type type, Double cost) {
+    public VnCost(Type type) {
         this.type = checkNotNull(type, "Type cannot be null");
-        this.cost = checkNotNull(cost, "Cost cannot be null");
     }
 
     /**
      * Creates new CostConstraint with specified cost type.
      *
      * @param type of cost
-     * @param cost of a link
      * @return instance of CostConstraint
      */
-    public static VnCost of(Type type, Double cost) {
-        return new VnCost(type, cost);
+    public static VnCost of(Type type) {
+        return new VnCost(type);
     }
 
     /**
@@ -127,7 +114,7 @@ public final class VnCost implements VnConstraint {
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, cost);
+        return Objects.hash(type);
     }
 
     @Override
@@ -138,8 +125,7 @@ public final class VnCost implements VnConstraint {
 
         if (obj instanceof VnCost) {
             VnCost other = (VnCost) obj;
-            return Objects.equals(this.type, other.type) &&
-                   Objects.equals(this.cost, other.cost);
+            return Objects.equals(this.type, other.type);
         }
 
         return false;
@@ -149,7 +135,6 @@ public final class VnCost implements VnConstraint {
     public String toString() {
         return toStringHelper(this)
                 .add("type", type)
-                .add("cost", cost)
                 .toString();
     }
 }

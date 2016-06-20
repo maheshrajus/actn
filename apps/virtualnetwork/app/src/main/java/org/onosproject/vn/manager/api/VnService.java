@@ -15,6 +15,7 @@
  */
 package org.onosproject.vn.manager.api;
 
+import org.onosproject.incubator.net.tunnel.Tunnel;
 import org.onosproject.vn.manager.constraint.VnConstraint;
 import org.onosproject.vn.store.EndPoint;
 import org.onosproject.vn.store.VirtualNetworkInfo;
@@ -86,4 +87,18 @@ public interface VnService {
      * @return Virtual networks if exists, otherwise empty list
      */
     List<VirtualNetworkInfo> queryAllVn();
+
+    /**
+     * Queries all tunnels in all virtual network.
+     *
+     * @return tunnels if exists, otherwise empty list
+     */
+    Iterable<Tunnel> queryAllTunnels();
+
+    /**
+     * Queries all tunnels in a virtual network.
+     *
+     * @return tunnels if exists, otherwise null
+     */
+    Iterable<Tunnel> queryVnTunnels(String vnName);
 }

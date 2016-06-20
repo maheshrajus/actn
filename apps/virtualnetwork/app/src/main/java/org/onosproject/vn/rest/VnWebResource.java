@@ -18,15 +18,16 @@ package org.onosproject.vn.rest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.onosproject.incubator.net.tunnel.Tunnel;
 import org.onosproject.net.DeviceId;
+import org.onosproject.pce.pceservice.DefaultPcePath;
+import org.onosproject.pce.pceservice.PcePath;
 import org.onosproject.rest.AbstractWebResource;
-import org.onosproject.vn.manager.DefaultVirtualNetwork;
 import org.onosproject.vn.manager.VirtualNetwork;
 import org.onosproject.vn.manager.api.VnService;
 import org.onosproject.vn.manager.constraint.VnConstraint;
 import org.onosproject.vn.manager.constraint.VnCost;
 import org.onosproject.vn.store.EndPoint;
-import org.onosproject.vn.store.VirtualNetworkInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,13 +70,15 @@ public class VnWebResource extends AbstractWebResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response queryAllVn() {
         log.debug("Query all VN.");
-        List<VirtualNetworkInfo> vns = get(VnService.class).queryAllVn();
+        Iterable<Tunnel> vnTunnels = get(VnService.class).queryAllTunnels();
         ObjectNode result = mapper().createObjectNode();
         ArrayNode pathEntry = result.putArray("vn");
-        if (vns != null) {
-            for (final VirtualNetworkInfo virtualNetwork : vns) {
-                VirtualNetwork vn = DefaultVirtualNetwork.builder().of(virtualNetwork).build();
-                pathEntry.add(codec(VirtualNetwork.class).encode(vn, this));
+        if (vnTunnels != null) {
+            for (final Tunnel t : vnTunnels) {
+                //VirtualNetwork vn = DefaultVirtualNetwork.builder().of(virtualNetwork).build();
+                //pathEntry.add(codec(VirtualNetwork.class).encode(vn, this));
+                PcePath path = DefaultPcePath.builder().of(t).build();
+                pathEntry.add(codec(PcePath.class).encode(path, this));
             }
         }
         return ok(result.toString()).build();
@@ -92,12 +95,18 @@ public class VnWebResource extends AbstractWebResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response queryVn(@PathParam("VnName") String vnName) {
-        log.debug("Query virtual network by identifier {}.", vnName);
-        VirtualNetworkInfo virtualNetwork = nullIsNotFound(get(VnService.class).queryVn(vnName),
-                                       VIRTUAL_NETWORK_NOT_FOUND);
-        VirtualNetwork vn = DefaultVirtualNetwork.builder().of(virtualNetwork).build();
+        Iterable<Tunnel> vnTunnels = get(VnService.class).queryVnTunnels(vnName);
         ObjectNode result = mapper().createObjectNode();
-        result.set("vn", codec(VirtualNetwork.class).encode(vn, this));
+        ArrayNode pathEntry = result.putArray("vn");
+        if (vnTunnels != null) {
+            for (final Tunnel t : vnTunnels) {
+                //VirtualNetwork vn = DefaultVirtualNetwork.builder().of(virtualNetwork).build();
+                //pathEntry.add(codec(VirtualNetwork.class).encode(vn, this));
+                PcePath path = DefaultPcePath.builder().of(t).build();
+                pathEntry.add(codec(PcePath.class).encode(path, this));
+
+            }
+        }
         return ok(result.toString()).build();
     }
 

@@ -40,7 +40,6 @@ public final class VnCodec extends JsonCodec<VirtualNetwork> {
     private static final String VN_NAME = "vnName";
     private static final String CONSTRAINT = "constraint";
     private static final String COST_TYPE = "costType";
-    private static final String COST = "cost";
     private static final String BANDWIDTH = "bandwidth";
     private static final String ENDPOINT = "endPoint";
     private static final String SRC_ENDPOINT = "source";
@@ -72,11 +71,7 @@ public final class VnCodec extends JsonCodec<VirtualNetwork> {
             if (jNode != null) {
                 String costType = jNode.asText();
                 // TODO: validation
-                jNode = constraintJNode.get(COST);
-                if (jNode != null) {
-                    String cost = jNode.asText();
-                    resultBuilder.cost(costType, cost);
-                }
+                resultBuilder.cost(costType);
             }
 
             // retrieve bandwidth
@@ -135,7 +130,6 @@ public final class VnCodec extends JsonCodec<VirtualNetwork> {
         ObjectNode constraintNode = context.mapper()
                 .createObjectNode()
                 .put(COST_TYPE, vnCost.type().toString())
-                .put(COST, vnCost.cost().toString())
                 .put(BANDWIDTH, String.valueOf(vnbandwidth.bandWidthValue().bps()));
 
         result.set(CONSTRAINT, constraintNode);

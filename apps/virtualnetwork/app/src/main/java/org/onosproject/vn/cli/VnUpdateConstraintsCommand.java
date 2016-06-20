@@ -42,13 +42,9 @@ public class VnUpdateConstraintsCommand extends AbstractShellCommand {
     @Argument(index = 0, name = "vnName", description = "virtual network name.", required = true, multiValued = false)
     String vnName = null;
 
-    @Option(name = "-ct", aliases = "--costType", description = "The cost attribute IGP cost (1) or TE cost (2).",
+    @Option(name = "-c", aliases = "--costType", description = "The cost attribute IGP cost (1) or TE cost (2).",
             required = false, multiValued = false)
     Integer costType = null;
-
-    @Option(name = "-cv", aliases = "--costValue", description = "The cost value.",
-            required = false, multiValued = false)
-    Double costValue = null;
 
     @Option(name = "-b", aliases = "--bandwidth", description = "The bandwidth attribute of path. "
             + "Data rate unit is in bps.", required = false, multiValued = false)
@@ -83,12 +79,9 @@ public class VnUpdateConstraintsCommand extends AbstractShellCommand {
                 error("The cost attribute value either IGP cost(1) or TE cost(2).");
                 return;
             }
-            if (costValue == null) {
-                error("The cost value cannot be null.");
-                return;
-            }
+
             VnCost.Type enCostType = VnCost.Type.values()[costType - 1];
-            VnCost costConstraint = VnCost.of(enCostType, costValue);
+            VnCost costConstraint = VnCost.of(enCostType);
             constraint.add(costConstraint);
         }
 

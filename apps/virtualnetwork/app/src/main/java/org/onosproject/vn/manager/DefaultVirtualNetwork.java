@@ -210,9 +210,9 @@ public final class DefaultVirtualNetwork implements VirtualNetwork {
         }
 
         @Override
-        public VirtualNetwork.Builder cost(String costType, String cost) {
+        public VirtualNetwork.Builder cost(String costType) {
             if (null != costType) {
-                this.cost = VnCost.of(VnCost.Type.values()[(Integer.valueOf(costType) - 1)], Double.valueOf(cost));
+                this.cost = VnCost.of(VnCost.Type.values()[(Integer.valueOf(costType) - 1)]);
             }
             return this;
         }

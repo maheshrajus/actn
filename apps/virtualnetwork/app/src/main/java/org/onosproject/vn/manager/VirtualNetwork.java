@@ -124,10 +124,9 @@ public interface VirtualNetwork {
          * Returns the builder object of cost constraint.
          *
          * @param costType constraint type
-         * @param cost constraint
          * @return builder object of cost constraint
          */
-        Builder cost(String costType, String cost);
+        Builder cost(String costType);
 
         /**
          * Returns the builder object of bandwidth constraint.

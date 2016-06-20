@@ -40,13 +40,9 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class VnSetupCommand extends AbstractShellCommand {
     private final Logger log = getLogger(getClass());
 
-    @Option(name = "-ct", aliases = "--costType", description = "The cost attribute IGP cost (1) or TE cost (2).",
+    @Option(name = "-c", aliases = "--costType", description = "The cost attribute IGP cost (1) or TE cost (2).",
             required = false, multiValued = false)
     Integer costType = null;
-
-    @Option(name = "-cv", aliases = "--costValue", description = "The cost value.",
-            required = false, multiValued = false)
-    Double costValue = null;
 
     @Option(name = "-b", aliases = "--bandwidth", description = "The bandwidth attribute of path. "
             + "Data rate unit is in bps.", required = false, multiValued = false)
@@ -96,14 +92,10 @@ public class VnSetupCommand extends AbstractShellCommand {
                 error("The cost attribute value either IGP cost(1) or TE cost(2).");
                 return;
             }
-            if (costValue == null) {
-                error("The cost value cannot be null.");
-                return;
-            }
-            VnCost.Type enCostType = VnCost.Type.values()[costType - 1];
-            VnCost cost = VnCost.of(enCostType, costValue);
 
-            //cost.setCost(cost);
+            VnCost.Type enCostType = VnCost.Type.values()[costType - 1];
+            VnCost cost = VnCost.of(enCostType);
+
             constraints.add(cost);
         }
 
@@ -112,8 +104,6 @@ public class VnSetupCommand extends AbstractShellCommand {
             constraints.add(vnBandWidth);
         }
 
-        //System.out.print(cost);
-        //System.out.print(bandwidth);
         if (!service.setupVn(vnName, constraints, endPoint)) {
             error("Virtual network creation failed.");
         }

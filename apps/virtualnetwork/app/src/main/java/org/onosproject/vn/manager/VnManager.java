@@ -25,7 +25,8 @@ import org.onlab.util.Bandwidth;
 import org.onosproject.core.ApplicationId;
 import org.onosproject.core.CoreService;
 import org.onosproject.core.IdGenerator;
-import org.onosproject.incubator.net.tunnel.TunnelId;
+import org.onosproject.incubator.net.tunnel.Tunnel;
+import org.onosproject.net.DeviceId;
 import org.onosproject.net.intent.Constraint;
 import org.onosproject.pce.pceservice.api.PceService;
 import org.onosproject.pce.pceservice.constraint.CostConstraint;
@@ -45,6 +46,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Implementation of virtual network service.
@@ -96,7 +99,7 @@ public class VnManager implements VnService {
         VirtualNetworkInfo virtualNetwork = vnStore.queryVn(vnName);
         for (Lsp lsp : virtualNetwork.lsp()) {
             String tunnelName = vnName.toString().concat(Long.toString(tunnelIdIdGen.getNewId()));
-            //service.setupPath(lsp.src(), lsp.dst(), tunnelName, getConstraints(constraints), null);
+            //service.setupPath(lsp.src(), lsp.dst(), tunnelName, getConstraints(constraints), vnName);
         }
         return true;
     }
@@ -109,22 +112,51 @@ public class VnManager implements VnService {
         VirtualNetworkInfo virtualNetwork = vnStore.queryVn(vnName);
         for (Lsp lsp : virtualNetwork.lsp()) {
             String tunnelName = vnName.toString().concat(Long.toString(tunnelIdIdGen.getNewId()));
-            service.setupPath(lsp.src(), lsp.dst(), tunnelName, null, null, null);
+            service.setupPath(lsp.src(), lsp.dst(), tunnelName, null, null, vnName);
         }
         return true;
     }
 
     @Override
     public boolean updateVn(String vnName, EndPoint endPoint) {
-        if (!vnStore.updateVn(vnName, endPoint)) {
+        checkNotNull(endPoint, "End point cannot be null");
+        VirtualNetworkInfo virtualNetwork = vnStore.queryVn(vnName);
+        if (virtualNetwork == null) {
             return false;
         }
-        VirtualNetworkInfo virtualNetwork = vnStore.queryVn(vnName);
-        for (Lsp lsp : virtualNetwork.lsp()) {
-            String tunnelName = vnName.toString().concat(Long.toString(tunnelIdIdGen.getNewId()));
+        List<Lsp> lsps = new LinkedList<>();
+        List<DeviceId> src = endPoint.src();
+        List<DeviceId> dst = endPoint.dst();
 
-            //TODO: currently no interface for updatePath end Point in pceService
-            service.setupPath(lsp.src(), lsp.dst(), tunnelName, null, null, null);
+        for (DeviceId source : src) {
+            lsps.addAll(dst.stream().filter(destination -> !source.equals(destination))
+                                .map(destination -> new Lsp(source, destination)).collect(Collectors.toList()));
+        }
+        // Check if any tunnel not provided in update, if not delete existing
+        Iterable<Tunnel> tunnels = service.queryPath(vnName);
+        for (Lsp lsp : virtualNetwork.lsp()) {
+            if (!lsps.contains(lsp)) {
+                // not present in update request, so delete existing
+                for (Tunnel t : tunnels) {
+                    if ((t.src().equals(lsp.src())) && (t.dst().equals(lsp.dst()))) {
+                        service.releasePath(t.tunnelId());
+                    }
+                }
+                virtualNetwork.lsp().remove(lsp);
+            }
+        }
+
+        for (Lsp lsp : lsps) {
+            if (!virtualNetwork.lsp().contains(lsp)) {
+              // new entry, setup path
+                String tunnelName = vnName.toString().concat(Long.toString(tunnelIdIdGen.getNewId()));
+                service.setupPath(lsp.src(), lsp.dst(), tunnelName,
+                                  getConstraints(virtualNetwork.constraints()), null, vnName);
+            }
+        }
+
+        if (!vnStore.updateVn(vnName, endPoint)) {
+            return false;
         }
         return true;
     }
@@ -159,12 +191,9 @@ public class VnManager implements VnService {
            return false;
        }
 
-       VirtualNetworkInfo virtualNetwork = vnStore.queryVn(vnName);
-       for (Lsp lsp : virtualNetwork.lsp()) {
-           String tunnelName = vnName.toString().concat(Long.toString(tunnelIdIdGen.getNewId()));
-           // TODO:
-           service.updatePath(tunnelName, getConstraints(constraint));
-           //service.updatePath(TunnelId.valueOf(tunnelName), getConstraints(constraint));
+       Iterable<Tunnel> tunnels = service.queryPath(vnName);
+       for (Tunnel t : tunnels) {
+           service.updatePath(t.tunnelId(), getConstraints(constraint));
        }
        return true;
     }
@@ -175,11 +204,11 @@ public class VnManager implements VnService {
         if (virtualNetwork == null) {
             return true;
         }
-        for (Lsp lsp : virtualNetwork.lsp()) {
-            String tunnelName = vnName.toString().concat(Long.toString(tunnelIdIdGen.getNewId()));
-            // TODO:
-            service.releasePath(TunnelId.valueOf(tunnelName));
+        Iterable<Tunnel> tunnels = service.queryPath(vnName);
+        for (Tunnel t : tunnels) {
+            service.releasePath(t.tunnelId());
         }
+
         if (!vnStore.deleteVn(vnName)) {
             return false;
         }
@@ -197,5 +226,29 @@ public class VnManager implements VnService {
         List<VirtualNetworkInfo> vn = new LinkedList<>();
         vn.addAll(vnMap.keySet().stream().map(vnName -> vnStore.queryVn(vnName)).collect(Collectors.toList()));
         return vn;
+    }
+
+    @Override
+    public Iterable<Tunnel> queryAllTunnels() {
+        Map<String, VirtualNetworkInfo> vnMap = vnStore.queryAllVn();
+        List<Tunnel> allTunnels = new LinkedList<>();
+        Iterable<Tunnel> tunnels;
+        for (Map.Entry<String, VirtualNetworkInfo> entry : vnMap.entrySet()) {
+            tunnels = service.queryPath(entry.getValue().vnName());
+            if (tunnels != null) {
+               for (Tunnel t : tunnels) {
+                   allTunnels.add(t);
+               }
+            }
+        }
+        return allTunnels;
+    }
+    @Override
+    public Iterable<Tunnel> queryVnTunnels(String vnName) {
+        VirtualNetworkInfo vnInfo = vnStore.queryVn(vnName);
+        if (vnInfo != null) {
+            return service.queryPath(vnName);
+        }
+        return null;
     }
 }

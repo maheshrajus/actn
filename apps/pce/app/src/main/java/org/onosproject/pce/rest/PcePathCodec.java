@@ -15,17 +15,16 @@
  */
 package org.onosproject.pce.rest;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.onosproject.codec.CodecContext;
 import org.onosproject.codec.JsonCodec;
-import org.onosproject.pce.pceservice.PcePath;
 import org.onosproject.pce.pceservice.DefaultPcePath;
+import org.onosproject.pce.pceservice.PcePath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.JsonNode;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * PCE path json codec.
@@ -58,6 +57,7 @@ public final class PcePathCodec extends JsonCodec<PcePath> {
         if (jDefaultNode != null) {
             String lspType = jDefaultNode.asText();
             resultBuilder.lspType(lspType);
+            return resultBuilder.build();
         }
 
         // retrieve source
@@ -112,21 +112,28 @@ public final class PcePathCodec extends JsonCodec<PcePath> {
     @Override
     public ObjectNode encode(PcePath path, CodecContext context) {
         checkNotNull(path, "path output cannot be null");
-        ObjectNode result = context.mapper()
-                .createObjectNode()
-                .put(PATH_ID, path.id().id())
-                .put(SOURCE, path.source())
-                .put(DESTINATION, path.destination())
-                .put(LSP_TYPE, path.lspType().type())
-                .put(DEFAULT_LSP_TYPE, path.defaultLspType().type())
-                .put(SYMBOLIC_PATH_NAME, path.name());
+        ObjectNode result;
+        if (path.defaultLspType() != null) {
+            result = context.mapper()
+                    .createObjectNode()
+                    .put(DEFAULT_LSP_TYPE, path.defaultLspType().type());
+        } else {
+            result = context.mapper()
+                    .createObjectNode()
+                    .put(PATH_ID, path.id().id())
+                    .put(SOURCE, path.source())
+                    .put(DESTINATION, path.destination())
+                    .put(LSP_TYPE, path.lspType().type())
+                    .put(SYMBOLIC_PATH_NAME, path.name());
 
-        ObjectNode constraintNode = context.mapper()
-                .createObjectNode()
-                .put(COST, path.costConstraint().toString())
-                .put(BANDWIDTH, path.bandwidthConstraint().toString());
+            ObjectNode constraintNode = context.mapper()
+                    .createObjectNode()
+                    .put(COST, path.costConstraint().toString())
+                    .put(BANDWIDTH, path.bandwidthConstraint().toString());
 
-        result.set(CONSTRAINT, constraintNode);
+            result.set(CONSTRAINT, constraintNode);
+        }
+
         return result;
     }
 }
