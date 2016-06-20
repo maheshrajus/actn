@@ -17,8 +17,10 @@ package org.onosproject.pcc.pccmgr.api;
 
 import java.util.List;
 
+import org.onosproject.pce.pceservice.api.PcePathReport;
 import org.onosproject.pcep.pcepio.protocol.PcepFactory;
 import org.onosproject.pcep.pcepio.protocol.PcepMessage;
+import org.onosproject.pcep.pcepio.protocol.PcepReportMsg;
 import org.onosproject.pcep.pcepio.protocol.PcepStateReport;
 
 /**
@@ -196,4 +198,8 @@ public interface PcepClient {
      * @param rptMsg the report message to be stored
      */
     void addSyncMsgToList(PceId pceId, PcepStateReport rptMsg);
+
+    PcepReportMsg buildPCRptMsg(PcePathReport reportInfo, boolean synchFlag);
+
+    PcepReportMsg buildLspSyncEndMsg();
 }

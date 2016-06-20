@@ -25,8 +25,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.RejectedExecutionException;
 
+import org.apache.felix.scr.annotations.Reference;
+import org.apache.felix.scr.annotations.ReferenceCardinality;
 import org.jboss.netty.channel.Channel;
+import org.onlab.packet.Ip4Address;
 import org.onlab.packet.IpAddress;
+import org.onosproject.net.ConnectPoint;
+import org.onosproject.net.Link;
+import org.onosproject.net.Path;
 import org.onosproject.pcc.pccmgr.api.ClientCapability;
 import org.onosproject.pcc.pccmgr.api.LspKey;
 import org.onosproject.pcc.pccmgr.api.PceId;
@@ -35,11 +41,25 @@ import org.onosproject.pcc.pccmgr.api.PcepPacketStats;
 import org.onosproject.pcc.pccmgr.api.PcepSyncStatus;
 import org.onosproject.pcc.pccmgr.api.PcepAgent;
 import org.onosproject.pcc.pccmgr.api.PcepClientDriver;
+import org.onosproject.pce.pceservice.api.PcePathReport;
+import org.onosproject.pce.pceservice.api.PceService;
+import org.onosproject.pcep.pcepio.exceptions.PcepParseException;
+import org.onosproject.pcep.pcepio.protocol.PcepAttribute;
+import org.onosproject.pcep.pcepio.protocol.PcepEroObject;
 import org.onosproject.pcep.pcepio.protocol.PcepFactories;
 import org.onosproject.pcep.pcepio.protocol.PcepFactory;
+import org.onosproject.pcep.pcepio.protocol.PcepLspObject;
 import org.onosproject.pcep.pcepio.protocol.PcepMessage;
+import org.onosproject.pcep.pcepio.protocol.PcepReportMsg;
+import org.onosproject.pcep.pcepio.protocol.PcepRroObject;
+import org.onosproject.pcep.pcepio.protocol.PcepSrpObject;
 import org.onosproject.pcep.pcepio.protocol.PcepStateReport;
 import org.onosproject.pcep.pcepio.protocol.PcepVersion;
+import org.onosproject.pcep.pcepio.protocol.PcepXroObject;
+import org.onosproject.pcep.pcepio.types.IPv4SubObject;
+import org.onosproject.pcep.pcepio.types.PcepValueType;
+import org.onosproject.pcep.pcepio.types.StatefulIPv4LspIdentifiersTlv;
+import org.onosproject.pcep.pcepio.types.SymbolicPathNameTlv;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,6 +94,11 @@ public class PcepClientImpl implements PcepClientDriver {
     private PcepPacketStatsImpl pktStats;
     private Map<LspKey, Boolean> lspDelegationInfo;
     private Map<PceId, List<PcepStateReport>> sycRptCache = new HashMap<>();
+    public static final long IDENTIFIER_SET = 0x100000000L;
+    public static final long SET = 0xFFFFFFFFL;
+
+    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    protected PceService pceService;
 
     @Override
     public void init(PceId pceId, PcepVersion pcepVersion, PcepPacketStats pktStats) {
@@ -154,6 +179,11 @@ public class PcepClientImpl implements PcepClientDriver {
     @Override
     public Channel getChannel() {
         return this.channel;
+    }
+
+    @Override
+    public PceService getPceService() {
+        return this.pceService;
     }
 
     @Override
@@ -292,6 +322,158 @@ public class PcepClientImpl implements PcepClientDriver {
         List<PcepStateReport> rptMsgList = sycRptCache.get(pceId);
         rptMsgList.add(rptMsg);
         sycRptCache.put(pceId, rptMsgList);
+    }
+
+    @Override
+    public PcepReportMsg buildPCRptMsg(PcePathReport reportInfo, boolean synchFlag) {
+        PcepSrpObject srpObj = null;
+        PcepValueType tlv;
+        LinkedList<PcepValueType> llSubObjects;
+        byte operState = 0;
+
+        LinkedList<PcepStateReport> llPcRptList = new LinkedList<>();
+        PcepStateReport.Builder stateRptBldr = this.factory().buildPcepStateReport();
+        LinkedList<PcepValueType> llOptionalTlv = new LinkedList<PcepValueType>();
+
+        // build srp object if srpid exists
+        Integer srpId = 0;
+        if ((srpId = PcepSrpIdMap.getSrpId(reportInfo.pathName().getBytes())) != 0) {
+            // build SRP object
+            try {
+                srpObj = this.factory().buildSrpObject().setSrpID(srpId).setRFlag(reportInfo.isRemoved()).build();
+            } catch (PcepParseException e) {
+                e.printStackTrace();
+            }
+        }
+
+        //build LSP object
+        tlv = new StatefulIPv4LspIdentifiersTlv(reportInfo.ingress().getIp4Address().toInt(),
+                                                Short.parseShort(reportInfo.localLspId()),
+                                                Short.parseShort(reportInfo.pceTunnelId()),
+                                                reportInfo.ingress().getIp4Address().toInt(),
+                                                reportInfo.egress().getIp4Address().toInt());
+        llOptionalTlv.add(tlv);
+
+        //set SymbolicPathNameTlv of LSP object
+        tlv = new SymbolicPathNameTlv(reportInfo.pathName().getBytes());
+        llOptionalTlv.add(tlv);
+
+        PcepLspObject.Builder lspObjBldr = this.factory().buildLspObject();
+        lspObjBldr.setAFlag((reportInfo.adminState() == PcePathReport.State.UP));
+        lspObjBldr.setPlspId(Integer.parseInt(reportInfo.plspId()))
+                .setRFlag(reportInfo.isRemoved()).setDFlag(reportInfo.isDelegate())
+                .setSFlag(synchFlag)
+                .setOptionalTlv(llOptionalTlv);
+        if (reportInfo.state() == PcePathReport.State.UP) {
+            operState = 1;
+        }
+        lspObjBldr.setOFlag(operState);
+
+
+        //build ERO object
+        llSubObjects = createPcepPath(reportInfo.eroPath());
+        PcepEroObject eroObj = this.factory().buildEroObject().setSubObjects(llSubObjects).build();
+
+        //build Attribute
+        PcepAttribute pcepAttr = null;
+
+        if (reportInfo.xroPath() != null) {
+            llSubObjects = createPcepPath(reportInfo.xroPath());
+
+            //build XRO object
+            PcepXroObject xroObj = this.factory().buildXroObject().setSubObjects(llSubObjects).build();
+
+            pcepAttr = this.factory().buildPcepAttribute().setXroObject(xroObj).build();
+        }
+
+        //build RRO object
+        PcepRroObject rroObj = null;
+
+        if (reportInfo.rroPath() != null) {
+            llSubObjects = createPcepPath(reportInfo.rroPath());
+            rroObj = this.factory().buildRroObject().setSubObjects(llSubObjects).build();
+        }
+
+        // set all the objects in state report
+        if (srpObj != null) {
+            stateRptBldr.setSrpObject(srpObj);
+        }
+
+        stateRptBldr.setLspObject(lspObjBldr.build());
+        stateRptBldr.setEroObject(eroObj);
+
+        if (pcepAttr != null) {
+            stateRptBldr.setPcepAttribute(pcepAttr);
+        }
+
+        if (rroObj != null) {
+            stateRptBldr.setRroObject(rroObj);
+        }
+
+        try {
+            llPcRptList.add(stateRptBldr.build());
+        } catch (PcepParseException e) {
+            e.printStackTrace();
+        }
+
+        //build PCRpt message
+        return this.factory().buildReportMsg().setStateReportList(llPcRptList).build();
+    }
+
+    @Override
+    public PcepReportMsg buildLspSyncEndMsg() {
+        LinkedList<PcepStateReport> llPcRptList = new LinkedList<>();
+        PcepStateReport.Builder stateRptBldr = this.factory().buildPcepStateReport();
+
+        //build LSP object
+        PcepLspObject lspObj = this.factory().buildLspObject().setPlspId(0).setSFlag(false).build();
+
+        //build empty ERO object
+        PcepEroObject eroObj = this.factory().buildEroObject().build();
+
+        stateRptBldr.setLspObject(lspObj);
+        stateRptBldr.setEroObject(eroObj);
+
+        try {
+            llPcRptList.add(stateRptBldr.build());
+        } catch (PcepParseException e) {
+            e.printStackTrace();
+        }
+
+        //build PCRpt message
+        return this.factory().buildReportMsg().setStateReportList(llPcRptList).build();
+    }
+
+    public LinkedList<PcepValueType> createPcepPath(Path path) {
+        LinkedList<PcepValueType> llSubObjects = new LinkedList<PcepValueType>();
+        List<Link> listLink = path.links();
+        ConnectPoint source = null;
+        ConnectPoint destination = null;
+        IpAddress ipDstAddress = null;
+        IpAddress ipSrcAddress = null;
+        PcepValueType subObj = null;
+        long portNo;
+
+        for (Link link : listLink) {
+            source = link.src();
+            if (!(source.equals(destination))) {
+                //set IPv4SubObject for ERO object
+                portNo = source.port().toLong();
+                portNo = ((portNo & IDENTIFIER_SET) == IDENTIFIER_SET) ? portNo & SET : portNo;
+                ipSrcAddress = Ip4Address.valueOf((int) portNo);
+                subObj = new IPv4SubObject(ipSrcAddress.getIp4Address().toInt());
+                llSubObjects.add(subObj);
+            }
+
+            destination = link.dst();
+            portNo = destination.port().toLong();
+            portNo = ((portNo & IDENTIFIER_SET) == IDENTIFIER_SET) ? portNo & SET : portNo;
+            ipDstAddress = Ip4Address.valueOf((int) portNo);
+            subObj = new IPv4SubObject(ipDstAddress.getIp4Address().toInt());
+            llSubObjects.add(subObj);
+        }
+
+        return llSubObjects;
     }
 
     @Override

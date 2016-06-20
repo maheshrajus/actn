@@ -154,4 +154,6 @@ public interface PceService {
      * @param default lspType lsp type
      */
     void setdefaultLspType(LspType lspType);
+
+    List<PcePathReport> queryAllInitiateTunnels();
 }

@@ -28,6 +28,8 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.concurrent.RejectedExecutionException;
 
+import org.apache.felix.scr.annotations.Reference;
+import org.apache.felix.scr.annotations.ReferenceCardinality;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
@@ -43,6 +45,9 @@ import org.onosproject.pcc.pccmgr.api.ClientCapability;
 import org.onosproject.pcc.pccmgr.api.PceId;
 import org.onosproject.pcc.pccmgr.api.PcepClientDriver;
 import org.onosproject.pcc.pccmgr.api.PcepPeerCfg;
+import org.onosproject.pcc.pccmgr.api.PcepSyncStatus;
+import org.onosproject.pce.pceservice.api.PcePathReport;
+import org.onosproject.pce.pceservice.api.PceService;
 import org.onosproject.pcep.pcepio.exceptions.PcepParseException;
 
 import org.onosproject.pcep.pcepio.protocol.PcepError;
@@ -53,6 +58,7 @@ import org.onosproject.pcep.pcepio.protocol.PcepFactory;
 import org.onosproject.pcep.pcepio.protocol.PcepMessage;
 import org.onosproject.pcep.pcepio.protocol.PcepOpenMsg;
 import org.onosproject.pcep.pcepio.protocol.PcepOpenObject;
+import org.onosproject.pcep.pcepio.protocol.PcepReportMsg;
 import org.onosproject.pcep.pcepio.protocol.PcepType;
 import org.onosproject.pcep.pcepio.protocol.PcepVersion;
 import org.onosproject.pcep.pcepio.types.DomainIdTlv;
@@ -264,6 +270,7 @@ class PcepChannelHandler extends IdleStateAwareChannelHandler {
                 log.info("Message received in established state " + m.getType());
                 //dispatch the message
                 h.dispatchMessage(m);
+                syncLspDb(h.pc);
             }
         };
         private boolean handshakeComplete;
@@ -272,6 +279,30 @@ class PcepChannelHandler extends IdleStateAwareChannelHandler {
             this.handshakeComplete = handshakeComplete;
         }
 
+        void syncLspDb(PcepClientDriver pc) {
+            PcePathReport tunnel = null;
+            PcepReportMsg pcRptMsg = null;
+
+            pc.setLspDbSyncStatus(PcepSyncStatus.IN_SYNC);
+
+            List<PcePathReport> llPceInitLspList = pc.getPceService().queryAllInitiateTunnels();
+
+            for (int i = 0; i < llPceInitLspList.size(); i++) {
+                tunnel = llPceInitLspList.get(i);
+                pcRptMsg = pc.buildPCRptMsg(tunnel, true);
+                pc.sendMessage(Collections.singletonList(pcRptMsg));
+            }
+
+            sendLspDbSyncEnd(pc);
+        }
+
+        void sendLspDbSyncEnd(PcepClientDriver pc){
+
+            PcepReportMsg pcSyncEndMsg = pc.buildLspSyncEndMsg();
+            pc.sendMessage(Collections.singletonList(pcSyncEndMsg));
+
+            pc.setLspDbSyncStatus(PcepSyncStatus.SYNCED);
+        }
         void processPcepMessage(PcepChannelHandler h, PcepMessage m) throws IOException, PcepParseException {
             // do nothing
         }
