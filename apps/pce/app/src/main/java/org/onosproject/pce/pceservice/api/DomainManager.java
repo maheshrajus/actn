@@ -25,7 +25,7 @@ import java.util.Set;
 public interface DomainManager {
 
     /**
-     * Creates new path based on constraints and LSP type.
+     * Returns domain specific paths.
      *
      */
     Set<Path> getDomainSpecificPaths();
