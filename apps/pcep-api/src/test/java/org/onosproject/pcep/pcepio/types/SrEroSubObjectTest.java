@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.onosproject.pcepio.types;
+package org.onosproject.pcep.pcepio.types;
 
 import com.google.common.testing.EqualsTester;
+
 import org.junit.Test;
 import org.onosproject.pcep.pcepio.protocol.PcepNai;
-import org.onosproject.pcep.pcepio.types.SrEroSubObject;
 
 public class SrEroSubObjectTest {
 

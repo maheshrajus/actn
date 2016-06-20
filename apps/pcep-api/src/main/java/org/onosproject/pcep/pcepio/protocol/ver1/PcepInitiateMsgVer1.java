@@ -180,49 +180,59 @@ class PcepInitiateMsgVer1 implements PcepInitiateMsg {
 
                     log.info("Parsing Ero object");
 
-                    cb.markReaderIndex();
-                    PcepObjectHeader tempObjHeader = PcepObjectHeader.read(cb);
-                    //cb.resetReaderIndex();
+                    if (cb.readableBytes() > MINIMUM_COMMON_HEADER_LENGTH) {
+                        cb.markReaderIndex();
+                        PcepObjectHeader tempObjHeader = PcepObjectHeader
+                                .read(cb);
+                        // cb.resetReaderIndex();
 
-                    //store Association object
-                    llAssociationList = new LinkedList<>();
-                    PcepAssociationObject associationObj;
-                    byte yObjClass = tempObjHeader.getObjClass();
-                    byte yObjType = tempObjHeader.getObjType();
+                        // store Association object
+                        llAssociationList = new LinkedList<>();
+                        PcepAssociationObject associationObj;
+                        byte yObjClass = tempObjHeader.getObjClass();
+                        byte yObjType = tempObjHeader.getObjType();
 
-                    boolean resetIndex = true;
+                        boolean resetIndex = true;
 
-                    while ((yObjClass == PcepAssociationObjectVer1.ASSOCIATION_OBJ_CLASS)
-                            && (yObjType == PcepAssociationObjectVer1.ASSOCIATION_OBJ_TYPE)) {
+                        while ((yObjClass == PcepAssociationObjectVer1.ASSOCIATION_OBJ_CLASS)
+                                && (yObjType == PcepAssociationObjectVer1.ASSOCIATION_OBJ_TYPE)) {
 
-                        resetIndex = false;
+                            resetIndex = false;
 
-                        cb.resetReaderIndex();
-                        associationObj = PcepAssociationObjectVer1.read(cb);
-                        llAssociationList.add(associationObj);
+                            cb.resetReaderIndex();
+                            associationObj = PcepAssociationObjectVer1.read(cb);
+                            llAssociationList.add(associationObj);
 
-                        yObjClass = 0;
-                        yObjType = 0;
+                            yObjClass = 0;
+                            yObjType = 0;
 
-                        if (cb.readableBytes() > OBJECT_HEADER_LENGTH) {
-                            resetIndex = true;
-                            cb.markReaderIndex();
-                            tempObjHeader = PcepObjectHeader.read(cb);
-                            //cb.resetReaderIndex();
-                            yObjClass = tempObjHeader.getObjClass();
-                            yObjType = tempObjHeader.getObjType();
+                            if (cb.readableBytes() > OBJECT_HEADER_LENGTH) {
+                                resetIndex = true;
+                                cb.markReaderIndex();
+                                tempObjHeader = PcepObjectHeader.read(cb);
+                                // cb.resetReaderIndex();
+                                yObjClass = tempObjHeader.getObjClass();
+                                yObjType = tempObjHeader.getObjType();
+                            }
+                            PcepValueType tlv = associationObj.getOptionalTlv()
+                                    .getFirst();
+                            VirtualNetworkTlv vnTlv = (VirtualNetworkTlv) tlv;
+                            log.info("Parsing Association Object, Type: "
+                                    + associationObj.getAssociationType()
+                                    + ", ID: "
+                                    + associationObj.getAssociationID()
+                                    + ", Source: "
+                                    + Ip4Address.valueOf(associationObj
+                                            .getAssociationSource())
+                                    + ", VnTlv: "
+                                    + new String(vnTlv.getValue()));
                         }
-                        PcepValueType tlv = associationObj.getOptionalTlv().getFirst();
-                        VirtualNetworkTlv vnTlv = (VirtualNetworkTlv) tlv;
-                        log.info("Parsing Association Object, Type: " + associationObj.getAssociationType()
-                                         + ", ID: " + associationObj.getAssociationID()
-                                         + ", Source: " + Ip4Address.valueOf(associationObj.getAssociationSource())
-                                         + ", VnTlv: " + new String(vnTlv.getValue()));
-                    }
 
-                    pceInitLspReq.setAssociationObjectList(llAssociationList);
-                    if (resetIndex) {
-                        cb.resetReaderIndex();
+                        pceInitLspReq
+                                .setAssociationObjectList(llAssociationList);
+                        if (resetIndex) {
+                            cb.resetReaderIndex();
+                        }
                     }
 
                     if (cb.readableBytes() > MINIMUM_COMMON_HEADER_LENGTH) {

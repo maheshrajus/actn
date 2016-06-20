@@ -119,6 +119,7 @@ import com.google.common.collect.ImmutableSet;
 import static org.onosproject.incubator.net.tunnel.Tunnel.Type.MPLS;
 import static org.onosproject.incubator.net.tunnel.Tunnel.State.INIT;
 import static org.onosproject.incubator.net.tunnel.Tunnel.State.ESTABLISHED;
+import static org.onosproject.incubator.net.tunnel.Tunnel.State.ACTIVE;
 import static org.onosproject.incubator.net.tunnel.Tunnel.State.UNSTABLE;
 import static org.onosproject.pce.pceservice.LspType.WITH_SIGNALLING;
 import static org.onosproject.pce.pceservice.LspType.SR_WITHOUT_SIGNALLING;
@@ -746,6 +747,39 @@ public class PceManager implements PceService {
             return true;
         }
         return false;
+    }
+    @Override
+    public List<PcePathReport> queryAllInitiateTunnels() {
+
+        List<PcePathReport> pcePathList = new LinkedList<PcePathReport>();
+        Collection<Tunnel> tunnels = tunnelService.queryTunnel(MPLS);
+        PcePathReport.State state = null;
+        for (Tunnel tunnel : tunnels) {
+            if (tunnel.annotations().value(VN_NAME) != null) {
+                if ((tunnel.state() == ESTABLISHED) || (tunnel.state() == ACTIVE)) {
+                    state = PcePathReport.State.UP;
+                } else {
+                    state = PcePathReport.State.DOWN;
+                }
+
+                PcePathReport pcePath = DefaultPcePathReport.builder()
+                        .pathName(tunnel.tunnelName().toString())
+                        .plspId(tunnel.annotations().value(PcepAnnotationKeys.PLSP_ID))
+                        .localLspId(tunnel.annotations().value(PcepAnnotationKeys.LOCAL_LSP_ID))
+                        .pceTunnelId(tunnel.tunnelId().toString())
+                        .isDelegate(Boolean.parseBoolean(tunnel.annotations().value(DELEGATE)))
+                        .state(state)
+                        .ingress(((IpTunnelEndPoint) tunnel.src()).ip())
+                        .egress(((IpTunnelEndPoint) tunnel.dst()).ip())
+                        .eroPath(tunnel.path())
+                        .rroPath(tunnel.path())
+                        .build();
+
+                pcePathList.add(pcePath);
+            }
+        }
+        return pcePathList;
+
     }
 
     /**

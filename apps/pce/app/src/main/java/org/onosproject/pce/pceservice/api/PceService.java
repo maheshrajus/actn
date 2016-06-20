@@ -163,5 +163,9 @@ public interface PceService {
      */
     boolean pceBandwidthAvailable(Link link, Double bandwidth);
 
+    /**
+     * Returns the tunnels which are initiated.
+     * @return list of PcePathReport if tunnels exist otherwise empty list.
+     */
     List<PcePathReport> queryAllInitiateTunnels();
 }

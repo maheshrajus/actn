@@ -13,17 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.onosproject.pcepio.protocol;
+package org.onosproject.pcep.pcepio.protocol;
 
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.junit.Test;
 import org.onosproject.pcep.pcepio.exceptions.PcepOutOfBoundMessageException;
 import org.onosproject.pcep.pcepio.exceptions.PcepParseException;
-import org.onosproject.pcep.pcepio.protocol.PcepFactories;
-import org.onosproject.pcep.pcepio.protocol.PcepMessage;
-import org.onosproject.pcep.pcepio.protocol.PcepMessageReader;
-import org.onosproject.pcep.pcepio.protocol.PcepReportMsg;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;

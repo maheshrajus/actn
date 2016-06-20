@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.onosproject.pcepio.types;
+package org.onosproject.pcep.pcepio.types;
 
 import com.google.common.testing.EqualsTester;
 import org.junit.Test;
