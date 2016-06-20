@@ -185,6 +185,9 @@ public class PcePathResourceTest extends PceResourceTest {
         expect(pceService.queryAllPath())
                          .andReturn(null)
                          .anyTimes();
+        expect(pceService.defaultLspType())
+                         .andReturn(null)
+                         .anyTimes();
         replay(pceService);
         WebTarget wt = target();
         String response = wt.path("path").request().get(String.class);

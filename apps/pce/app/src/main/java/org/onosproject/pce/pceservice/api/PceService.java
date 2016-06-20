@@ -151,7 +151,7 @@ public interface PceService {
     /**
      * Sets default LSP type.
      *
-     * @param default lspType lsp type
+     * @param lspType lspType lsp type
      */
     void setdefaultLspType(LspType lspType);
 
