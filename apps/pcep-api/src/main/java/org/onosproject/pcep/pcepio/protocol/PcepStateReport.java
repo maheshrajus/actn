@@ -197,6 +197,29 @@ public interface PcepStateReport {
         Builder setLspObject(PcepLspObject lspObject);
 
         /**
+         * Sets the LSP Object.
+         *
+         * @param eroObject Pcep Lsp Object
+         * @return builder by setting PcepLspObject
+         */
+        Builder setEroObject(PcepEroObject eroObject);
+
+        /**
+         * Sets the LSP Object.
+         *
+         * @param rroObject Pcep Lsp Object
+         * @return builder by setting PcepLspObject
+         */
+        Builder setRroObject(PcepRroObject rroObject);
+
+        /**
+         * Sets PcepAttribute.
+         *
+         * @param pcepAttribute Pcep Attribute object
+         */
+        Builder setPcepAttribute(PcepAttribute pcepAttribute);
+
+        /**
          * Sets the Path Object.
          *
          * @param msgPath Pcep MsgPath object

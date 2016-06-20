@@ -85,6 +85,7 @@ import org.onosproject.pcep.controller.PcepLspSyncAction;
 import org.onosproject.pcep.controller.SrpIdGenerators;
 import org.onosproject.pcep.pcepio.exceptions.PcepParseException;
 import org.onosproject.pcep.pcepio.protocol.PcInitiatedLspRequest;
+import org.onosproject.pcep.pcepio.protocol.PcepAssociationObject;
 import org.onosproject.pcep.pcepio.protocol.PcepAttribute;
 import org.onosproject.pcep.pcepio.protocol.PcepBandwidthObject;
 import org.onosproject.pcep.pcepio.protocol.PcepEndPointsObject;
@@ -104,6 +105,7 @@ import org.onosproject.pcep.pcepio.types.PathSetupTypeTlv;
 import org.onosproject.pcep.pcepio.types.PcepValueType;
 import org.onosproject.pcep.pcepio.types.StatefulIPv4LspIdentifiersTlv;
 import org.onosproject.pcep.pcepio.types.SymbolicPathNameTlv;
+import org.onosproject.pcep.pcepio.types.VirtualNetworkTlv;
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Modified;
 import org.slf4j.Logger;
@@ -952,10 +954,31 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
         // build pcep attribute
         PcepAttribute pcepAttribute = pc.factory().buildPcepAttribute().setBandwidthObject(bandwidthObject).build();
 
-        PcInitiatedLspRequest initiateLspRequest = pc.factory().buildPcInitiatedLspRequest().setSrpObject(srpobj)
+        PcInitiatedLspRequest.Builder initiateLspReqBldr = pc.factory().buildPcInitiatedLspRequest().setSrpObject(srpobj)
                 .setLspObject(lspobj).setEndPointsObject(endpointsobj).setEroObject(eroobj)
-                .setPcepAttribute(pcepAttribute).build();
-        llPcInitiatedLspRequestList.add(initiateLspRequest);
+                .setPcepAttribute(pcepAttribute);
+
+        // build association object
+        // TODO : need to check whether VN association exists or not
+        if (true) {
+            LinkedList<PcepAssociationObject> llAssociationObj = new LinkedList<PcepAssociationObject>();
+            llOptionalTlv = new LinkedList<PcepValueType>();
+
+            String vn = "virtual-network"; //TODO : need to get vn name from tunnel
+            VirtualNetworkTlv vnTlv = new VirtualNetworkTlv(vn.getBytes());
+
+            llOptionalTlv.add(vnTlv);
+
+            // TODO : need to set vn Association Type, ID, Source may need to get from tunnel
+            PcepAssociationObject associationObj = pc.factory().buildAssociationObject().setAssociationID((short) 1)
+                    .setAssociationSource(0x01010101).setAssociationType((short) 1)
+                    .setOptionalTlv(llOptionalTlv).build();
+            llAssociationObj.add(associationObj);
+
+            initiateLspReqBldr.setAssociationObjectList(llAssociationObj);
+        }
+
+        llPcInitiatedLspRequestList.add(initiateLspReqBldr.build());
         return llPcInitiatedLspRequestList;
     }
 

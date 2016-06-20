@@ -283,6 +283,12 @@ public class PcepStateReportVer1 implements PcepStateReport {
     //PcepMsgPath
     private PcepStateReport.PcepMsgPath msgPath;
 
+    //PCEP ERO Object
+    private PcepEroObject eroObject;
+    //PCEP RRO Object
+    private PcepRroObject rroObject;
+    //PCEP Attribute
+    private PcepAttribute pcepAttr;
     /**
      * Constructor to reset objects.
      */
@@ -290,12 +296,18 @@ public class PcepStateReportVer1 implements PcepStateReport {
         this.srpObject = null;
         this.lspObject = null;
         this.msgPath = null;
+        this.eroObject = null;
+        this.rroObject = null;
+        this.pcepAttr = null;
     }
 
-    public PcepStateReportVer1(PcepSrpObject srpObject, PcepLspObject lspObject, PcepStateReport.PcepMsgPath msgPath) {
+    public PcepStateReportVer1(PcepSrpObject srpObject, PcepLspObject lspObject, PcepEroObject eroObject,
+                               PcepRroObject rroObject, PcepAttribute pcepAttribute) {
         this.srpObject = srpObject;
         this.lspObject = lspObject;
-        this.msgPath = msgPath;
+        this.eroObject = eroObject;
+        this.rroObject = rroObject;
+        this.pcepAttr = pcepAttribute;
     }
 
     @Override
@@ -336,6 +348,9 @@ public class PcepStateReportVer1 implements PcepStateReport {
         private boolean bIsSrpObjectSet = false;
         private boolean bIsLspObjectSet = false;
         private boolean bIsPcepMsgPathSet = false;
+        private boolean bIsEroObjectSet = false;
+        private boolean bIsRroObjectSet = false;
+        private boolean bIsPcepAttrSet = false;
 
         //PCEP SRP Object
         private PcepSrpObject srpObject;
@@ -343,6 +358,13 @@ public class PcepStateReportVer1 implements PcepStateReport {
         private PcepLspObject lspObject;
         //PCEP Attribute list
         private PcepStateReport.PcepMsgPath msgPath;
+
+        //PCEP ERO Object
+        private PcepEroObject eroObject;
+        //PCEP RRO Object
+        private PcepRroObject rroObject;
+        //PCEP Attribute
+        private PcepAttribute pcepAttr;
 
         @Override
         public PcepStateReport build() throws PcepParseException {
@@ -353,6 +375,12 @@ public class PcepStateReportVer1 implements PcepStateReport {
             PcepLspObject lspObject = null;
             //PCEP Attribute list
             PcepStateReport.PcepMsgPath msgPath = null;
+            //PCEP ERO Object
+            PcepEroObject eroObject = null;
+            //PCEP RRO Object
+            PcepRroObject rroObject = null;
+            //PCEP Attribute
+            PcepAttribute pcepAttr = null;
 
             if (this.bIsSrpObjectSet) {
                 srpObject = this.srpObject;
@@ -363,13 +391,28 @@ public class PcepStateReportVer1 implements PcepStateReport {
             } else {
                 lspObject = this.lspObject;
             }
+
+            if (!this.bIsEroObjectSet) {
+                throw new PcepParseException(" ERO Object NOT Set while building PcepStateReport.");
+            } else {
+                eroObject = this.eroObject;
+            }
+
+            if (this.bIsRroObjectSet) {
+                rroObject = this.rroObject;
+            }
+
+            if (this.bIsPcepAttrSet) {
+                pcepAttr = this.pcepAttr;
+            }
+
             if (!this.bIsPcepMsgPathSet) {
-                throw new PcepParseException(" Message Path NOT Set while building PcepStateReport.");
+                //throw new PcepParseException(" Message Path NOT Set while building PcepStateReport.");
             } else {
                 msgPath = this.msgPath;
             }
 
-            return new PcepStateReportVer1(srpObject, lspObject, msgPath);
+            return new PcepStateReportVer1(srpObject, lspObject, eroObject, rroObject, pcepAttr);
         }
 
         @Override
@@ -398,6 +441,27 @@ public class PcepStateReportVer1 implements PcepStateReport {
         public Builder setLspObject(PcepLspObject lspObject) {
             this.lspObject = lspObject;
             this.bIsLspObjectSet = true;
+            return this;
+        }
+
+        @Override
+        public PcepStateReport.Builder setEroObject(PcepEroObject eroObject) {
+            this.eroObject = eroObject;
+            this.bIsEroObjectSet = true;
+            return this;
+        }
+
+        @Override
+        public PcepStateReport.Builder setRroObject(PcepRroObject rroObject) {
+            this.rroObject = rroObject;
+            this.bIsRroObjectSet = true;
+            return this;
+        }
+
+        @Override
+        public PcepStateReport.Builder setPcepAttribute(PcepAttribute pcepAttribute) {
+            this.pcepAttr = pcepAttribute;
+            this.bIsPcepAttrSet = true;
             return this;
         }
 

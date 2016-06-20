@@ -197,7 +197,7 @@ public class PcepAssociationObjectVer1 implements PcepAssociationObject {
         ChannelBuffer tempCb = cb.readBytes(associationObjHeader.getObjLen() - MINIMUM_COMMON_HEADER_LENGTH);
         reserved = tempCb.readShort();
         flags = tempCb.readShort();
-        bRFlag = 0 < (flags & 0x1); // TODO : need to check again
+        bRFlag = ((flags & 0x1) != 0);
 
         associationType = tempCb.readShort();
         associationID = tempCb.readShort();

@@ -38,6 +38,8 @@ import org.onosproject.pcc.pccmgr.api.PcepEventListener;
 import org.onosproject.pcc.pccmgr.api.PcepNodeListener;
 import org.onosproject.pcc.pccmgr.api.PcepPacketListener;
 import org.onosproject.pcc.pccmgr.api.PcepSyncStatus;
+import org.onosproject.pce.pceservice.api.PcePathUpdateListener;
+import org.onosproject.pce.pceservice.api.PceService;
 import org.onosproject.pcep.pcepio.exceptions.PcepParseException;
 import org.onosproject.pcep.pcepio.protocol.PcInitiatedLspRequest;
 import org.onosproject.pcep.pcepio.protocol.PcepError;
@@ -100,6 +102,11 @@ public class PcepClientControllerImpl implements PcepClientController {
     protected Set<PcepNodeListener> pcepNodeListener = Sets.newHashSet();
     protected Set<PcepPacketListener> pcepPacketListener = Sets.newHashSet();
 
+    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    protected PceService pceService;
+
+    private PcePathUpdateListener pcePathListener = new InnerPcePathUpdateListener();
+
     private final Controller ctrl = new Controller();
 
     public static final String BANDWIDTH = "bandwidth";
@@ -117,6 +124,8 @@ public class PcepClientControllerImpl implements PcepClientController {
     @Activate
     public void activate() {
         ctrl.start(agent);
+        pceService.addListener(pcePathListener);
+
         log.info("Started");
     }
 
@@ -419,6 +428,11 @@ public class PcepClientControllerImpl implements PcepClientController {
 
         @Override
         public PcepClientDriver getConnectedClient(PceId pceId) {
+            Iterator<ConcurrentHashMap.Entry<PceId, PcepClient>> iterator = connectedClients.entrySet().iterator();
+            if (iterator.hasNext()) {
+                return (PcepClientDriver) iterator.next();
+            }
+
             return (PcepClientDriver) connectedClients.get(pceId);
         }
 

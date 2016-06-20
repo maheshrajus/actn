@@ -26,6 +26,7 @@ import org.onosproject.pcep.pcepio.protocol.PcepBandwidthObject;
 import org.onosproject.pcep.pcepio.protocol.PcepIroObject;
 import org.onosproject.pcep.pcepio.protocol.PcepLspaObject;
 import org.onosproject.pcep.pcepio.protocol.PcepMetricObject;
+import org.onosproject.pcep.pcepio.protocol.PcepXroObject;
 import org.onosproject.pcep.pcepio.types.PcepObjectHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,6 +67,10 @@ public class PcepAttributeVer1 implements PcepAttribute {
     private PcepIroObject iroObject;
     private boolean isIroObjectSet;
 
+    //PCEP XRO object
+    private PcepXroObject xroObject;
+    private boolean isXroObjectSet;
+
     /**
      * Default constructor to initialize member variables.
      */
@@ -79,6 +84,7 @@ public class PcepAttributeVer1 implements PcepAttribute {
         this.isBandwidthObjectSet = false;
         this.isMetricListSet = false;
         this.isIroObjectSet = false;
+        this.isXroObjectSet = false;
     }
 
     /**
@@ -116,6 +122,11 @@ public class PcepAttributeVer1 implements PcepAttribute {
         } else {
             this.isIroObjectSet = true;
         }
+        if (xroObject == null) {
+            this.isXroObjectSet = false;
+        } else {
+            this.isXroObjectSet = true;
+        }
     }
 
     /**
@@ -132,6 +143,7 @@ public class PcepAttributeVer1 implements PcepAttribute {
         this.isMetricListSet = false;
 
         this.isIroObjectSet = false;
+        this.isXroObjectSet = false;
     }
 
     /**
@@ -221,6 +233,11 @@ public class PcepAttributeVer1 implements PcepAttribute {
             pcepAttribute.setIroObject(PcepIroObjectVer1.read(cb));
         }
 
+        //If XRO present then store it.XRO is optional
+        if (yObjClass == PcepXroObjectVer1.XRO_OBJ_CLASS) {
+            pcepAttribute.setXroObject(PcepXroObjectVer1.read(cb));
+        }
+
         PcepLspaObject lspaObject = pcepAttribute.getLspaObject();
         PcepBandwidthObject bandwidthObject = pcepAttribute.getBandwidthObject();
         LinkedList<PcepMetricObject> metriclist = pcepAttribute.llMetricList;
@@ -270,6 +287,12 @@ public class PcepAttributeVer1 implements PcepAttribute {
         if (this.isIroObjectSet) {
             this.iroObject.write(cb);
         }
+
+        //PCEP  XRO object is optional
+        if (this.isXroObjectSet) {
+            this.xroObject.write(cb);
+        }
+
         return cb.writerIndex() - iLenStartIndex;
     }
 
@@ -318,6 +341,12 @@ public class PcepAttributeVer1 implements PcepAttribute {
         this.iroObject = iroObject;
     }
 
+    @Override
+    public void setXroObject(PcepXroObject xroObject) {
+        this.isXroObjectSet = true;
+        this.xroObject = xroObject;
+    }
+
     /**
      * Builder class for PCEP attributes.
      */
@@ -338,6 +367,10 @@ public class PcepAttributeVer1 implements PcepAttribute {
         //PCEP IRO object
         private PcepIroObject iroObject;
         private boolean isIroObjectSet;
+
+        //PCEP XRO object
+        private PcepXroObject xroObject;
+        private boolean isXroObjectSet;
 
         @Override
         public PcepAttribute build() {
@@ -390,6 +423,11 @@ public class PcepAttributeVer1 implements PcepAttribute {
         }
 
         @Override
+        public PcepXroObject getXroObject() {
+            return this.xroObject;
+        }
+
+        @Override
         public Builder setBandwidthObject(PcepBandwidthObject bandwidthObject) {
             this.isBandwidthObjectSet = true;
             this.bandwidthObject = bandwidthObject;
@@ -416,6 +454,13 @@ public class PcepAttributeVer1 implements PcepAttribute {
             this.iroObject = iroObject;
             return this;
         }
+
+        @Override
+        public PcepAttribute.Builder setXroObject(PcepXroObject xroObject) {
+            this.isXroObjectSet = true;
+            this.xroObject = xroObject;
+            return this;
+        }
     }
 
     @Override
@@ -426,6 +471,7 @@ public class PcepAttributeVer1 implements PcepAttribute {
                 .add("bandwidthObject", bandwidthObject)
                 .add("MetricObjectList", llMetricList)
                 .add("IroObject", iroObject)
+                .add("XroObject", xroObject)
                 .toString();
     }
 }

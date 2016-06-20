@@ -78,6 +78,13 @@ public interface PcepAttribute {
     void setIroObject(PcepIroObject iroObject);
 
     /**
+     * Sets the PcepxroObject.
+     *
+     * @param xroObject iro object
+     */
+    void setXroObject(PcepXroObject xroObject);
+
+    /**
      * Returns PcepMetricObject List.
      *
      * @return list of metric objects
@@ -125,6 +132,13 @@ public interface PcepAttribute {
         PcepIroObject getIroObject();
 
         /**
+         * Returns PcepXroObject.
+         *
+         * @return xroObject
+         */
+        PcepXroObject getXroObject();
+
+        /**
          * Sets the PcepBandwidthObject.
          *
          * @param bandwidthObject bandwidth object
@@ -147,6 +161,14 @@ public interface PcepAttribute {
          * @return Builder object for PcepAttrubute
          */
         Builder setIroObject(PcepIroObject iroObject);
+
+        /**
+         * Sets the PcepXroObject.
+         *
+         * @param xroObject iro object
+         * @return Builder object for PcepAttrubute
+         */
+        Builder setXroObject(PcepXroObject xroObject);
 
         /**
          * Returns PcepMetricObject List.
