@@ -21,11 +21,13 @@ import org.onosproject.incubator.net.resource.label.LabelResourceId;
 import org.onosproject.incubator.net.tunnel.TunnelId;
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.Link;
-import org.onosproject.net.resource.ResourceConsumer;
+import org.onosproject.net.LinkKey;
 import org.onosproject.pce.pcestore.PceccTunnelInfo;
 import org.onosproject.pce.pcestore.PcePathInfo;
+import org.onosproject.store.service.Versioned;
 
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Abstraction of an entity providing pool of available labels to devices, links and tunnels.
@@ -185,15 +187,6 @@ public interface PceStore {
     boolean updateTunnelInfo(TunnelId tunnelId, List<LspLocalLabelInfo> lspLocalLabelInfoList);
 
     /**
-     * Updates tunnel info map with tunnel consumer id.
-     *
-     * @param tunnelId tunnel id
-     * @param tunnelConsumerId tunnel consumer id
-     * @return success or failure
-     */
-    boolean updateTunnelInfo(TunnelId tunnelId, ResourceConsumer tunnelConsumerId);
-
-    /**
      * Removes device label from global node label store for specified device id.
      *
      * @param id device id
@@ -249,4 +242,55 @@ public interface PceStore {
      * @return device id of the lsrId
      */
     DeviceId getLsrIdDevice(String lsrId);
+
+    /**
+     * Add unreserved bandwidth to linkKey mapping.
+     *
+     * @param linkkey link key of the link
+     * @param bandwidth set of unreserved bandwidth
+     * @return success or failure
+     */
+    boolean addUnreservedBw(LinkKey linkkey, Set<Double> bandwidth);
+
+    /**
+     * Remove unreserved bandwidth to linkKey mapping.
+     *
+     * @param linkkey link key of the link
+     * @return success or failure
+     */
+    boolean removeUnreservedBw(LinkKey linkkey);
+
+    /**
+     * Get list of unreserved Bandwidth of the link.
+     *
+     * @param linkkey link key of the link
+     * @return Set of unreserved bandwidth
+     */
+    Set<Double> getUnreservedBw(LinkKey linkkey);
+
+    /**
+     * Allocate local bandwidth(non rsvp-te) to linkKey mapping.
+     *
+     * @param linkkey link key of the link
+     * @param bandwidth requested local bandwidth
+     * @return success or failure
+     */
+    boolean allocLocalReservedBw(LinkKey linkkey, Double bandwidth);
+
+    /**
+     * Release local bandwidth(non rsvp-te) to linkKey mapping.
+     *
+     * @param linkkey link key of the link
+     * @param bandwidth releasing local bandwidth
+     * @return success or failure
+     */
+    boolean releaseLocalReservedBw(LinkKey linkkey, Double bandwidth);
+
+    /**
+     * Get local allocated bandwidth of the link.
+     *
+     * @param linkkey link key of the link
+     * @return allocated bandwidth
+     */
+    Versioned<Double> getAllocatedLocalReservedBw(LinkKey linkkey);
 }

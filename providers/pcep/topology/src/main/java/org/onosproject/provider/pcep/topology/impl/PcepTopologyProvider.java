@@ -327,7 +327,7 @@ public class PcepTopologyProvider extends AbstractProvider
 
         @Override
         public void addDevicePcepConfig(PcepClient pc) {
-            if (netConfigRegistry == null) {
+            if (netConfigService == null) {
                 log.error("Cannot add PCEP device capability as network config service is not available.");
                 return;
             }
@@ -341,7 +341,7 @@ public class PcepTopologyProvider extends AbstractProvider
 
         @Override
         public void deleteDevicePcepConfig(PccId pccId) {
-            if (netConfigRegistry == null) {
+            if (netConfigService == null) {
                 log.error("Cannot remove PCEP device capability as network config service is not available.");
                 return;
             }

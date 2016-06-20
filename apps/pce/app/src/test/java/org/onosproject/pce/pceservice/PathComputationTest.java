@@ -130,7 +130,6 @@ public class PathComputationTest {
 
     @Before
     public void startUp() {
-        pceManager.resourceService = resourceService;
         pceManager.deviceService = deviceService;
         pceManager.netCfgService = netConfigRegistry;
     }
@@ -172,7 +171,6 @@ public class PathComputationTest {
 
     @After
     public void tearDown() {
-        pceManager.resourceService = null;
         pceManager.deviceService = null;
         pceManager.netCfgService = null;
     }

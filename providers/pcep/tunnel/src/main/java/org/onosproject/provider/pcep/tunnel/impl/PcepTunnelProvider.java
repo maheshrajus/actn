@@ -954,7 +954,8 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
         // build pcep attribute
         PcepAttribute pcepAttribute = pc.factory().buildPcepAttribute().setBandwidthObject(bandwidthObject).build();
 
-        PcInitiatedLspRequest.Builder initiateLspReqBldr = pc.factory().buildPcInitiatedLspRequest().setSrpObject(srpobj)
+        PcInitiatedLspRequest.Builder initiateLspReqBldr = pc.factory().buildPcInitiatedLspRequest()
+                .setSrpObject(srpobj)
                 .setLspObject(lspobj).setEndPointsObject(endpointsobj).setEroObject(eroobj)
                 .setPcepAttribute(pcepAttribute);
 

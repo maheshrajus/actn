@@ -168,7 +168,6 @@ public class PceManagerTest {
     public void startUp() throws TestUtilsException {
         listener = TestUtils.getField(pceManager, "topologyListener");
         pceManager.pathService = pathService;
-        pceManager.resourceService = resourceService;
         pceManager.topologyService = topologyService;
         pceManager.tunnelService = tunnelService;
         pceManager.coreService = coreService;
@@ -1358,7 +1357,6 @@ public class PceManagerTest {
     public void tearDown() {
         pceManager.deactivate();
         pceManager.pathService = null;
-        pceManager.resourceService = null;
         pceManager.tunnelService = null;
         pceManager.coreService = null;
         pceManager.storageService = null;

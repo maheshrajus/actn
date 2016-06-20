@@ -320,11 +320,8 @@ public final class BasicPceccHandler {
               labelRsrcService.releaseToDevicePool(release);
            }
 
-           // Remove tunnel info only if tunnel consumer id is not saved.
-           // If tunnel consumer id is saved, this tunnel info will be removed during releasing bandwidth.
-           if (pceccTunnelInfo.tunnelConsumerId() == null) {
-               pceStore.removeTunnelInfo(tunnel.tunnelId());
-           }
+           pceStore.removeTunnelInfo(tunnel.tunnelId());
+
        } else {
            log.error("Unable to find PCECC tunnel info in store for a tunnel {}.", tunnel.toString());
        }

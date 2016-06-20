@@ -140,7 +140,7 @@ public class DistributedPceStoreTest {
                .build();
        lspLocalLabelInfoList1.add(lspLocalLabel1);
 
-       pceccTunnelInfo1 = new PceccTunnelInfo(lspLocalLabelInfoList1, tunnelConsumerId1);
+       pceccTunnelInfo1 = new PceccTunnelInfo(lspLocalLabelInfoList1);
 
        // Create pceccTunnelInfo2
        List<LspLocalLabelInfo> lspLocalLabelInfoList2 = new LinkedList<>();
@@ -157,7 +157,7 @@ public class DistributedPceStoreTest {
                .build();
        lspLocalLabelInfoList2.add(lspLocalLabel2);
 
-       pceccTunnelInfo2 = new PceccTunnelInfo(lspLocalLabelInfoList2, tunnelConsumerId2);
+       pceccTunnelInfo2 = new PceccTunnelInfo(lspLocalLabelInfoList2);
 
        // Creates failedPathInfo1
        DeviceId src1 = DeviceId.deviceId("foo1");
@@ -491,7 +491,7 @@ public class DistributedPceStoreTest {
                .build();
         lspLocalLabelInfoList3.add(lspLocalLabel3);
 
-        PceccTunnelInfo pceccTunnelInfo3 = new PceccTunnelInfo(lspLocalLabelInfoList3, tunnelConsumerId3);
+        PceccTunnelInfo pceccTunnelInfo3 = new PceccTunnelInfo(lspLocalLabelInfoList3);
 
         // Create pceccTunnelInfo4
         List<LspLocalLabelInfo> lspLocalLabelInfoList4 = new LinkedList<>();
@@ -508,15 +508,15 @@ public class DistributedPceStoreTest {
                .build();
         lspLocalLabelInfoList4.add(lspLocalLabel4);
 
-        PceccTunnelInfo pceccTunnelInfo4 = new PceccTunnelInfo(lspLocalLabelInfoList4, tunnelConsumerId4);
+        PceccTunnelInfo pceccTunnelInfo4 = new PceccTunnelInfo(lspLocalLabelInfoList4);
 
         // update only lspLocalLabelInfoList
         assertThat(distrPceStore.updateTunnelInfo(tunnelId1, lspLocalLabelInfoList3), is(true));
         assertThat(distrPceStore.updateTunnelInfo(tunnelId2, lspLocalLabelInfoList4), is(true));
 
         // update only tunnelConsumerId
-        assertThat(distrPceStore.updateTunnelInfo(tunnelId1, tunnelConsumerId3), is(true));
-        assertThat(distrPceStore.updateTunnelInfo(tunnelId2, tunnelConsumerId4), is(true));
+        //assertThat(distrPceStore.updateTunnelInfo(tunnelId1, tunnelConsumerId3), is(true));
+        //assertThat(distrPceStore.updateTunnelInfo(tunnelId2, tunnelConsumerId4), is(true));
 
         assertThat(distrPceStore.getTunnelInfo(tunnelId1), is(pceccTunnelInfo3));
         assertThat(distrPceStore.getTunnelInfo(tunnelId2), is(pceccTunnelInfo4));

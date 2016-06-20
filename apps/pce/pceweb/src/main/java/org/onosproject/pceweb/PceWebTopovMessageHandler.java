@@ -409,7 +409,7 @@ public class PceWebTopovMessageHandler extends UiMessageHandler {
      * @param bandWidth bandWidth
      * @param bandWidthType is the kbps or mbps
      * @param costType is igp or te
-     * @param tunnelName tunnel id
+     * @param tunnelIdStr tunnel id
      */
     private void findAndSendPathsUpdate(String bandWidth, String bandWidthType, String costType, String tunnelIdStr) {
         if (tunnelIdStr != null) {
@@ -440,7 +440,7 @@ public class PceWebTopovMessageHandler extends UiMessageHandler {
     /**
      * Handles the remove path and highlights the paths if existed.
      *
-     * @param tunnelIdName tunnelId
+     * @param tunnelIdStr tunnelId
      */
     private void findAndSendPathsRemove(String tunnelIdStr) {
         if (tunnelIdStr != null) {
@@ -470,7 +470,6 @@ public class PceWebTopovMessageHandler extends UiMessageHandler {
      * @param bandWidth bandWidth
      * @param bandWidthType is the kbps or mbps
      * @param costType is igp or te
-     * @param listConstrnt list of constraints
      * @return
      */
     private List<Constraint> addBandwidthCostTypeConstraints(String bandWidth,

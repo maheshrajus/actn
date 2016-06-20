@@ -29,11 +29,12 @@ import org.onosproject.incubator.net.resource.label.LabelResourceId;
 import org.onosproject.incubator.net.tunnel.TunnelId;
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.Link;
-import org.onosproject.net.resource.ResourceConsumer;
+import org.onosproject.net.LinkKey;
 import org.onosproject.pce.pcestore.PceccTunnelInfo;
 import org.onosproject.pce.pcestore.PcePathInfo;
 import org.onosproject.pce.pcestore.api.LspLocalLabelInfo;
 import org.onosproject.pce.pcestore.api.PceStore;
+import org.onosproject.store.service.Versioned;
 
 /**
  * Provides test implementation of PceStore.
@@ -163,18 +164,6 @@ public class PceStoreAdapter implements PceStore {
     }
 
     @Override
-    public boolean updateTunnelInfo(TunnelId tunnelId, ResourceConsumer tunnelConsumerId) {
-        if (!tunnelInfoMap.containsKey((tunnelId))) {
-            return false;
-        }
-
-        PceccTunnelInfo tunnelInfo = tunnelInfoMap.get(tunnelId);
-        tunnelInfo.tunnelConsumerId(tunnelConsumerId);
-        tunnelInfoMap.put(tunnelId, tunnelInfo);
-        return true;
-    }
-
-    @Override
     public boolean removeGlobalNodeLabel(DeviceId id) {
         globalNodeLabelMap.remove(id);
         if (globalNodeLabelMap.containsKey(id)) {
@@ -222,6 +211,37 @@ public class PceStoreAdapter implements PceStore {
 
     @Override
     public DeviceId getLsrIdDevice(String lsrId) {
+        return null;
+    }
+
+
+    @Override
+    public boolean addUnreservedBw(LinkKey linkkey, Set<Double> bandwidth) {
+        return true;
+    }
+
+    @Override
+    public boolean removeUnreservedBw(LinkKey linkkey) {
+        return true;
+    }
+
+    @Override
+    public Set<Double> getUnreservedBw(LinkKey linkkey) {
+        return null;
+    }
+
+    @Override
+    public boolean allocLocalReservedBw(LinkKey linkkey, Double bandwidth) {
+        return true;
+    }
+
+    @Override
+    public boolean releaseLocalReservedBw(LinkKey linkkey, Double bandwidth) {
+        return true;
+    }
+
+    @Override
+    public Versioned<Double> getAllocatedLocalReservedBw(LinkKey linkkey) {
         return null;
     }
 }

@@ -61,10 +61,10 @@ public class PceccTunnelInfoTest {
                 .build();
         lspLocalLabelList1.add(lspLocalLabel1);
 
-        PceccTunnelInfo pceccTunnelInfo1 = new PceccTunnelInfo(lspLocalLabelList1, tunnelConsumerId1);
+        PceccTunnelInfo pceccTunnelInfo1 = new PceccTunnelInfo(lspLocalLabelList1);
 
         // create same as above object
-        PceccTunnelInfo samePceccTunnelInfo1 = new PceccTunnelInfo(lspLocalLabelList1, tunnelConsumerId1);
+        PceccTunnelInfo samePceccTunnelInfo1 = new PceccTunnelInfo(lspLocalLabelList1);
 
         // Create different object.
         List<LspLocalLabelInfo> lspLocalLabelInfoList2 = new LinkedList<>();
@@ -86,7 +86,7 @@ public class PceccTunnelInfoTest {
                 .build();
         lspLocalLabelInfoList2.add(lspLocalLabel2);
 
-        PceccTunnelInfo pceccTunnelInfo2 = new PceccTunnelInfo(lspLocalLabelInfoList2, tunnelConsumerId2);
+        PceccTunnelInfo pceccTunnelInfo2 = new PceccTunnelInfo(lspLocalLabelInfoList2);
 
         new EqualsTester().addEqualityGroup(pceccTunnelInfo1, samePceccTunnelInfo1)
                           .addEqualityGroup(pceccTunnelInfo2)
@@ -117,7 +117,7 @@ public class PceccTunnelInfoTest {
                 .build();
         lspLocalLabelInfoList.add(lspLocalLabelInfo);
 
-        PceccTunnelInfo pceccTunnelInfo = new PceccTunnelInfo(lspLocalLabelInfoList, tunnelConsumerId);
+        PceccTunnelInfo pceccTunnelInfo = new PceccTunnelInfo(lspLocalLabelInfoList);
 
         assertThat(lspLocalLabelInfoList, is(pceccTunnelInfo.lspLocalLabelInfoList()));
     }

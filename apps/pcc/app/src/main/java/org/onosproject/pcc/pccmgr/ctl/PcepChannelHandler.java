@@ -28,8 +28,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.concurrent.RejectedExecutionException;
 
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
@@ -47,7 +45,6 @@ import org.onosproject.pcc.pccmgr.api.PcepClientDriver;
 import org.onosproject.pcc.pccmgr.api.PcepPeerCfg;
 import org.onosproject.pcc.pccmgr.api.PcepSyncStatus;
 import org.onosproject.pce.pceservice.api.PcePathReport;
-import org.onosproject.pce.pceservice.api.PceService;
 import org.onosproject.pcep.pcepio.exceptions.PcepParseException;
 
 import org.onosproject.pcep.pcepio.protocol.PcepError;
@@ -296,13 +293,14 @@ class PcepChannelHandler extends IdleStateAwareChannelHandler {
             sendLspDbSyncEnd(pc);
         }
 
-        void sendLspDbSyncEnd(PcepClientDriver pc){
+        void sendLspDbSyncEnd(PcepClientDriver pc) {
 
             PcepReportMsg pcSyncEndMsg = pc.buildLspSyncEndMsg();
             pc.sendMessage(Collections.singletonList(pcSyncEndMsg));
 
             pc.setLspDbSyncStatus(PcepSyncStatus.SYNCED);
         }
+
         void processPcepMessage(PcepChannelHandler h, PcepMessage m) throws IOException, PcepParseException {
             // do nothing
         }

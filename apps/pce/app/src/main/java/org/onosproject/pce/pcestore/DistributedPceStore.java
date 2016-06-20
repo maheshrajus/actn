@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.felix.scr.annotations.Activate;
@@ -35,22 +36,22 @@ import org.onlab.util.KryoNamespace;
 import org.onosproject.incubator.net.tunnel.TunnelId;
 import org.onosproject.incubator.net.resource.label.LabelResource;
 import org.onosproject.incubator.net.resource.label.LabelResourceId;
+import org.onosproject.net.LinkKey;
 import org.onosproject.net.intent.constraint.BandwidthConstraint;
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.Link;
-import org.onosproject.net.resource.ResourceConsumer;
 import org.onosproject.pce.pceservice.constraint.CapabilityConstraint;
 import org.onosproject.pce.pceservice.constraint.CostConstraint;
-import org.onosproject.pce.pceservice.TunnelConsumerId;
 import org.onosproject.pce.pceservice.LspType;
 import org.onosproject.pce.pcestore.api.LspLocalLabelInfo;
 import org.onosproject.pce.pcestore.api.PceStore;
 import org.onosproject.store.serializers.KryoNamespaces;
+
 import org.onosproject.store.service.ConsistentMap;
 import org.onosproject.store.service.DistributedSet;
 import org.onosproject.store.service.Serializer;
 import org.onosproject.store.service.StorageService;
-
+import org.onosproject.store.service.Versioned;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -90,8 +91,14 @@ public class DistributedPceStore implements PceStore {
     // List of Failed path info
     private DistributedSet<PcePathInfo> failedPathSet;
 
+    // Mapping tunnel with link key with local reserved bandwidth
+    private ConsistentMap<LinkKey, Double> localReservedBw;
+
     // Locally maintain LSRID to device id mapping for better performance.
     private Map<String, DeviceId> lsrIdDeviceIdMap = new HashMap<>();
+
+    // Locally maintain unreserved bandwidth of each link.
+    private Map<LinkKey, Set<Double>> unResvBw = new HashMap<>();
 
     @Activate
     protected void activate() {
@@ -123,7 +130,6 @@ public class DistributedPceStore implements PceStore {
                                 .register(TunnelId.class,
                                           PceccTunnelInfo.class,
                                           DefaultLspLocalLabelInfo.class,
-                                          TunnelConsumerId.class,
                                           LabelResourceId.class)
                                 .build()))
                 .build();
@@ -144,6 +150,15 @@ public class DistributedPceStore implements PceStore {
 
                 .build()
                 .asDistributedSet();
+
+        localReservedBw = storageService.<LinkKey, Double>consistentMapBuilder()
+                .withName("onos-pce-localResrvBw")
+                .withSerializer(Serializer.using(
+                        new KryoNamespace.Builder()
+                                .register(KryoNamespaces.API)
+                                .register(LinkKey.class)
+                                .build()))
+                .build();
 
         log.info("Started");
     }
@@ -286,23 +301,6 @@ public class DistributedPceStore implements PceStore {
     }
 
     @Override
-    public boolean updateTunnelInfo(TunnelId tunnelId, ResourceConsumer tunnelConsumerId) {
-        checkNotNull(tunnelId, TUNNEL_ID_NULL);
-        checkNotNull(tunnelConsumerId, TUNNEL_CONSUMER_ID_NULL);
-
-        if (!tunnelInfoMap.containsKey((tunnelId))) {
-            log.debug("Tunnel info does not exist whose tunnel id is {}.", tunnelId.toString());
-            return false;
-        }
-
-        PceccTunnelInfo tunnelInfo = tunnelInfoMap.get(tunnelId).value();
-        tunnelInfo.tunnelConsumerId(tunnelConsumerId);
-        tunnelInfoMap.put(tunnelId, tunnelInfo);
-
-        return true;
-    }
-
-    @Override
     public boolean removeGlobalNodeLabel(DeviceId id) {
         checkNotNull(id, DEVICE_ID_NULL);
 
@@ -369,5 +367,64 @@ public class DistributedPceStore implements PceStore {
 
         return lsrIdDeviceIdMap.get(lsrId);
 
+    }
+
+    @Override
+    public boolean addUnreservedBw(LinkKey linkkey, Set<Double> bandwidth) {
+        checkNotNull(linkkey);
+        checkNotNull(bandwidth);
+        unResvBw.put(linkkey, bandwidth);
+        return true;
+    }
+
+    @Override
+    public boolean removeUnreservedBw(LinkKey linkkey) {
+        checkNotNull(linkkey);
+        unResvBw.remove(linkkey);
+        return true;
+    }
+
+    @Override
+    public Set<Double> getUnreservedBw(LinkKey linkkey) {
+        checkNotNull(linkkey);
+        return unResvBw.get(linkkey);
+    }
+
+    @Override
+    public boolean allocLocalReservedBw(LinkKey linkkey, Double bandwidth) {
+        checkNotNull(linkkey);
+        checkNotNull(bandwidth);
+        Versioned<Double> allocatedBw = localReservedBw.get(linkkey);
+        if (allocatedBw != null) {
+            localReservedBw.put(linkkey, (allocatedBw.value() + bandwidth));
+        } else {
+            localReservedBw.put(linkkey, bandwidth);
+        }
+
+        return true;
+    }
+
+    @Override
+    public boolean releaseLocalReservedBw(LinkKey linkkey, Double bandwidth) {
+        checkNotNull(linkkey);
+        checkNotNull(bandwidth);
+        Versioned<Double> allocatedBw = localReservedBw.get(linkkey);
+        if (allocatedBw.value() < bandwidth) {
+            return false;
+        }
+
+        Double releasedBw = allocatedBw.value() - bandwidth;
+        if (releasedBw == 0.0) {
+            localReservedBw.remove(linkkey);
+        } else {
+            localReservedBw.put(linkkey, releasedBw);
+        }
+        return true;
+    }
+
+    @Override
+    public Versioned<Double> getAllocatedLocalReservedBw(LinkKey linkkey) {
+        checkNotNull(linkkey);
+        return localReservedBw.get(linkkey);
     }
 }

@@ -20,6 +20,7 @@ import java.util.Set;
 
 import org.onlab.packet.IpAddress;
 import org.onosproject.net.DeviceId;
+import org.onosproject.net.Link;
 import org.onosproject.net.Path;
 import org.onosproject.net.intent.Constraint;
 import org.onosproject.pce.pceservice.LspType;
@@ -154,6 +155,13 @@ public interface PceService {
      * @param lspType lspType lsp type
      */
     void setdefaultLspType(LspType lspType);
+
+    /**
+     * Returns if the link has the available bandwidth or not.
+     *
+     * @return true if bandwidth is available else false
+     */
+    boolean pceBandwidthAvailable(Link link, Double bandwidth);
 
     List<PcePathReport> queryAllInitiateTunnels();
 }

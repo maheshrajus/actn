@@ -336,8 +336,8 @@ public class PcepClientImpl implements PcepClientDriver {
         LinkedList<PcepValueType> llOptionalTlv = new LinkedList<PcepValueType>();
 
         // build srp object if srpid exists
-        Integer srpId = 0;
-        if ((srpId = PcepSrpIdMap.getSrpId(reportInfo.pathName().getBytes())) != 0) {
+        Integer srpId = PcepSrpIdMap.getSrpId(reportInfo.pathName().getBytes());
+        if (srpId  != 0) {
             // build SRP object
             try {
                 srpObj = this.factory().buildSrpObject().setSrpID(srpId).setRFlag(reportInfo.isRemoved()).build();
