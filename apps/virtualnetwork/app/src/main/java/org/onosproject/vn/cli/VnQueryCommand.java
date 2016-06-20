@@ -43,7 +43,7 @@ public class VnQueryCommand extends AbstractShellCommand {
 
         VnService service = get(VnService.class);
         if (null == vnName) {
-            Iterable<Tunnel> vnTunnels = service.queryAllTunnels();
+            Iterable<Tunnel> vnTunnels = service.queryAllVnTunnels();
             if (vnTunnels != null) {
                 /*for (final VirtualNetworkInfo vn : virtualNetworks) {
                     display(vn);

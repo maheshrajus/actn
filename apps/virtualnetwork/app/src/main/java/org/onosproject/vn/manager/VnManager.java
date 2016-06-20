@@ -229,7 +229,7 @@ public class VnManager implements VnService {
     }
 
     @Override
-    public Iterable<Tunnel> queryAllTunnels() {
+    public Iterable<Tunnel> queryAllVnTunnels() {
         Map<String, VirtualNetworkInfo> vnMap = vnStore.queryAllVn();
         List<Tunnel> allTunnels = new LinkedList<>();
         Iterable<Tunnel> tunnels;

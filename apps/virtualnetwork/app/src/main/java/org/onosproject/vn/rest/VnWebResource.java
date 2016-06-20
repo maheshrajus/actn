@@ -70,7 +70,7 @@ public class VnWebResource extends AbstractWebResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response queryAllVn() {
         log.debug("Query all VN.");
-        Iterable<Tunnel> vnTunnels = get(VnService.class).queryAllTunnels();
+        Iterable<Tunnel> vnTunnels = get(VnService.class).queryAllVnTunnels();
         ObjectNode result = mapper().createObjectNode();
         ArrayNode pathEntry = result.putArray("vn");
         if (vnTunnels != null) {

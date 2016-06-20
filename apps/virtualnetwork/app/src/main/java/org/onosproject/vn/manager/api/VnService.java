@@ -93,7 +93,7 @@ public interface VnService {
      *
      * @return tunnels if exists, otherwise empty list
      */
-    Iterable<Tunnel> queryAllTunnels();
+    Iterable<Tunnel> queryAllVnTunnels();
 
     /**
      * Queries all tunnels in a virtual network.
