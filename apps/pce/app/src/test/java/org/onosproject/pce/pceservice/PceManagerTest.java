@@ -133,13 +133,13 @@ public class PceManagerTest {
     private MockTopologyService topologyService = new MockTopologyService();
     private MockMastershipService mastershipService = new MockMastershipService();
     private MockPathService pathService = new MockPathService();
+    private MockNetConfigRegistryAdapter netConfigRegistry = new PathComputationTest.MockNetConfigRegistryAdapter();
     private PceManager pceManager = new PceManager();
     private MockCoreService coreService = new MockCoreService();
     private MockTunnelServiceAdapter tunnelService = new MockTunnelServiceAdapter();
     private TestStorageService storageService = new TestStorageService();
     private PacketService packetService = new MockPacketService();
     private MockDeviceService deviceService = new MockDeviceService();
-    private MockNetConfigRegistryAdapter netConfigRegistry = new PathComputationTest.MockNetConfigRegistryAdapter();
     private MockLinkService linkService = new MockLinkService();
     private MockFlowObjService flowObjectiveService = new MockFlowObjService();
     private PceStore pceStore = new PceStoreAdapter();
@@ -176,6 +176,7 @@ public class PceManagerTest {
         pceManager.deviceService = deviceService;
         pceManager.linkService = linkService;
         pceManager.netCfgService = netConfigRegistry;
+        pceManager.netConfigRegistry = netConfigRegistry;
         pceManager.labelRsrcAdminService = labelRsrcAdminService;
         pceManager.labelRsrcService = labelResourceService;
         pceManager.flowObjectiveService = flowObjectiveService;
