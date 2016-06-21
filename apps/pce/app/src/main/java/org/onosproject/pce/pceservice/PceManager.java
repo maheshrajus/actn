@@ -86,6 +86,7 @@ import org.onosproject.net.intent.constraint.BandwidthConstraint;
 import org.onosproject.net.link.LinkListener;
 import org.onosproject.net.link.LinkEvent;
 import org.onosproject.net.link.LinkService;
+import org.onosproject.pce.pceservice.api.DefaultPcePathReport;
 import org.onosproject.pce.pceservice.api.PcePathReport;
 import org.onosproject.pce.pceservice.api.PcePathUpdateListener;
 import org.onosproject.pce.pceservice.constraint.CapabilityConstraint;
@@ -262,11 +263,6 @@ public class PceManager implements PceService {
     @Override
     public void setdefaultLspType(LspType defaultLspType) {
         this.defaultLspType = defaultLspType;
-    }
-
-    @Override
-    public List<PcePathReport> queryAllInitiateTunnels() {
-        return null;
     }
 
     @Activate
@@ -748,6 +744,7 @@ public class PceManager implements PceService {
         }
         return false;
     }
+
     @Override
     public List<PcePathReport> queryAllInitiateTunnels() {
 
