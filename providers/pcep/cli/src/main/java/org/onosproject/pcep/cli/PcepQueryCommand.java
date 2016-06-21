@@ -33,7 +33,7 @@ import java.util.TreeMap;
 /**
  * Lists ISIS neighbors, database and interfaces details.
  */
-@Command(scope = "onos", name = "Pcep-Query", description = "Query PCEP LSP type and Domain map info")
+@Command(scope = "onos", name = "Pcep-DomainMap-Query", description = "Query PCEP Domain map info")
 public class PcepQueryCommand extends AbstractShellCommand {
     private static final Logger log = LoggerFactory.getLogger(PcepQueryCommand.class);
 
@@ -55,15 +55,6 @@ public class PcepQueryCommand extends AbstractShellCommand {
         String lspType = null;
         PcepClientController pcepClientController = get(PcepClientController.class);
         PcepCfg pcepCfg = pcepClientController.getConfig();
-        if (pcepCfg.lspType() == 1) {
-            lspType = "SR";
-        } else if (pcepCfg.lspType() == 2) {
-            lspType = "CR";
-        } else if (pcepCfg.lspType() == 3) {
-            lspType = "RSVP-TE";
-        }
-        print("LSP Type          : %s", lspType);
-        print("Domain Map        :");
 
         TreeMap<Integer, PcepCfgData> domainMap =  pcepCfg.pcepDomainMap();
 
@@ -73,6 +64,10 @@ public class PcepQueryCommand extends AbstractShellCommand {
 
             // Get an iterator
             Iterator it = set.iterator();
+
+            if (it.hasNext()) {
+                print("Domain Map        :");
+            }
 
             // Display elements
             while (it.hasNext()) {

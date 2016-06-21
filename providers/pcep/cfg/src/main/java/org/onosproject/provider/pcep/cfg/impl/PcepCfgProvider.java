@@ -137,7 +137,7 @@ public class PcepCfgProvider extends AbstractProvider {
     }
 
     /**
-     * Read the configuration and update it to the BGP-LS south bound protocol.
+     * Read the configuration and update it to the PCEP south bound protocol.
      */
     private void updateConfiguration() {
         PcepCfg pcepConfig = null;
@@ -208,6 +208,32 @@ public class PcepCfgProvider extends AbstractProvider {
     }
 
     /**
+     * Read the configuration and update it to the PCEP south bound protocol.
+     */
+    private void deleteConfiguration() {
+        PcepCfg pcepConfig = pcepController.getConfig();
+        List<PcepAppConfig.PcepConfig> nodes;
+        TreeMap<Integer, PcepCfgData> pcepTree;
+        PcepAppConfig config = configRegistry.getConfig(appId, PcepAppConfig.class);
+
+        if (config == null) {
+            log.warn("No configuration found");
+            return;
+        }
+
+        /* update the peer configuration */
+        pcepTree = pcepConfig.pcepDomainMap();
+        if (pcepTree.isEmpty()) {
+            log.info("There are no PCEP peers to iterate");
+        } else {
+            nodes = config.pcepDomainMap();
+            for (int j = 0; j < nodes.size(); j++) {
+                pcepConfig.deleteConfig(nodes.get(j).asNumber());
+            }
+        }
+    }
+
+    /**
      * PCEP config listener to populate the configuration.
      */
     private class InternalConfigListener implements NetworkConfigListener {
@@ -226,6 +252,8 @@ public class PcepCfgProvider extends AbstractProvider {
                     updateConfiguration();
                     break;
                 case CONFIG_REMOVED:
+                    deleteConfiguration();
+                    break;
                 default:
                     break;
             }

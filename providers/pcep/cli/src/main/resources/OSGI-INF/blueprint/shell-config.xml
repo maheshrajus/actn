@@ -23,6 +23,9 @@
             <action class="org.onosproject.pcep.cli.PcepDomainMapCommand"/>
         </command>
         <command>
+            <action class="org.onosproject.pcep.cli.PcepDomainMapDeleteCommand"/>
+        </command>
+        <command>
             <action class="org.onosproject.pcep.cli.PcepQueryCommand"/>
         </command>
         <command>

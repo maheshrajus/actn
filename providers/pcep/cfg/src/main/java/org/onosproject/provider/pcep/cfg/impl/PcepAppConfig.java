@@ -51,7 +51,7 @@ public class PcepAppConfig extends Config<ApplicationId> {
         this.pcepController = DefaultServiceDirectory.getService(PcepClientController.class);
         pcepConfig = pcepController.getConfig();
 
-        fields = hasOnlyFields(LSP_TYPE, PCEP_DOMAIN_MAP);
+        fields = hasOnlyFields(PCEP_DOMAIN_MAP);
 
         if (!fields) {
             return fields;
@@ -97,9 +97,9 @@ public class PcepAppConfig extends Config<ApplicationId> {
         if (!validatePcepDomain()) {
             return false;
         }
-        if (!validateLspType()) {
+        /*if (!validateLspType()) {
             return false;
-        }
+        }*/
         return true;
     }
 
