@@ -347,7 +347,10 @@ public class PceManager implements PceService {
 
         if (srcDevice == null || dstDevice == null) {
             // Device is not known.
-            pceStore.addFailedPathInfo(new PcePathInfo(src, dst, tunnelName, constraints, lspType));
+            if (vnName == null) {
+                pceStore.addFailedPathInfo(new PcePathInfo(src, dst, tunnelName, constraints, lspType));
+            }
+
             return false;
         }
 
@@ -357,7 +360,9 @@ public class PceManager implements PceService {
 
         if (srcLsrId == null || dstLsrId == null) {
             // LSR id is not known.
-            pceStore.addFailedPathInfo(new PcePathInfo(src, dst, tunnelName, constraints, lspType));
+            if (vnName == null) {
+                pceStore.addFailedPathInfo(new PcePathInfo(src, dst, tunnelName, constraints, lspType));
+            }
             return false;
         }
 
@@ -365,7 +370,9 @@ public class PceManager implements PceService {
         DeviceCapability cfg = netCfgService.getConfig(DeviceId.deviceId(srcLsrId), DeviceCapability.class);
         if (cfg == null) {
             log.debug("No session to ingress.");
-            pceStore.addFailedPathInfo(new PcePathInfo(src, dst, tunnelName, constraints, lspType));
+            if (vnName == null) {
+                pceStore.addFailedPathInfo(new PcePathInfo(src, dst, tunnelName, constraints, lspType));
+            }
             return false;
         }
 
@@ -406,7 +413,9 @@ public class PceManager implements PceService {
 
         // NO-PATH
         if (computedPathSet.isEmpty()) {
-            pceStore.addFailedPathInfo(new PcePathInfo(src, dst, tunnelName, constraints, lspType));
+            if (vnName == null) {
+                pceStore.addFailedPathInfo(new PcePathInfo(src, dst, tunnelName, constraints, lspType));
+            }
             return false;
         }
 
@@ -434,7 +443,9 @@ public class PceManager implements PceService {
             labelStack = srTeHandler.computeLabelStack(computedPath);
             // Failed to form a label stack.
             if (labelStack == null) {
-                pceStore.addFailedPathInfo(new PcePathInfo(src, dst, tunnelName, constraints, lspType));
+                if (vnName == null) {
+                    pceStore.addFailedPathInfo(new PcePathInfo(src, dst, tunnelName, constraints, lspType));
+                }
                 return false;
             }
         }
@@ -453,17 +464,21 @@ public class PceManager implements PceService {
                                           labelStack, annotationBuilder.build());
 
         // Allocate bandwidth.
-        if (bwConstraintValue != 0) {
+        if (bwConstraintValue != 0 && lspType != WITH_SIGNALLING) {
             if (!reserveBandwidth(computedPath, bwConstraintValue, null)) {
-                pceStore.addFailedPathInfo(new PcePathInfo(src, dst, tunnelName, constraints, lspType));
+                if (vnName == null) {
+                    pceStore.addFailedPathInfo(new PcePathInfo(src, dst, tunnelName, constraints, lspType));
+                }
                 return false;
             }
         }
 
         TunnelId tunnelId = tunnelService.setupTunnel(appId, src, tunnel, computedPath);
         if (tunnelId == null) {
-            pceStore.addFailedPathInfo(new PcePathInfo(src, dst, tunnelName, constraints, lspType));
-            if (bwConstraintValue != 0) {
+            if (vnName == null) {
+                pceStore.addFailedPathInfo(new PcePathInfo(src, dst, tunnelName, constraints, lspType));
+            }
+            if (bwConstraintValue != 0 && lspType != WITH_SIGNALLING) {
                 //resourceService.release(consumerId);
                 computedPath.links().forEach(ln -> pceStore.releaseLocalReservedBw(LinkKey.linkKey(ln),
                         Double.parseDouble(tunnel.annotations().value(BANDWIDTH))));
@@ -520,7 +535,20 @@ public class PceManager implements PceService {
         DeviceId srcDeviceId = pceStore.getLsrIdDevice(srcLsrId.toString());
         DeviceId dstDeviceId = pceStore.getLsrIdDevice(dstLsrId.toString());
 
-        return setupPath(vnName, srcDeviceId, dstDeviceId, tunnelName, constraints, lspType);
+        boolean result = setupPath(vnName, srcDeviceId, dstDeviceId, tunnelName, constraints, lspType);
+
+        if (!result) {
+
+            PcePathReport report = DefaultPcePathReport.builder()
+                    .pathName(tunnelName)
+                    .state(PcePathReport.State.DOWN)
+                    .ingress(srcLsrId)
+                    .egress(dstLsrId)
+                    .build();
+
+            pcePathUpdateListener.forEach(item -> item.updatePath(report));
+        }
+        return result;
     }
 
     @Override
@@ -644,7 +672,7 @@ public class PceManager implements PceService {
                                                  labelStack, annotationBuilder.build());
 
         // Allocate shared bandwidth.
-        if (bwConstraintValue != 0) {
+        if (bwConstraintValue != 0  && lspType != WITH_SIGNALLING) {
             if (!reserveBandwidth(computedPath, bwConstraintValue, shBwConstraint)) {
                 return false;
             }
@@ -653,7 +681,7 @@ public class PceManager implements PceService {
         TunnelId updatedTunnelId = tunnelService.setupTunnel(appId, links.get(0).src().deviceId(), updatedTunnel,
                                                              computedPath);
 
-        if (updatedTunnelId == null) {
+        if (updatedTunnelId == null && lspType != WITH_SIGNALLING) {
             if (bwConstraintValue != 0) {
                 //resourceService.release(consumerId);
                 releaseSharedBandwidth(updatedTunnel, tunnel);
@@ -667,15 +695,26 @@ public class PceManager implements PceService {
     @Override
     public boolean updatePath(String plspId, List<Constraint> constraints) {
         checkNotNull(plspId);
+        boolean result = false;
         Collection<Tunnel> tunnels = tunnelService.queryTunnel(MPLS);
         Optional<Tunnel> tunnel = tunnels.stream()
                 .filter(t -> t.annotations().value(PLSP_ID).equals(plspId))
                 .findFirst();
 
         if (tunnel.isPresent()) {
-            return updatePath(tunnel.get().tunnelId(), constraints);
+            result =  updatePath(tunnel.get().tunnelId(), constraints);
         }
-        return false;
+
+        if (!result) {
+
+            PcePathReport report = DefaultPcePathReport.builder()
+                    .state(PcePathReport.State.DOWN)
+                    .plspId(plspId)
+                    .build();
+
+            pcePathUpdateListener.forEach(item -> item.updatePath(report));
+        }
+        return result;
     }
 
     @Override
@@ -695,16 +734,26 @@ public class PceManager implements PceService {
     @Override
     public boolean releasePath(String plspId) {
         checkNotNull(plspId);
+        boolean result = false;
         Collection<Tunnel> tunnels = tunnelService.queryTunnel(MPLS);
         Optional<Tunnel> tunnel = tunnels.stream()
                 .filter(t -> t.annotations().value(PLSP_ID).equals(plspId))
                 .findFirst();
 
         if (tunnel.isPresent()) {
-            return tunnelService.downTunnel(appId, tunnel.get().tunnelId());
+            result =  tunnelService.downTunnel(appId, tunnel.get().tunnelId());
         }
 
-        return false;
+        if (!result) {
+
+            PcePathReport report = DefaultPcePathReport.builder()
+                    .state(PcePathReport.State.DOWN)
+                    .plspId(plspId)
+                    .build();
+
+            pcePathUpdateListener.forEach(item -> item.updatePath(report));
+        }
+        return result;
     }
 
     @Override
@@ -763,7 +812,7 @@ public class PceManager implements PceService {
                         .pathName(tunnel.tunnelName().toString())
                         .plspId(tunnel.annotations().value(PcepAnnotationKeys.PLSP_ID))
                         .localLspId(tunnel.annotations().value(PcepAnnotationKeys.LOCAL_LSP_ID))
-                        .pceTunnelId(tunnel.tunnelId().toString())
+                        .pceTunnelId(tunnel.annotations().value(PcepAnnotationKeys.PCC_TUNNEL_ID))
                         .isDelegate(Boolean.parseBoolean(tunnel.annotations().value(DELEGATE)))
                         .state(state)
                         .ingress(((IpTunnelEndPoint) tunnel.src()).ip())
@@ -777,6 +826,42 @@ public class PceManager implements PceService {
         }
         return pcePathList;
 
+    }
+
+    /**
+     * Send Tunnel update report to all listeners.
+     *
+     * @param tunnel tunnel information
+     * @param success whether to send success report or not
+     * @param remove whether to send remove tunnel or not
+     * @return none
+     */
+    private void reportTunnelToListeners(Tunnel tunnel, boolean success, boolean remove) {
+        PcePathReport.State state;
+
+        if (tunnel.annotations().value(VN_NAME) != null) {
+            if (success) {
+                state = PcePathReport.State.UP;
+            } else {
+                state = PcePathReport.State.DOWN;
+            }
+
+            PcePathReport report = DefaultPcePathReport.builder()
+                    .pathName(tunnel.tunnelName().toString())
+                    .plspId(tunnel.annotations().value(PcepAnnotationKeys.PLSP_ID))
+                    .localLspId(tunnel.annotations().value(PcepAnnotationKeys.LOCAL_LSP_ID))
+                    .pceTunnelId(tunnel.annotations().value(PcepAnnotationKeys.PCC_TUNNEL_ID))
+                    .isDelegate(Boolean.parseBoolean(tunnel.annotations().value(DELEGATE)))
+                    .state(state)
+                    .isRemoved(remove)
+                    .ingress(((IpTunnelEndPoint) tunnel.src()).ip())
+                    .egress(((IpTunnelEndPoint) tunnel.dst()).ip())
+                    .eroPath(tunnel.path())
+                    .rroPath(tunnel.path())
+                    .build();
+
+            pcePathUpdateListener.forEach(item -> item.updatePath(report));
+        }
     }
 
     /**
@@ -892,13 +977,18 @@ public class PceManager implements PceService {
              * and If tunnel is failed and computation fails nothing to do because tunnel status will be same[Failed]
              */
             if (!updatePath(tunnel.tunnelId(), constraintList) && !tunnel.state().equals(Tunnel.State.FAILED)) {
-                // If updation fails store in PCE store as failed path
-                // then PCInitiate (Remove)
-                pceStore.addFailedPathInfo(new PcePathInfo(tunnel.path().src().deviceId(), tunnel
-                        .path().dst().deviceId(), tunnel.tunnelName().value(), constraintList,
-                        LspType.valueOf(tunnel.annotations().value(LSP_SIG_TYPE))));
-                //Release that tunnel calling PCInitiate
-                releasePath(tunnel.tunnelId());
+
+                if (tunnel.annotations().value(VN_NAME) != null && tunnel.type() == MPLS) {
+                    reportTunnelToListeners(tunnel, false, false);
+                } else {
+                    // If updation fails store in PCE store as failed path
+                    // then PCInitiate (Remove)
+                    pceStore.addFailedPathInfo(new PcePathInfo(tunnel.path().src().deviceId(), tunnel
+                            .path().dst().deviceId(), tunnel.tunnelName().value(), constraintList,
+                            LspType.valueOf(tunnel.annotations().value(LSP_SIG_TYPE))));
+                    //Release that tunnel calling PCInitiate
+                    releasePath(tunnel.tunnelId());
+                }
             }
         }
 
@@ -1270,9 +1360,11 @@ public class PceManager implements PceService {
             case TUNNEL_ADDED:
                 // Allocate bandwidth for non-initiated, delegated LSPs with non-zero bandwidth (learned LSPs).
                 String pceInit = tunnel.annotations().value(PCE_INIT);
-                if (FALSE.equalsIgnoreCase(pceInit)
-                        && bwConstraintValue != 0) {
+                if (FALSE.equalsIgnoreCase(pceInit) && bwConstraintValue != 0 && lspType != WITH_SIGNALLING) {
                     reserveBandwidth(tunnel.path(), bwConstraintValue, null);
+                }
+                if (tunnel.state() == ESTABLISHED) {
+                    reportTunnelToListeners(tunnel, true, false);
                 }
                 break;
 
@@ -1313,6 +1405,11 @@ public class PceManager implements PceService {
                                                                   links.get(links.size() - 1).dst().deviceId(),
                                                                   tunnel.tunnelName().value(), constraints, lspType));
                 }
+
+                if (tunnel.state() == ESTABLISHED) {
+                    reportTunnelToListeners(tunnel, true, false);
+                }
+
                 break;
 
             case TUNNEL_REMOVED:
@@ -1322,17 +1419,22 @@ public class PceManager implements PceService {
 
                 // If not zero bandwidth, and delegated (initiated LSPs will also be delegated).
                 if (bwConstraintValue != 0) {
-                    releaseBandwidth(event.subject());
-
-                    // Release basic PCECC labels.
-                    if (lspType == WITHOUT_SIGNALLING_AND_WITHOUT_SR) {
-                        if (mastershipService.getLocalRole(tunnel.path().src().deviceId()) == MastershipRole.MASTER) {
-                            crHandler.releaseLabel(tunnel);
-                        }
-                    } else {
-                        pceStore.removeTunnelInfo(tunnel.tunnelId());
+                    if (lspType != WITH_SIGNALLING) {
+                        releaseBandwidth(event.subject());
                     }
                 }
+
+                // Release basic PCECC labels.
+                if (lspType == WITHOUT_SIGNALLING_AND_WITHOUT_SR) {
+                    if (mastershipService.getLocalRole(tunnel.path().src().deviceId()) == MastershipRole.MASTER) {
+                            crHandler.releaseLabel(tunnel);
+                    }
+                } else {
+                    pceStore.removeTunnelInfo(tunnel.tunnelId());
+                }
+
+                reportTunnelToListeners(tunnel, true, true);
+
                 break;
 
             default:
