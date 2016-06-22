@@ -143,6 +143,7 @@ import static org.onosproject.pcep.controller.PcepAnnotationKeys.PCE_INIT;
 import static org.onosproject.pcep.controller.PcepAnnotationKeys.PLSP_ID;
 import static org.onosproject.pcep.controller.PcepAnnotationKeys.DELEGATE;
 import static org.onosproject.pcep.controller.PcepAnnotationKeys.COST_TYPE;
+import static org.onosproject.pcep.controller.PcepAnnotationKeys.VN_NAME;
 import static org.onosproject.provider.pcep.tunnel.impl.RequestType.CREATE;
 import static org.onosproject.provider.pcep.tunnel.impl.RequestType.DELETE;
 import static org.onosproject.provider.pcep.tunnel.impl.RequestType.LSP_STATE_RPT;
@@ -965,7 +966,7 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
             LinkedList<PcepAssociationObject> llAssociationObj = new LinkedList<PcepAssociationObject>();
             llOptionalTlv = new LinkedList<PcepValueType>();
 
-            String vn = "virtual-network"; //TODO : need to get vn name from tunnel
+            String vn = tunnel.annotations().value(VN_NAME);
             VirtualNetworkTlv vnTlv = new VirtualNetworkTlv(vn.getBytes());
 
             llOptionalTlv.add(vnTlv);
