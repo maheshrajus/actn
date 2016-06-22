@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableSet;
 
 import org.onlab.osgi.ServiceDirectory;
+import org.onlab.util.Bandwidth;
 import org.onosproject.net.Annotations;
 import org.onosproject.net.Device;
 import org.onosproject.net.DeviceId;
@@ -37,18 +38,25 @@ import org.onosproject.ui.topo.LinkHighlight;
 import org.onosproject.ui.topo.Mod;
 import org.onosproject.ui.topo.NodeBadge;
 import org.onosproject.ui.topo.TopoUtils;
-//import org.onosproject.ui.topo.LinkHighlight.Flavor;
-import org.onosproject.ui.topo.NodeBadge.Status;
 import org.onosproject.ui.topo.TopoJson;
+import org.onosproject.vn.vnservice.api.VnService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import static org.onosproject.ui.topo.LinkHighlight.Flavor.*;
+
+
+
+//import org.onosproject.vn.manager.api.VnService;
+import org.onosproject.vn.vnservice.constraint.VnBandwidth;
+import org.onosproject.vn.vnservice.constraint.VnConstraint;
+import org.onosproject.vn.vnservice.constraint.VnCost;
+import org.onosproject.vn.store.EndPoint;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import static org.onosproject.ui.topo.LinkHighlight.Flavor.*;
 
 /**
  * Skeletal ONOS UI Topology-Overlay message handler.
@@ -82,26 +90,30 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
     private static final String COSTTYPE = "ctype";
     private static final String VN_NAME = "vnName";
     public static final String AS_NUMBER = "asNumber";
-    private static final Link[] EMPTY_LINK_SET = new Link[0];
     private static final String CUSTOM_RED = "customRed";
+    private static final String COST_TYPE_IGP = "igp";
+    private static final String COST_TYPE_TE = "te";
+    private static final String BANDWIDTH_TYPE_KBPS = "kbps";
+    private static final String STRING_NULL = "null";
+    private static final double BANDWIDTH_KBPS = 1_000;
+    private static final double BANDWIDTH_MBPS = 1_000_000;
 
     private final Logger log = LoggerFactory.getLogger(getClass());
     // Delay for showHighlights event processing on GUI client side to
     // account for addLink animation.
-    private static final int DELAY_MS = 1100;
     private DeviceService deviceService;
     private LinkService linkService;
-    private Link[] linkSet = EMPTY_LINK_SET;
-    private int linkIndex;
+    private VnService vnService;
 
-    private List<ElementId> srcList = new ArrayList<ElementId>();
-    private List<ElementId> dstList = new ArrayList<ElementId>();
+    private List<DeviceId> srcList = new ArrayList<DeviceId>();
+    private List<DeviceId> dstList = new ArrayList<DeviceId>();
 
     @Override
     public void init(UiConnection connection, ServiceDirectory directory) {
         super.init(connection, directory);
         deviceService = directory.get(DeviceService.class);
         linkService = directory.get(LinkService.class);
+        vnService = directory.get(VnService.class);
     }
 
     @Override
@@ -134,7 +146,7 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
         public void process(long sid, ObjectNode payload) {
             String id = string(payload, ID);
             ElementId src = elementId(id);
-            srcList.add(src);
+            srcList.add((DeviceId) src);
             log.info("count" + srcList.size());
         }
     }
@@ -152,7 +164,7 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
         public void process(long sid, ObjectNode payload) {
             String id = string(payload, ID);
             ElementId dst = elementId(id);
-            dstList.add(dst);
+            dstList.add((DeviceId) dst);
         }
     }
 
@@ -299,8 +311,10 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
             String costType = string(payload, COSTTYPE);
             String vnName = string(payload, VN_NAME);
 
-            //TODO: pass the src, dst list and these constrainsts for setup path.
-            //TODO: clear the srcList and dstList after update the path.
+            if (vnName == null) {
+                log.error("VN Name is NULL");
+            }
+            setupVnHandle(bandWidth, bandWidthType, costType, vnName);
         }
     }
 
@@ -328,11 +342,6 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
                         lh = new LinkHighlight(TopoUtils.compactLinkString(link), PRIMARY_HIGHLIGHT)
                         .addMod(new Mod(CUSTOM_RED));
 
-                        log.info("modes:", lh.flavor().toString());
-                        log.info("modes:", +lh.mods().size());
-                        log.info("mode name:", lh.mods().iterator().next().toString());
-                        log.info("CSS class name:", lh.cssClasses());
-                        //assertEquals("wrong css", "primary custom", lh.cssClasses());
                         highlights.add(lh);
                     }
                 }
@@ -377,66 +386,64 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
         sendMessage(TopoJson.highlightsMessage(highlights));
     }
 
-    private void addDeviceBadge(Highlights h, DeviceId devId, int n) {
-        DeviceHighlight dh = new DeviceHighlight(devId.toString());
-        dh.setBadge(createBadge(n));
-        h.add(dh);
+    private void setupVnHandle(String bandWidth, String bandWidthType, String costType, String vnName) {
+        List<VnConstraint> constraints;
+        EndPoint endPoint = new EndPoint(srcList, dstList);
+
+        if (bandWidth == null && costType == null) {
+            if (!vnService.setupVn(vnName, endPoint)) {
+                log.error("Virtual network creation failed.");
+            }
+            return;
+        }
+
+        constraints = buildCostAndBandWidthConstraints(bandWidth, bandWidthType, costType);
+        if (!vnService.setupVn(vnName, constraints, endPoint)) {
+            log.error("Virtual network creation failed.");
+        }
+        //clear the src and dst list after setup.
+        dstList.removeAll(dstList);
+        srcList.removeAll(srcList);
+
     }
 
-    private NodeBadge createBadge(int n) {
-        Status status = n > 3 ? Status.ERROR : Status.WARN;
-        String noun = n > 3 ? "(critical)" : "(problematic)";
-        String msg = "Egress links: " + n + " " + noun;
-        return NodeBadge.number(status, n, msg);
-    }
+    private List<VnConstraint> buildCostAndBandWidthConstraints(String bandWidth,
+                                                                String bandWidthType, String costType) {
+        List<VnConstraint> constraints = new LinkedList<>();
 
-    private Highlights fromLinks(Set<Link> links, DeviceId devId) {
-        VnwebLinkMap linkMap = new VnwebLinkMap();
-        if (links != null) {
-            log.debug("Processing {} links", links.size());
-            links.forEach(linkMap::add);
+        //bandwidth
+        double bwValue = 0.0;
+        if (!bandWidth.equals(STRING_NULL)) {
+            bwValue = Double.parseDouble(bandWidth);
+        }
+        if (bandWidthType.equals(BANDWIDTH_TYPE_KBPS)) {
+            bwValue = bwValue * BANDWIDTH_KBPS;
         } else {
-            log.debug("No egress links found for device {}", devId);
+            bwValue = bwValue * BANDWIDTH_MBPS;
         }
 
-        Highlights highlights = new Highlights();
-
-        for (VnwebLink dlink : linkMap.biLinks()) {
-            dlink.makeImportant().setLabel("Yo!");
-            highlights.add(dlink.highlight(null));
-        }
-        return highlights;
-    }
-
-    private void initLinkSet() {
-        Set<Link> links = new HashSet<>();
-        for (Link link : linkService.getActiveLinks()) {
-            links.add(link);
-        }
-        linkSet = links.toArray(new Link[links.size()]);
-        linkIndex = 0;
-        log.debug("initialized link set to {}", linkSet.length);
-    }
-
-    private void sendLinkData() {
-        VnwebLinkMap linkMap = new VnwebLinkMap();
-        for (Link link : linkSet) {
-            linkMap.add(link);
-        }
-        VnwebLink dl = linkMap.add(linkSet[linkIndex]);
-        dl.makeImportant().setLabel(Integer.toString(linkIndex));
-        log.debug("sending link data (index {})", linkIndex);
-
-        linkIndex += 1;
-        if (linkIndex >= linkSet.length) {
-            linkIndex = 0;
+        //Cost type
+        VnCost.Type costTypeVal = null;
+        switch (costType) {
+        case COST_TYPE_IGP:
+            costTypeVal = VnCost.Type.COST;
+            break;
+        case COST_TYPE_TE:
+            costTypeVal = VnCost.Type.TE_COST;
+            break;
+        default:
+            break;
         }
 
-        Highlights highlights = new Highlights();
-        for (VnwebLink dlink : linkMap.biLinks()) {
-            highlights.add(dlink.highlight(null));
+        if (bwValue != 0.0) {
+            VnBandwidth vnBandWidth = new VnBandwidth(Bandwidth.bps(bwValue));
+            constraints.add(vnBandWidth);
         }
 
-        sendHighlights(highlights);
+        if (costTypeVal != null) {
+            constraints.add(VnCost.of(costTypeVal));
+        }
+
+        return constraints;
     }
 }

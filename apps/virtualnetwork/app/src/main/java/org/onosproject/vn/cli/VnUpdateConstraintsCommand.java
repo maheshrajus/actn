@@ -20,10 +20,10 @@ import org.apache.karaf.shell.commands.Command;
 import org.apache.karaf.shell.commands.Option;
 import org.onlab.util.Bandwidth;
 import org.onosproject.cli.AbstractShellCommand;
-import org.onosproject.vn.manager.api.VnService;
-import org.onosproject.vn.manager.constraint.VnBandwidth;
-import org.onosproject.vn.manager.constraint.VnConstraint;
-import org.onosproject.vn.manager.constraint.VnCost;
+import org.onosproject.vn.vnservice.api.VnService;
+import org.onosproject.vn.vnservice.constraint.VnBandwidth;
+import org.onosproject.vn.vnservice.constraint.VnConstraint;
+import org.onosproject.vn.vnservice.constraint.VnCost;
 import org.onosproject.vn.store.VirtualNetworkInfo;
 import org.slf4j.Logger;
 

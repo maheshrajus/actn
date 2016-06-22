@@ -14,7 +14,24 @@
  * limitations under the License.
  */
 
+package org.onosproject.vn.vnservice.constraint;
+
 /**
- * PCE path console command-line extensions.
+ * Abstraction which provides the constraints.
  */
-package org.onosproject.vn.cli;
+public interface VnConstraint {
+    /**
+     * Returns the constraint type.
+     *
+     * @return constraint type
+     */
+    short getType();
+
+    /**
+     * Compares two objects.
+     *
+     * @param o object
+     * @return result after comparing two objects
+     */
+    int compareTo(Object o);
+}

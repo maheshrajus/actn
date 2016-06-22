@@ -24,31 +24,12 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <groupId>org.onosproject.vnweb</groupId>
     <artifactId>onos-app-vnweb</artifactId>
     <packaging>bundle</packaging>
 
     <description>ONOS VN UI Topology-Overlay bundle archetype</description>
-    <url>http://onosproject.org</url>
-
-    <properties>
-        <onos.app.name>org.onosproject.vnweb</onos.app.name>
-        <onos.app.title>VN web application</onos.app.title>
-        <onos.app.category>Utility</onos.app.category>
-        <onos.app.url>https://wiki.onosproject.org/display/ONOS/</onos.app.url>
-        <onos.app.readme>
-            Allows the user to visualize different types of paths between
-            network entities such as routers.
-        </onos.app.readme>
-    </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.12</version>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>org.apache.karaf.shell</groupId>
             <artifactId>org.apache.karaf.shell.console</artifactId>
@@ -60,78 +41,20 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.felix</groupId>
-            <artifactId>org.apache.felix.scr.annotations</artifactId>
-            <version>1.9.12</version>
-            <scope>provided</scope>
+            <groupId>org.onosproject</groupId>
+            <artifactId>onos-app-vn</artifactId>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <version>3.0.1</version>
-                <extensions>true</extensions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.5.1</version>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-scr-plugin</artifactId>
-                <version>1.21.0</version>
-                <executions>
-                    <execution>
-                        <id>generate-scr-srcdescriptor</id>
-                        <goals>
-                            <goal>scr</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <supportedProjectTypes>
-                        <supportedProjectType>bundle</supportedProjectType>
-                        <supportedProjectType>war</supportedProjectType>
-                    </supportedProjectTypes>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.onosproject</groupId>
-                <artifactId>onos-maven-plugin</artifactId>
-                <version>1.9</version>
-                <executions>
-                    <execution>
-                        <id>cfg</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>cfg</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>swagger</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>swagger</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>app</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>app</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
-
+    <properties>
+        <onos.app.name>org.onosproject.vnweb</onos.app.name>
+        <onos.app.title>VN web application</onos.app.title>
+        <onos.app.category>Utility</onos.app.category>
+        <onos.app.url>https://wiki.onosproject.org/display/ONOS/</onos.app.url>
+        <onos.app.readme>
+            Allows the user to visualize different types of paths between
+            network entities such as routers.
+        </onos.app.readme>
+    </properties>
 </project>

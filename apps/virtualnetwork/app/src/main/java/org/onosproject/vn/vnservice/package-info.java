@@ -15,6 +15,6 @@
  */
 
 /**
- * PCE path console command-line extensions.
+ * VN manager service application.
  */
-package org.onosproject.vn.cli;
+package org.onosproject.vn.vnservice;

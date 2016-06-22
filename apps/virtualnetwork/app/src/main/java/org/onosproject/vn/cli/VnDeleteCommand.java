@@ -18,7 +18,7 @@ package org.onosproject.vn.cli;
 import org.apache.karaf.shell.commands.Argument;
 import org.apache.karaf.shell.commands.Command;
 import org.onosproject.cli.AbstractShellCommand;
-import org.onosproject.vn.manager.api.VnService;
+import org.onosproject.vn.vnservice.api.VnService;
 import org.slf4j.Logger;
 
 import static org.slf4j.LoggerFactory.getLogger;

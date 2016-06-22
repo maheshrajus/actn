@@ -15,7 +15,7 @@
  */
 package org.onosproject.vn.store.api;
 
-import org.onosproject.vn.manager.constraint.VnConstraint;
+import org.onosproject.vn.vnservice.constraint.VnConstraint;
 import org.onosproject.vn.store.EndPoint;
 import org.onosproject.vn.store.VirtualNetworkInfo;
 

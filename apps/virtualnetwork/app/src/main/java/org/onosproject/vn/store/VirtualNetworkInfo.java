@@ -17,7 +17,7 @@ package org.onosproject.vn.store;
 
 import com.google.common.base.MoreObjects;
 import org.onosproject.net.DeviceId;
-import org.onosproject.vn.manager.constraint.VnConstraint;
+import org.onosproject.vn.vnservice.constraint.VnConstraint;
 
 import java.util.LinkedList;
 import java.util.List;

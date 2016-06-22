@@ -20,7 +20,7 @@ import org.apache.karaf.shell.commands.Option;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.incubator.net.tunnel.Tunnel;
 import org.onosproject.net.AnnotationKeys;
-import org.onosproject.vn.manager.api.VnService;
+import org.onosproject.vn.vnservice.api.VnService;
 import org.slf4j.Logger;
 
 import static org.slf4j.LoggerFactory.getLogger;

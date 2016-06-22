@@ -21,7 +21,7 @@ import org.apache.felix.scr.annotations.Deactivate;
 import org.apache.felix.scr.annotations.Reference;
 import org.apache.felix.scr.annotations.ReferenceCardinality;
 import org.onosproject.codec.CodecService;
-import org.onosproject.vn.manager.VirtualNetwork;
+import org.onosproject.vn.vnservice.VirtualNetwork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

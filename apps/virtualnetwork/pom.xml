@@ -34,20 +34,12 @@
         <module>app</module>
         <module>vnweb</module>
     </modules>
+
     <dependencies>
        <dependency>
             <groupId>org.glassfish.jersey.containers</groupId>
             <artifactId>jersey-container-servlet</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.jersey.test-framework</groupId>
-            <artifactId>jersey-test-framework-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.jersey.test-framework.providers</groupId>
-            <artifactId>jersey-test-framework-provider-jetty</artifactId>
-            <scope>test</scope>
-        </dependency>
+        </dependency>               
     </dependencies>
+   
 </project>

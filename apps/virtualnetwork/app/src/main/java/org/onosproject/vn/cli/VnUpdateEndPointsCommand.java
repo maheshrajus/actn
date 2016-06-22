@@ -19,7 +19,7 @@ import org.apache.karaf.shell.commands.Argument;
 import org.apache.karaf.shell.commands.Command;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.net.DeviceId;
-import org.onosproject.vn.manager.api.VnService;
+import org.onosproject.vn.vnservice.api.VnService;
 import org.onosproject.vn.store.EndPoint;
 import org.slf4j.Logger;
 

@@ -15,6 +15,6 @@
  */
 
 /**
- * PCE path console command-line extensions.
+ * Constraints for path computation.
  */
-package org.onosproject.vn.cli;
+package org.onosproject.vn.vnservice.constraint;
