@@ -21,12 +21,14 @@ import com.google.common.collect.ImmutableSet;
 
 import org.onlab.osgi.ServiceDirectory;
 import org.onlab.util.Bandwidth;
+import org.onosproject.incubator.net.tunnel.Tunnel;
 import org.onosproject.net.Annotations;
 import org.onosproject.net.Device;
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.ElementId;
 import org.onosproject.net.HostId;
 import org.onosproject.net.Link;
+import org.onosproject.net.Path;
 import org.onosproject.net.device.DeviceService;
 import org.onosproject.net.link.LinkService;
 import org.onosproject.ui.RequestHandler;
@@ -39,23 +41,22 @@ import org.onosproject.ui.topo.Mod;
 import org.onosproject.ui.topo.NodeBadge;
 import org.onosproject.ui.topo.TopoUtils;
 import org.onosproject.ui.topo.TopoJson;
-import org.onosproject.vn.vnservice.api.VnService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
-
-//import org.onosproject.vn.manager.api.VnService;
+import org.onosproject.vn.vnservice.api.VnService;
 import org.onosproject.vn.vnservice.constraint.VnBandwidth;
 import org.onosproject.vn.vnservice.constraint.VnConstraint;
 import org.onosproject.vn.vnservice.constraint.VnCost;
 import org.onosproject.vn.store.EndPoint;
+import org.onosproject.vn.store.VirtualNetworkInfo;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+
 import static org.onosproject.ui.topo.LinkHighlight.Flavor.*;
 
 /**
@@ -83,7 +84,6 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
     private static final String BUFFER_ARRAY = "a";
     private static final String VNWEB_QUERY_SHOW = "show";
     private static final String VNWEB_QUERY_REMOVE = "remove";
-    private static final String VNWEB_QUERY_UPDATE = "update";
     private static final String ID = "id";
     private static final String BANDWIDTH = "bw";
     private static final String BANDWIDTHTYPE = "bwtype";
@@ -97,6 +97,19 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
     private static final String STRING_NULL = "null";
     private static final double BANDWIDTH_KBPS = 1_000;
     private static final double BANDWIDTH_MBPS = 1_000_000;
+    private static final String DST = "DST";
+    private static final String SRC = "SRC";
+    private static String[] linkColor = {"pCol1", "pCol2", "pCol3", "pCol4",
+            "pCol5", "pCol6", "pCol7", "pCol8", "pCol9", "pCol10", "pCol11",
+            "pCol12", "pCol13", "pCol14", "pCol15"};
+    private static final int LINK_COLOR_MAX = 15;
+    private static final int TYPE_BW = 2;
+    private static final int TYPE_COST = 1;
+    private static final String FILL_BW = "bwtype";
+    private static final String FILL_COST = "CostType";
+    private static final String FILL_VN = "VnName";
+    private static final String FILL_SRC = "SRC";
+    private static final String FILL_DST = "SRC";
 
     private final Logger log = LoggerFactory.getLogger(getClass());
     // Delay for showHighlights event processing on GUI client side to
@@ -107,6 +120,7 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
 
     private List<DeviceId> srcList = new ArrayList<DeviceId>();
     private List<DeviceId> dstList = new ArrayList<DeviceId>();
+    private List<Path> paths = new LinkedList<>();
 
     @Override
     public void init(UiConnection connection, ServiceDirectory directory) {
@@ -118,18 +132,11 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
 
     @Override
     protected Collection<RequestHandler> createRequestHandlers() {
-        return ImmutableSet.of(
-                new VnIdQuery(),
-                new VnIdQueryHandle(),
-                new VnIdRemoveHandle(),
-                new ClearHandler(),
-                new SetSrcHandler(),
-                new SetDstHandler(),
-                new SetPathHandler(),
-                new VnIdUpdateHandle(),
-                new VnIdUpdateHandleConstr(),
-                new VnDeviceHighlight()
-        );
+        return ImmutableSet.of(new VnIdQuery(), new VnIdQueryHandle(),
+                new VnIdRemoveHandle(), new ClearHandler(),
+                new SetSrcHandler(), new SetDstHandler(), new SetPathHandler(),
+                new VnIdUpdateHandle(), new VnIdUpdateHandleConstr(),
+                new VnDeviceHighlight());
     }
 
     // === Handler classes: Begin
@@ -147,7 +154,6 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
             String id = string(payload, ID);
             ElementId src = elementId(id);
             srcList.add((DeviceId) src);
-            log.info("count" + srcList.size());
         }
     }
 
@@ -177,13 +183,14 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
         public void process(long sid, ObjectNode payload) {
             log.debug("query received for VN IDs");
             String type = string(payload, VN_ID_QUERY);
-            //TODO: Need to get all the VN ids and send message to the client.
             ObjectNode result = objectNode();
             ArrayNode arrayNode = arrayNode();
+            List<VirtualNetworkInfo> listVn = vnService.queryAllVn();
 
-            arrayNode.add("123");
-            arrayNode.add("456");
-            arrayNode.add("789");
+            for (VirtualNetworkInfo vn : listVn) {
+                arrayNode.add(vn.vnName().toString());
+            }
+
             result.putArray(BUFFER_ARRAY).addAll(arrayNode);
 
             if (type.equals(VNWEB_QUERY_SHOW)) {
@@ -203,12 +210,11 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
 
         @Override
         public void process(long sid, ObjectNode payload) {
-            String vnId = string(payload, VN_ID);
-            log.debug("query received for VN ID", vnId);
-
-            //clear the previous highlights if any
+            String vnName = string(payload, VN_ID);
+            log.debug("query received for VN ID", vnName);
+            Iterable<Tunnel> tunnels = vnService.queryVnTunnels(vnName);
             clearForMode();
-            //TODO: Get the all the tunnels based on VN ID and highlight them.
+            findTunnelAndHighlights(tunnels);
         }
     }
 
@@ -219,10 +225,11 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
 
         @Override
         public void process(long sid, ObjectNode payload) {
-            String vnId = string(payload, VN_ID);
-            log.debug("remove event received for VN ID", vnId);
-
-            //TODO: remove the VN based all tunnels and highlight rest of them.
+            String vnName = string(payload, VN_ID);
+            log.debug("remove event received for VN ID", vnName);
+            if (!vnService.deleteVn(vnName)) {
+                log.debug("Virtual network creation failed.");
+            }
         }
     }
 
@@ -233,28 +240,38 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
 
         @Override
         public void process(long sid, ObjectNode payload) {
-            String vnId = string(payload, VN_ID);
-            log.debug("update event received for VN ID", vnId);
-            //TODO:send the information about tunnel[src, dst and list of constrainsts.]
-            //TODO: update the VN based all tunnels and highlight rest of them.
-
+            String vnName = string(payload, VN_ID);
+            log.debug("update event received for VN ID", vnName);
             ObjectNode result = objectNode();
             ArrayNode arrayNode = arrayNode();
 
-            arrayNode.add("VnName");
-            arrayNode.add("MaheshNetwork");
-            arrayNode.add("BandWidth");
-            arrayNode.add("200");
-            arrayNode.add("CostType");
-            arrayNode.add("TE");
-            arrayNode.add("SRC");
-            arrayNode.add("RT1");
-            arrayNode.add("RT2");
-            arrayNode.add("RT3");
-            arrayNode.add("DST");
-            arrayNode.add("RT1");
-            arrayNode.add("RT2");
-            arrayNode.add("RT3");
+            // filling the VN name
+            VirtualNetworkInfo vnInfo = vnService.queryVn(vnName);
+            arrayNode.add(FILL_VN);
+            arrayNode.add(vnInfo.vnName().toString());
+
+            // filling the bandwidth and cost related constraints.
+            List<VnConstraint> listConstraints = vnInfo.constraints();
+            for (VnConstraint constrn : listConstraints) {
+                if (constrn.getType() == TYPE_BW) {
+                    arrayNode.add(FILL_BW);
+                    arrayNode.add("200"); // TODO:
+                }
+                if (constrn.getType() == TYPE_COST) {
+                    arrayNode.add(FILL_COST);
+                    arrayNode.add("1"); // TODO:
+                }
+            }
+            // filling the SRC device IDs
+            arrayNode.add(FILL_SRC);
+            for (DeviceId device : vnInfo.endPoint().src()) {
+                arrayNode.add(device.toString());
+            }
+            // filling the SRC device IDs
+            arrayNode.add(FILL_DST);
+            for (DeviceId device : vnInfo.endPoint().dst()) {
+                arrayNode.add(device.toString());
+            }
 
             result.putArray(BUFFER_ARRAY).addAll(arrayNode);
             sendMessage(VNWEB_UPDATE_MSG_HANDLE_REPLY, sid, result);
@@ -268,15 +285,26 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
 
         @Override
         public void process(long sid, ObjectNode payload) {
-            String vnId = string(payload, VN_ID);
-            log.debug("update event received for VN ID", vnId);
+            String vnName = string(payload, VN_ID);
+            log.debug("update event received for VN ID", vnName);
 
             String bandWidth = string(payload, BANDWIDTH);
             String bandWidthType = string(payload, BANDWIDTHTYPE);
             String costType = string(payload, COSTTYPE);
+            List<VnConstraint> constraints;
 
-            //TODO: update the VN based on constrainsts received.[SRC, DST, BW and cost type]
-            //TODO: clear the srcList and dstList after update the path.
+            constraints = buildCostAndBandWidthConstraints(bandWidth,
+                    bandWidthType, costType);
+            EndPoint endPoint = new EndPoint(srcList, dstList);
+            if (!vnService.updateVn(vnName, endPoint)) {
+                log.error("Virtual network creation failed.");
+            }
+            if (!vnService.updateVn(vnName, constraints)) {
+                log.error("Virtual network creation failed.");
+            }
+            // clear the src and dst list after setup.
+            dstList.removeAll(dstList);
+            srcList.removeAll(srcList);
 
         }
     }
@@ -336,11 +364,13 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
                 if (dev.type() == Device.Type.ROUTER) {
                     Annotations annots = dev.annotations();
                     String asNumber = annots.value(AS_NUMBER);
-                    highlights = addDeviceBadge(highlights, dev.id().toString(), asNumber);
+                    highlights = addDeviceBadge(highlights,
+                            dev.id().toString(), asNumber);
                     Set<Link> links = linkService.getDeviceLinks(dev.id());
                     for (Link link : links) {
-                        lh = new LinkHighlight(TopoUtils.compactLinkString(link), PRIMARY_HIGHLIGHT)
-                        .addMod(new Mod(CUSTOM_RED));
+                        lh = new LinkHighlight(
+                                TopoUtils.compactLinkString(link),
+                                PRIMARY_HIGHLIGHT).addMod(new Mod(CUSTOM_RED));
 
                         highlights.add(lh);
                     }
@@ -366,9 +396,12 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
     /**
      * Handles the badge add and highlights.
      *
-     * @param h highlights
-     * @param elemId device to be add badge
-     * @param type device type
+     * @param h
+     *            highlights
+     * @param elemId
+     *            device to be add badge
+     * @param type
+     *            device type
      * @return highlights
      */
     private Highlights addDeviceBadge(Highlights h, String devId, String asNum) {
@@ -386,7 +419,8 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
         sendMessage(TopoJson.highlightsMessage(highlights));
     }
 
-    private void setupVnHandle(String bandWidth, String bandWidthType, String costType, String vnName) {
+    private void setupVnHandle(String bandWidth, String bandWidthType,
+            String costType, String vnName) {
         List<VnConstraint> constraints;
         EndPoint endPoint = new EndPoint(srcList, dstList);
 
@@ -397,21 +431,22 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
             return;
         }
 
-        constraints = buildCostAndBandWidthConstraints(bandWidth, bandWidthType, costType);
+        constraints = buildCostAndBandWidthConstraints(bandWidth,
+                bandWidthType, costType);
         if (!vnService.setupVn(vnName, constraints, endPoint)) {
             log.error("Virtual network creation failed.");
         }
-        //clear the src and dst list after setup.
+        // clear the src and dst list after setup.
         dstList.removeAll(dstList);
         srcList.removeAll(srcList);
 
     }
 
-    private List<VnConstraint> buildCostAndBandWidthConstraints(String bandWidth,
-                                                                String bandWidthType, String costType) {
+    private List<VnConstraint> buildCostAndBandWidthConstraints(
+            String bandWidth, String bandWidthType, String costType) {
         List<VnConstraint> constraints = new LinkedList<>();
 
-        //bandwidth
+        // bandwidth
         double bwValue = 0.0;
         if (!bandWidth.equals(STRING_NULL)) {
             bwValue = Double.parseDouble(bandWidth);
@@ -422,7 +457,7 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
             bwValue = bwValue * BANDWIDTH_MBPS;
         }
 
-        //Cost type
+        // Cost type
         VnCost.Type costTypeVal = null;
         switch (costType) {
         case COST_TYPE_IGP:
@@ -445,5 +480,105 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
         }
 
         return constraints;
+    }
+
+    /**
+     * Handles the event of topology listeners.
+     */
+    private void findTunnelAndHighlights(Iterable<Tunnel> tunnelSet) {
+        Highlights highlights = new Highlights();
+        paths.removeAll(paths);
+
+        for (Tunnel tunnel : tunnelSet) {
+            if (tunnel.path() == null) {
+                log.error("path does not exist");
+                sendMessage(TopoJson.highlightsMessage(highlights));
+                return;
+            }
+            Link firstLink = tunnel.path().links().get(0);
+            if (firstLink != null) {
+                if (firstLink.src() != null) {
+                    highlights = addBadge(highlights, firstLink.src()
+                            .deviceId().toString(), SRC);
+                }
+            }
+            Link lastLink = tunnel.path().links()
+                    .get(tunnel.path().links().size() - 1);
+            if (lastLink != null) {
+                if (lastLink.dst() != null) {
+                    highlights = addBadge(highlights, lastLink.dst().deviceId()
+                            .toString(), DST);
+                }
+            }
+            paths.add(tunnel.path());
+        }
+
+        hilightAndSendPaths(highlights);
+    }
+
+    /**
+     * Handles the highlights of selected path.
+     */
+    private void hilightAndSendPaths(Highlights highlights) {
+        LinkHighlight lh;
+        int linkclr = 0;
+        for (Path path : paths) {
+            for (Link link : path.links()) {
+                lh = new LinkHighlight(TopoUtils.compactLinkString(link),
+                        PRIMARY_HIGHLIGHT).addMod(new Mod(linkColor[linkclr]));
+                highlights.add(lh);
+            }
+            linkclr = linkclr + 1;
+            if (linkclr == LINK_COLOR_MAX) {
+                linkclr = 0;
+            }
+        }
+
+        sendMessage(TopoJson.highlightsMessage(highlights));
+    }
+
+    /**
+     * Handles the addition of badge and highlights.
+     *
+     * @param highlights
+     *            highlights
+     * @param elemId
+     *            device to be add badge
+     * @param src
+     *            device to be add badge
+     * @return
+     */
+    private Highlights addBadge(Highlights highlights, String elemId, String src) {
+        highlights = deviceBadge(highlights, elemId, src);
+        return highlights;
+    }
+
+    /**
+     * Handles the badge add and highlights.
+     *
+     * @param h
+     *            highlights
+     * @param elemId
+     *            device to be add badge
+     * @param type
+     *            device badge value
+     * @return highlights
+     */
+    private Highlights deviceBadge(Highlights h, String elemId, String type) {
+        DeviceHighlight dh = new DeviceHighlight(elemId);
+        dh.setBadge(createBadge(type));
+        h.add(dh);
+        return h;
+    }
+
+    /**
+     * Handles the node badge add and highlights.
+     *
+     * @param type
+     *            device badge value
+     * @return badge of given node
+     */
+    private NodeBadge createBadge(String type) {
+        return NodeBadge.text(type);
     }
 }
