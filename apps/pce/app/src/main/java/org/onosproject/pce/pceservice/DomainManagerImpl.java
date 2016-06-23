@@ -15,8 +15,6 @@
  */
 package org.onosproject.pce.pceservice;
 
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
 import org.onosproject.net.Device;
 import org.onosproject.net.Link;
 import org.onosproject.net.Path;
@@ -27,11 +25,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -40,30 +35,27 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class DomainManagerImpl implements DomainManager {
     private static final Logger log = LoggerFactory.getLogger(DomainManagerImpl.class);
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
     protected DeviceService deviceService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
     protected PathService pathService;
-
-    private List<Link> links;
     /**
      * Creates new instance of domain manager.
      */
-    public DomainManagerImpl(Path path) {
-        checkNotNull(path, "Path cannot be null");
-        this.links = path.links();
+    public DomainManagerImpl(DeviceService deviceService, PathService pathService) {
+        this.deviceService = deviceService;
+        this.pathService = pathService;
     }
 
     @Override
-    public Set<Path> getDomainSpecificPaths() {
+    public Set<Path> getDomainSpecificPaths(Path path) {
+        checkNotNull(path, "Path cannot be null");
         Set<Path> paths = new HashSet<>();
         Device currentDevice;
         Device lastDevice = null;
         Device firstDevice = null;
         int prevAsNumber = 0;
 
-        for (Link link : links) {
+        for (Link link : path.links()) {
             currentDevice = deviceService.getDevice(link.src().deviceId());
             String asNumber = currentDevice.annotations().value("asNumber");
             if (asNumber != null) {
@@ -90,7 +82,7 @@ public class DomainManagerImpl implements DomainManager {
         }
         return paths;
     }
-    @Override
+    /*@Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
@@ -105,12 +97,12 @@ public class DomainManagerImpl implements DomainManager {
     @Override
     public int hashCode() {
         return Objects.hash(links);
-    }
+    }*/
 
-    @Override
+    /*@Override
     public String toString() {
         return toStringHelper(this)
                 .add("links", links)
                 .toString();
-    }
+    }*/
 }
