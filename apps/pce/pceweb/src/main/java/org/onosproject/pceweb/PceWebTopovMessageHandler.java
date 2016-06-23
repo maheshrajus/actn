@@ -443,7 +443,7 @@ public class PceWebTopovMessageHandler extends UiMessageHandler {
                 break;
         }
 
-        path = pceService.setupPath((DeviceId) src, (DeviceId) dst, tunnelName, listConstrnt, lspTypeVal);
+        path = pceService.setupPath((DeviceId) src, (DeviceId) dst, tunnelName, listConstrnt, lspTypeVal, null);
         if (!path) {
              log.error("setup path is failed");
              return;
