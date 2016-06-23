@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
+import com.google.common.collect.Maps;
 import org.apache.felix.scr.annotations.Activate;
 import org.apache.felix.scr.annotations.Component;
 import org.apache.felix.scr.annotations.Deactivate;
@@ -87,6 +87,12 @@ public class DistributedPceStore implements PceStore {
 
     // Mapping tunnel with device local info with tunnel consumer id
     private ConsistentMap<TunnelId, PceccTunnelInfo> tunnelInfoMap;
+
+    // Parent Path tunnel ID and list of child path tunnel ID's
+    private final Map<TunnelId, Set<TunnelId>> parentChildTunnelMap = Maps.newConcurrentMap();
+
+    // Add map to store Parent tunnel status and child tunnel status, parent tunnel status should be down till all
+    // child tunnel status is up, if any child tunnel status goes down, parent tunnel status should be down.
 
     // List of Failed path info
     private DistributedSet<PcePathInfo> failedPathSet;
@@ -426,5 +432,10 @@ public class DistributedPceStore implements PceStore {
     public Versioned<Double> getAllocatedLocalReservedBw(LinkKey linkkey) {
         checkNotNull(linkkey);
         return localReservedBw.get(linkkey);
+    }
+
+    @Override
+    public Map<TunnelId, Set<TunnelId>> parentChildTunnelMap() {
+        return parentChildTunnelMap;
     }
 }

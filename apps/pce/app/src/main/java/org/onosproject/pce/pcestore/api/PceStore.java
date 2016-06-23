@@ -293,4 +293,11 @@ public interface PceStore {
      * @return allocated bandwidth
      */
     Versioned<Double> getAllocatedLocalReservedBw(LinkKey linkkey);
+
+    /**
+     * Returns parent and child tunnel map.
+     *
+     * @return parent child tunnel map
+     */
+    public Map<TunnelId, Set<TunnelId>> parentChildTunnelMap();
 }

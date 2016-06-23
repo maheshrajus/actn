@@ -244,4 +244,9 @@ public class PceStoreAdapter implements PceStore {
     public Versioned<Double> getAllocatedLocalReservedBw(LinkKey linkkey) {
         return null;
     }
+
+    @Override
+    public Map<TunnelId, Set<TunnelId>> parentChildTunnelMap() {
+        return null;
+    }
 }
