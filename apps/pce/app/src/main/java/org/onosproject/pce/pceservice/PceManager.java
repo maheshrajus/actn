@@ -165,7 +165,7 @@ public class PceManager implements PceService {
     public static final int PCEP_PORT = 4189;
 
     private LspType defaultLspType;
-
+    public String pceMode = "PNC";
     private IdGenerator localLspIdIdGen;
     protected DistributedSet<Short> localLspIdFreeList;
 
@@ -275,6 +275,16 @@ public class PceManager implements PceService {
     @Override
     public void setdefaultLspType(LspType defaultLspType) {
         this.defaultLspType = defaultLspType;
+    }
+
+    @Override
+    public void setPceMode(String mode) {
+        this.pceMode = mode;
+    }
+
+    @Override
+    public String getPceMode() {
+        return pceMode;
     }
 
     @Activate

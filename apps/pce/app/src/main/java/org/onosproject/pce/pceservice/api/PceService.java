@@ -161,6 +161,18 @@ public interface PceService {
     void setdefaultLspType(LspType lspType);
 
     /**
+     * Sets PCE mode.
+     *
+     * @param mode PCE mode
+     */
+    void setPceMode(String mode);
+    /**
+     * Gets PCE mode.
+     *
+     * @param mode PCE mode
+     */
+    String getPceMode();
+    /**
      * Returns if the link has the available bandwidth or not.
      *
      * @return true if bandwidth is available else false

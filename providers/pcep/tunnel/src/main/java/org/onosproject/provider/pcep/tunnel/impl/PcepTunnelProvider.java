@@ -128,6 +128,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.onlab.util.Tools.get;
 import static org.onosproject.incubator.net.tunnel.Tunnel.State.INIT;
+import static org.onosproject.incubator.net.tunnel.Tunnel.Type.MDMPLS;
 import static org.onosproject.incubator.net.tunnel.Tunnel.Type.MPLS;
 import static org.onosproject.net.DefaultAnnotations.EMPTY;
 import static org.onosproject.net.DeviceId.deviceId;
@@ -278,6 +279,11 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
             return;
         }
 
+        if (tunnel.type() == MDMPLS) {
+            log.error("Tunnel Type should not be MDMPLS");
+            return;
+        }
+
         // check for tunnel end points
         if (!(tunnel.src() instanceof IpTunnelEndPoint) || !(tunnel.dst() instanceof IpTunnelEndPoint)) {
             log.error("Tunnel source or destination is not valid");
@@ -314,6 +320,11 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
             return;
         }
 
+        if (tunnel.type() == MDMPLS) {
+            log.error("Tunnel Type should not be MDMPLS");
+            return;
+        }
+
         // check for tunnel end points
         if (!(tunnel.src() instanceof IpTunnelEndPoint) || !(tunnel.dst() instanceof IpTunnelEndPoint)) {
             log.error("Tunnel source or destination is not valid");
@@ -344,6 +355,21 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
             return;
         }
 
+        if (tunnel.type() == MDMPLS) {
+            log.error("Tunnel Type should not be MDMPLS");
+            TunnelDescription td = new DefaultTunnelDescription(tunnel.tunnelId(),
+                    tunnel.src(), tunnel.dst(),
+                    tunnel.type(),
+                    tunnel.groupId(),
+                    tunnel.providerId(),
+                    tunnel.tunnelName(),
+                    tunnel.path(),
+                    (SparseAnnotations) tunnel.annotations());
+
+            tunnelRemoved(td);
+            return;
+        }
+
         // check for tunnel end points
         if (!(tunnel.src() instanceof IpTunnelEndPoint) || !(tunnel.dst() instanceof IpTunnelEndPoint)) {
             log.error("Tunnel source or destination is not valid");
@@ -369,6 +395,21 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
     public void releaseTunnel(ElementId srcElement, Tunnel tunnel) {
         if (tunnel.type() != MPLS) {
             log.error("Tunnel Type MPLS is only supported");
+            return;
+        }
+
+        if (tunnel.type() == MDMPLS) {
+            log.error("Tunnel Type should not be MDMPLS");
+            TunnelDescription td = new DefaultTunnelDescription(tunnel.tunnelId(),
+                    tunnel.src(), tunnel.dst(),
+                    tunnel.type(),
+                    tunnel.groupId(),
+                    tunnel.providerId(),
+                    tunnel.tunnelName(),
+                    tunnel.path(),
+                    (SparseAnnotations) tunnel.annotations());
+
+            tunnelRemoved(td);
             return;
         }
 
@@ -402,6 +443,11 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
     public void updateTunnel(Tunnel tunnel, Path path) {
         if (tunnel.type() != MPLS) {
             log.error("Tunnel Type MPLS is only supported");
+            return;
+        }
+
+        if (tunnel.type() == MDMPLS) {
+            log.error("Tunnel Type should not be MDMPLS");
             return;
         }
 
@@ -466,6 +512,11 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
 
         if (tunnel.type() != MPLS) {
             log.error("Tunnel Type MPLS is only supported");
+            return;
+        }
+
+        if (tunnel.type() == MDMPLS) {
+            log.error("Tunnel Type should not be MDMPLS");
             return;
         }
 

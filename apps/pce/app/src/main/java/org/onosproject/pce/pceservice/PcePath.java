@@ -83,6 +83,12 @@ public interface PcePath {
     LspType defaultLspType();
 
     /**
+     * Returns the mode of pce.
+     *
+     * @return symbolic-path-name
+     */
+    String getMode();
+    /**
      * Returns the attribute symbolic-path-name.
      *
      * @return symbolic-path-name
@@ -149,6 +155,13 @@ public interface PcePath {
         Builder lspType(String lspType);
 
         /**
+         * Returns the builder object of pce mode.
+         *
+         * @param mode pce mode
+         * @return builder object of mode type
+         */
+        Builder pceMode(String mode);
+        /**
          * Returns the builder object of default lspType.
          *
          * @param lspType lsp type
@@ -196,6 +209,13 @@ public interface PcePath {
          */
         Builder of(LspType lspType);
 
+        /**
+         * Copies lspType info to local.
+         *
+         * @param mode of PCE
+         * @return object of mode
+         */
+        Builder of(String mode);
         /**
          * Builds object of pce path.
          *

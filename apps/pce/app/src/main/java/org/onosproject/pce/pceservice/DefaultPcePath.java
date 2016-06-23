@@ -37,6 +37,7 @@ public final class DefaultPcePath implements PcePath {
     private String destination; // Egress
     private LspType lspType; // LSP type
     private LspType defaultLspType; // Default LSP type
+    private String pceMode; // pce mode
     private String name; // symbolic-path-name
     private Constraint costConstraint; // cost constraint
     private Constraint bandwidthConstraint; // bandwidth constraint
@@ -52,14 +53,16 @@ public final class DefaultPcePath implements PcePath {
      * @param costConstrnt cost constraint
      * @param bandwidthConstrnt bandwidth constraint
      */
-    private DefaultPcePath(TunnelId id, String src, String dst, LspType lspType,
-                           LspType defaultLspType, String name, Constraint costConstrnt, Constraint bandwidthConstrnt) {
+    private DefaultPcePath(TunnelId id, String src, String dst,
+            LspType lspType, LspType defaultLspType, String pceMode,
+            String name, Constraint costConstrnt, Constraint bandwidthConstrnt) {
 
         this.id = id;
         this.source = src;
         this.destination = dst;
         this.lspType = lspType;
         this.defaultLspType = defaultLspType;
+        this.pceMode = pceMode;
         this.name = name;
         this.costConstraint = costConstrnt;
         this.bandwidthConstraint = bandwidthConstrnt;
@@ -98,6 +101,11 @@ public final class DefaultPcePath implements PcePath {
     @Override
     public LspType defaultLspType() {
         return defaultLspType;
+    }
+
+    @Override
+    public String getMode() {
+        return pceMode;
     }
 
     @Override
@@ -146,7 +154,7 @@ public final class DefaultPcePath implements PcePath {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, source, destination, lspType, defaultLspType, name, costConstraint,
+        return Objects.hash(id, source, destination, lspType, defaultLspType, pceMode, name, costConstraint,
                             bandwidthConstraint);
     }
 
@@ -162,6 +170,7 @@ public final class DefaultPcePath implements PcePath {
                     && Objects.equals(destination, that.destination)
                     && Objects.equals(lspType, that.lspType)
                     && Objects.equals(defaultLspType, that.defaultLspType)
+                    && Objects.equals(pceMode, that.pceMode)
                     && Objects.equals(name, that.name)
                     && Objects.equals(costConstraint, that.costConstraint)
                     && Objects.equals(bandwidthConstraint, that.bandwidthConstraint);
@@ -177,6 +186,7 @@ public final class DefaultPcePath implements PcePath {
                 .add("destination", destination)
                 .add("lsptype", lspType)
                 .add("defaultLspType", defaultLspType)
+                .add("pceMode", pceMode)
                 .add("name", name)
                 .add("costConstraint", costConstraint.toString())
                 .add("bandwidthConstraint", bandwidthConstraint.toString())
@@ -201,6 +211,7 @@ public final class DefaultPcePath implements PcePath {
         private String destination;
         private LspType lspType;
         private LspType defaultLspType;
+        private String pceMode;
         private String name;
         private Constraint costConstraint;
         private Constraint bandwidthConstraint;
@@ -239,6 +250,13 @@ public final class DefaultPcePath implements PcePath {
             return this;
         }
 
+        @Override
+        public Builder pceMode(String mode) {
+            if (null != mode) {
+                this.pceMode = mode;
+            }
+            return this;
+        }
         @Override
         public Builder name(String name) {
             this.name = name;
@@ -291,8 +309,14 @@ public final class DefaultPcePath implements PcePath {
         }
 
         @Override
+        public Builder of(String pceMode) {
+            this.pceMode = pceMode;
+            return this;
+        }
+
+        @Override
         public PcePath build() {
-            return new DefaultPcePath(id, source, destination, lspType, defaultLspType, name,
+            return new DefaultPcePath(id, source, destination, lspType, defaultLspType, pceMode, name,
                                       costConstraint, bandwidthConstraint);
         }
     }
