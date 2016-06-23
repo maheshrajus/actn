@@ -263,11 +263,15 @@ public class PcepClientControllerImpl implements PcepClientController {
                                      ", SrpId: " + srpObj.getSrpID());
                 }
 
+                PcepEndPointsObject endPointObj = initLsp.getEndPointsObject();
+
                 if (srpObj.getRFlag()) {
                     log.info("Remove path with PLSPID " + lspObj.getPlspId());
-                    pceService.releasePath(String.valueOf(lspObj.getPlspId()));
+                    pceService.releasePath(IpAddress.valueOf(endPointObj.getSourceIpAddress()),
+                            IpAddress.valueOf(endPointObj.getDestIpAddress()),
+                                    String.valueOf(lspObj.getPlspId()));
                 } else {
-                    PcepEndPointsObject endPointObj = initLsp.getEndPointsObject();
+
 
                     if (initLsp.getAssociationObjectList() != null) {
                         ListIterator<PcepAssociationObject> iterator
@@ -386,6 +390,7 @@ public class PcepClientControllerImpl implements PcepClientController {
                         PcepLspObject lspObj = updReq.getLspObject();
                         ListIterator<PcepValueType> listTlvIterator = lspObj.getOptionalTlv().listIterator();
                         SymbolicPathNameTlv pathNameTlv = null;
+                        StatefulIPv4LspIdentifiersTlv lspIdentifier = null;
 
                         while (listTlvIterator.hasNext()) {
                             PcepValueType tlv = listTlvIterator.next();
@@ -393,10 +398,19 @@ public class PcepClientControllerImpl implements PcepClientController {
                                 case SymbolicPathNameTlv.TYPE:
                                     pathNameTlv = (SymbolicPathNameTlv) tlv;
                                     break;
-
+                                case StatefulIPv4LspIdentifiersTlv.TYPE:
+                                    lspIdentifier = (StatefulIPv4LspIdentifiersTlv) tlv;
+                                    break;
                                 default:
                                     break;
                             }
+                        }
+
+                        if (lspIdentifier == null) {
+                            //Attempted LSP Update Request without stateful PCE capability being advertised
+                            pc.sendMessage(Collections.singletonList(getErrMsg(pc.factory(), ERROR_TYPE_19,
+                                    ERROR_VALUE_2)));
+                            return;
                         }
 
                         if (pathNameTlv != null) {
@@ -434,7 +448,9 @@ public class PcepClientControllerImpl implements PcepClientController {
                             }
                         }
 
-                        pceService.updatePath(String.valueOf(lspObj.getPlspId()), constrntList);
+                        pceService.updatePath(IpAddress.valueOf(lspIdentifier.getIpv4IngressAddress()),
+                                IpAddress.valueOf(lspIdentifier.getIpv4EgressAddress()),
+                                String.valueOf(lspObj.getPlspId()), constrntList);
                     }
                 }
             }

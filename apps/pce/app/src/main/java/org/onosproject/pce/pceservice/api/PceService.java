@@ -83,11 +83,13 @@ public interface PceService {
     /**
      * Updates an existing path.
      *
+     * @param srcLsrId source device LSRId
+     * @param dstLsrId destination device LSRId
      * @param plspId plspId of the path
      * @param constraints list of constraints to be applied on path
      * @return false on failure and true on successful path update
      */
-    boolean updatePath(String plspId, List<Constraint> constraints);
+    boolean updatePath(IpAddress srcLsrId, IpAddress dstLsrId, String plspId, List<Constraint> constraints);
 
     /**
      * Releases an existing path.
@@ -100,10 +102,12 @@ public interface PceService {
     /**
      * Releases an existing path.
      *
+     * @param srcLsrId source device LSRId
+     * @param dstLsrId destination device LSRId
      * @param plspId plspId of the path
      * @return false on failure and true on successful path removal
      */
-    boolean releasePath(String plspId);
+    boolean releasePath(IpAddress srcLsrId, IpAddress dstLsrId, String plspId);
 
     /**
      * Queries all paths.

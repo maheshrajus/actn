@@ -693,10 +693,16 @@ public class PceManager implements PceService {
     }
 
     @Override
-    public boolean updatePath(String plspId, List<Constraint> constraints) {
+    public boolean updatePath(IpAddress srcLsrId, IpAddress dstLsrId, String plspId, List<Constraint> constraints) {
         checkNotNull(plspId);
+        checkNotNull(srcLsrId);
+        checkNotNull(dstLsrId);
+
         boolean result = false;
-        Collection<Tunnel> tunnels = tunnelService.queryTunnel(MPLS);
+        TunnelEndPoint tunSrc = IpTunnelEndPoint.ipTunnelPoint(srcLsrId);
+        TunnelEndPoint tunDst = IpTunnelEndPoint.ipTunnelPoint(dstLsrId);
+
+        Collection<Tunnel> tunnels = tunnelService.queryTunnel(tunSrc, tunDst);
         Optional<Tunnel> tunnel = tunnels.stream()
                 .filter(t -> t.annotations().value(PLSP_ID).equals(plspId))
                 .findFirst();
@@ -732,10 +738,16 @@ public class PceManager implements PceService {
     }
 
     @Override
-    public boolean releasePath(String plspId) {
+    public boolean releasePath(IpAddress srcLsrId, IpAddress dstLsrId, String plspId) {
         checkNotNull(plspId);
+        checkNotNull(srcLsrId);
+        checkNotNull(dstLsrId);
+
         boolean result = false;
-        Collection<Tunnel> tunnels = tunnelService.queryTunnel(MPLS);
+        TunnelEndPoint tunSrc = IpTunnelEndPoint.ipTunnelPoint(srcLsrId);
+        TunnelEndPoint tunDst = IpTunnelEndPoint.ipTunnelPoint(dstLsrId);
+
+        Collection<Tunnel> tunnels = tunnelService.queryTunnel(tunSrc, tunDst);
         Optional<Tunnel> tunnel = tunnels.stream()
                 .filter(t -> t.annotations().value(PLSP_ID).equals(plspId))
                 .findFirst();
