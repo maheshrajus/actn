@@ -28,5 +28,5 @@ public interface DomainManager {
      * Returns domain specific paths.
      *
      */
-    Set<Path> getDomainSpecificPaths();
+    Set<Path> getDomainSpecificPaths(Path path);
 }

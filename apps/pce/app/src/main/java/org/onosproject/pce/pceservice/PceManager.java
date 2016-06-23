@@ -97,6 +97,7 @@ import org.onosproject.net.topology.TopologyEdge;
 import org.onosproject.net.topology.TopologyEvent;
 import org.onosproject.net.topology.TopologyListener;
 import org.onosproject.net.topology.TopologyService;
+import org.onosproject.pce.pceservice.api.DomainManager;
 import org.onosproject.pce.pceservice.api.PceService;
 import org.onosproject.pce.pceservice.constraint.CostConstraint;
 import org.onosproject.pce.pceservice.constraint.ExcludeDeviceConstraint;
@@ -240,6 +241,8 @@ public class PceManager implements PceService {
 
     private PceService pceService;
 
+    private DomainManager domainManager = (DomainManager) new DomainManagerImpl(deviceService, pathService);
+
     // TODO: Move this to Topology+ later
     private final ConfigFactory<LinkKey, TeLinkConfig> configFactory =
             new ConfigFactory<LinkKey, TeLinkConfig>(SubjectFactories.LINK_SUBJECT_FACTORY,
@@ -253,6 +256,15 @@ public class PceManager implements PceService {
      * Creates new instance of PceManager.
      */
     public PceManager() {
+    }
+
+    /**
+     * Returns domain manager.
+     *
+     * @return domain manager
+     */
+    public DomainManager domainManager() {
+        return domainManager;
     }
 
     @Override
@@ -518,7 +530,10 @@ public class PceManager implements PceService {
         checkNotNull(src);
         checkNotNull(dst);
         checkNotNull(tunnelName);
-        checkNotNull(lspType);
+        //checkNotNull(lspType);
+        if (lspType == null) {
+            lspType = defaultLspType();
+        }
 
         return setupPath(null, src, dst, tunnelName, constraints, lspType);
     }
@@ -529,7 +544,10 @@ public class PceManager implements PceService {
         checkNotNull(srcLsrId);
         checkNotNull(dstLsrId);
         checkNotNull(tunnelName);
-        checkNotNull(lspType);
+        //checkNotNull(lspType);
+        if (lspType == null) {
+            lspType = defaultLspType();
+        }
 
         // Get the devices from lsrId's
         DeviceId srcDeviceId = pceStore.getLsrIdDevice(srcLsrId.toString());
