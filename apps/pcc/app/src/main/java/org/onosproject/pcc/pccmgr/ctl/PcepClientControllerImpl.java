@@ -96,8 +96,10 @@ import static org.onosproject.pcep.pcepio.protocol.ver1.PcepMetricObjectVer1.IGP
 import static org.onosproject.pcep.pcepio.protocol.ver1.PcepMetricObjectVer1.TE_METRIC;
 import static org.onosproject.pce.pceservice.LspType.WITH_SIGNALLING;
 import static org.onosproject.pcep.pcepio.types.PcepErrorDetailInfo.ERROR_TYPE_19;
+import static org.onosproject.pcep.pcepio.types.PcepErrorDetailInfo.ERROR_TYPE_6;
 import static org.onosproject.pcep.pcepio.types.PcepErrorDetailInfo.ERROR_VALUE_5;
 import static org.onosproject.pcep.pcepio.types.PcepErrorDetailInfo.ERROR_VALUE_2;
+import static org.onosproject.pcep.pcepio.types.PcepErrorDetailInfo.ERROR_VALUE_11;
 
 /**
  * Implementation of PCEP client controller.
@@ -411,8 +413,8 @@ public class PcepClientControllerImpl implements PcepClientController {
 
                         if (lspIdentifier == null) {
                             //Attempted LSP Update Request without stateful PCE capability being advertised
-                            pc.sendMessage(Collections.singletonList(getErrMsg(pc.factory(), ERROR_TYPE_19,
-                                    ERROR_VALUE_2)));
+                            pc.sendMessage(Collections.singletonList(getErrMsg(pc.factory(), ERROR_TYPE_6,
+                                    ERROR_VALUE_11)));
                             return;
                         }
 

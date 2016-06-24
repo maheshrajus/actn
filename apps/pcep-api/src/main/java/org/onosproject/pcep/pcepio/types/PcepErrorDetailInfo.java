@@ -108,5 +108,6 @@ public final class PcepErrorDetailInfo {
     public static final byte ERROR_VALUE_8 = 8;
     public static final byte ERROR_VALUE_9 = 9;
     public static final byte ERROR_VALUE_10 = 10;
+    public static final byte ERROR_VALUE_11 = 11;
     public static final byte ERROR_VALUE_255 = (byte) 255;
 }

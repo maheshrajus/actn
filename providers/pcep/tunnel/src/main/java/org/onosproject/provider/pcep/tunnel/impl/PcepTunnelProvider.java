@@ -1012,8 +1012,7 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
                 .setPcepAttribute(pcepAttribute);
 
         // build association object
-        // TODO : need to check whether VN association exists or not
-        if (true) {
+        if (tunnel.annotations().value(VN_NAME) != null) {
             LinkedList<PcepAssociationObject> llAssociationObj = new LinkedList<PcepAssociationObject>();
             llOptionalTlv = new LinkedList<PcepValueType>();
 
@@ -1024,7 +1023,7 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
 
             // TODO : need to set vn Association Type, ID, Source may need to get from tunnel
             PcepAssociationObject associationObj = pc.factory().buildAssociationObject().setAssociationID((short) 1)
-                    .setAssociationSource(0x01010101).setAssociationType((short) 1)
+                    .setAssociationSource(0x01010101).setAssociationType((short)224)
                     .setOptionalTlv(llOptionalTlv).build();
             llAssociationObj.add(associationObj);
 
