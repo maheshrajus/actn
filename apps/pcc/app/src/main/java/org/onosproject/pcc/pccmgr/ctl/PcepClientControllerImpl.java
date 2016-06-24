@@ -143,6 +143,9 @@ public class PcepClientControllerImpl implements PcepClientController {
     @Activate
     public void activate() {
         ctrl.start(agent);
+        //TODO : currently pceservice is set at PcepConfig singleton, will be removed later
+        PcepConfig.getInstance().setPceService(pceService);
+
         pceService.addListener(pcePathListener);
 
         log.info("Started");
@@ -233,7 +236,7 @@ public class PcepClientControllerImpl implements PcepClientController {
                     switch (tlv.getType()) {
                         case PathSetupTypeTlv.TYPE:
                             pathSetupTlv = (PathSetupTypeTlv) tlv;
-                            lspType = LspType.values()[Integer.valueOf(((PathSetupTypeTlv) tlv).getPst())];
+                            lspType = LspType.values()[(int) pathSetupTlv.getPst()];
                             break;
 
                         default:

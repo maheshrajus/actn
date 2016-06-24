@@ -282,7 +282,8 @@ class PcepChannelHandler extends IdleStateAwareChannelHandler {
 
             pc.setLspDbSyncStatus(PcepSyncStatus.IN_SYNC);
 
-            List<PcePathReport> llPceInitLspList = pc.getPceService().queryAllInitiateTunnels();
+
+            List<PcePathReport> llPceInitLspList = PcepConfig.getInstance().getPceService().queryAllInitiateTunnels();
 
             for (int i = 0; i < llPceInitLspList.size(); i++) {
                 tunnel = llPceInitLspList.get(i);
