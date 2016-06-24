@@ -157,6 +157,8 @@ public class PceManager implements PceService {
     private static final String LINK_NULL = "Link-cannot be null";
     public static final String PCE_SERVICE_APP = "org.onosproject.pce";
     private static final String LOCAL_LSP_ID_GEN_TOPIC = "pcep-local-lsp-id";
+    private static final String SETUP_PATH_ID_GEN_TOPIC = "pcep-setup-path-id";
+
     private static final int PREFIX_LENGTH = 32;
 
     private static final String LSRID = "lsrId";
@@ -168,6 +170,7 @@ public class PceManager implements PceService {
     private LspType defaultLspType;
     public String pceMode = "PNC";
     private IdGenerator localLspIdIdGen;
+    private IdGenerator setupPathIdIdGen;
     protected DistributedSet<Short> localLspIdFreeList;
 
     // LSR-id and device-id mapping for checking capability if L3 device is not
@@ -304,6 +307,7 @@ public class PceManager implements PceService {
         netCfgService.addListener(cfgListener);
 
         localLspIdIdGen = coreService.getIdGenerator(LOCAL_LSP_ID_GEN_TOPIC);
+        setupPathIdIdGen = coreService.getIdGenerator(SETUP_PATH_ID_GEN_TOPIC);
         localLspIdFreeList = storageService.<Short>setBuilder()
                 .withName("pcepLocalLspIdDeletedList")
                 .withSerializer(Serializer.using(KryoNamespaces.API))
@@ -367,7 +371,8 @@ public class PceManager implements PceService {
         TunnelId parentTunnelId = null;
         Set<Path> computedPathSet = computePath(src, dst, constraints);
         Path computedPath = computedPathSet.iterator().next();
-        if (true /*MDSC mode is configured*/) {
+
+        if (getPceMode().equals("MDSC")) {
             paths = domainManager().getDomainSpecificPaths(computedPath);
         }
 
@@ -566,7 +571,7 @@ public class PceManager implements PceService {
             lspType = defaultLspType();
         }
 
-        return setupPath(null, src, dst, tunnelName, constraints, lspType);
+        return setupPath(vnName, src, dst, tunnelName, constraints, lspType);
     }
 
     @Override
@@ -602,6 +607,14 @@ public class PceManager implements PceService {
 
     @Override
     public boolean updatePath(TunnelId tunnelId, List<Constraint> constraints) {
+        checkNotNull(tunnelId);
+        if (getPceMode().equals("MDSC")) {
+           return  updateMdscPath(tunnelId, constraints);
+        }
+        return updatePncPath(tunnelId, constraints);
+    }
+
+    public boolean updatePncPath(TunnelId tunnelId, List<Constraint> constraints) {
         checkNotNull(tunnelId);
         Set<Path> computedPathSet = null;
         Tunnel tunnel = tunnelService.queryTunnel(tunnelId);
@@ -662,8 +675,8 @@ public class PceManager implements PceService {
                 }
                 //If bandwidth constraints not specified , take existing bandwidth for shared bandwidth calculation
                 shBwConstraint = bwConstraint != null ? new SharedBandwidthConstraint(links,
-                        existingBwValue, bwConstraint.bandwidth()) : new SharedBandwidthConstraint(links,
-                        existingBwValue, existingBwValue);
+                                 existingBwValue, bwConstraint.bandwidth()) : new SharedBandwidthConstraint(links,
+                                 existingBwValue, existingBwValue);
 
                 constraints.add(shBwConstraint);
             }
@@ -694,8 +707,8 @@ public class PceManager implements PceService {
         annotationBuilder.set(DELEGATE, TRUE);
         annotationBuilder.set(PLSP_ID, tunnel.annotations().value(PLSP_ID));
         annotationBuilder.set(PCC_TUNNEL_ID, tunnel.annotations().value(PCC_TUNNEL_ID));
-
         Path computedPath = computedPathSet.iterator().next();
+
         LabelStack labelStack = null;
         LspType lspType = LspType.valueOf(lspSigType);
         long localLspId = 0;
@@ -715,7 +728,6 @@ public class PceManager implements PceService {
                 }
             }
         }
-
         Tunnel updatedTunnel = new DefaultTunnel(null, tunnel.src(), tunnel.dst(), MPLS, INIT, null, null,
                                                  tunnel.tunnelName(), computedPath,
                                                  labelStack, annotationBuilder.build());
@@ -737,7 +749,155 @@ public class PceManager implements PceService {
             }
             return false;
         }
+        return true;
+    }
 
+    public TunnelId getTunnel(Path updatepPath, Set<TunnelId> childTunnelIds) {
+        //Path updatepPath = (Path) iterator.next();
+        DeviceId src = updatepPath.links().get(0).src().deviceId();
+        DeviceId dst = updatepPath.links().get(updatepPath.links().size() - 1).dst().deviceId();
+
+        Iterator childTunnelItr = childTunnelIds.iterator();
+        while (childTunnelItr.hasNext()) {
+            TunnelId childTunnelId = (TunnelId) childTunnelItr.next();
+            Tunnel tmpTunnel = tunnelService.queryTunnel(childTunnelId);
+            DeviceId tunnelSrc = tmpTunnel.path().links().get(0).src().deviceId();
+            DeviceId tunnelDst = tmpTunnel.path().links().get(tmpTunnel.path().links().size() - 1).dst().deviceId();
+
+            if (tunnelSrc.equals(src) && tunnelDst.equals(dst)) {
+               return  childTunnelId;
+            }
+        }
+        return null;
+    }
+
+    public boolean updateMdscPath(TunnelId tunnelId, List<Constraint> constraints) {
+        checkNotNull(tunnelId);
+        Set<Path> computedPathSet = null;
+        Tunnel tunnel = tunnelService.queryTunnel(tunnelId);
+        Set<Path> oldPaths = null;
+        Set<Path> newPaths = null;
+        Set<TunnelId> childTunnelIds = null;
+
+        if (tunnel == null) {
+            return false;
+        }
+
+        if (tunnel.type() != MPLS || FALSE.equalsIgnoreCase(tunnel.annotations().value(DELEGATE))) {
+            // Only delegated LSPs can be updated.
+            return false;
+        }
+
+        List<Link> links = tunnel.path().links();
+        String lspSigType = tunnel.annotations().value(LSP_SIG_TYPE);
+        double bwConstraintValue = 0;
+        String costType = null;
+        SharedBandwidthConstraint shBwConstraint = null;
+        BandwidthConstraint bwConstraint = null;
+        CostConstraint costConstraint = null;
+
+        if (constraints != null) {
+            // Call path computation in shared bandwidth mode.
+            Iterator<Constraint> iterator = constraints.iterator();
+            while (iterator.hasNext()) {
+                Constraint constraint = iterator.next();
+                if (constraint instanceof BandwidthConstraint) {
+                    bwConstraint = (BandwidthConstraint) constraint;
+                    bwConstraintValue = bwConstraint.bandwidth().bps();
+                } else if (constraint instanceof CostConstraint) {
+                    costConstraint = (CostConstraint) constraint;
+                    costType = costConstraint.type().name();
+                }
+            }
+
+            // Remove and keep the cost constraint at the end of the list of constraints.
+            if (costConstraint != null) {
+                constraints.remove(costConstraint);
+            }
+
+            Bandwidth existingBwValue = null;
+            String existingBwAnnotation = tunnel.annotations().value(BANDWIDTH);
+            if (existingBwAnnotation != null) {
+                existingBwValue = Bandwidth.bps(Double.parseDouble(existingBwAnnotation));
+
+                /*
+                 * The computation is a shared bandwidth constraint based, so need to remove bandwidth constraint which
+                 * has been utilized to create shared bandwidth constraint.
+                 */
+                if (bwConstraint != null) {
+                    constraints.remove(bwConstraint);
+                }
+            }
+
+            if (existingBwValue != null) {
+                if (bwConstraintValue == 0) {
+                    bwConstraintValue = existingBwValue.bps();
+                }
+                //If bandwidth constraints not specified , take existing bandwidth for shared bandwidth calculation
+                shBwConstraint = bwConstraint != null ? new SharedBandwidthConstraint(links,
+                                 existingBwValue, bwConstraint.bandwidth()) : new SharedBandwidthConstraint(links,
+                                 existingBwValue, existingBwValue);
+
+                constraints.add(shBwConstraint);
+            }
+        } else {
+            constraints = new LinkedList<>();
+        }
+
+        constraints.add(CapabilityConstraint.of(CapabilityType.valueOf(lspSigType)));
+        if (costConstraint != null) {
+            constraints.add(costConstraint);
+        }
+
+        computedPathSet = computePath(links.get(0).src().deviceId(), links.get(links.size() - 1).dst().deviceId(),
+                                      constraints);
+
+        // NO-PATH
+        if (computedPathSet.isEmpty()) {
+            return false;
+        }
+
+        //Call domain manager with old path
+        oldPaths = domainManager().getDomainSpecificPaths(tunnel.path());
+        newPaths = domainManager().getDomainSpecificPaths(computedPathSet.iterator().next());
+        Map<DomainManager.Oper, Set<Path>> setPath = domainManager().compareDomainSpecificPaths(oldPaths, newPaths);
+
+        for (Map.Entry<TunnelId, Set<TunnelId>> map : pceStore.parentChildTunnelMap().entrySet()) {
+            TunnelId parentTunnel = map.getKey();
+            if (parentTunnel.equals(tunnelId)) {
+                childTunnelIds = map.getValue();
+            }
+        }
+
+        for (Map.Entry<DomainManager.Oper, Set<Path>> entry : setPath.entrySet()) {
+            Set<Path> path = entry.getValue();
+            Iterator iterator = path.iterator();
+            if (entry.getKey().equals(DomainManager.Oper.ADD)) {
+                while (iterator.hasNext()) {
+                    Path setupPath = (Path) iterator.next();
+                    String vnName = tunnel.annotations().value("vnName");
+                    setupPath(vnName, setupPath.src().deviceId(),
+                              setupPath.dst().deviceId(), vnName.concat(Long.toString(localLspIdIdGen.getNewId())),
+                                      constraints, defaultLspType());
+                }
+            } else if (entry.getKey().equals(DomainManager.Oper.UPDATE)) {
+                while (iterator.hasNext()) {
+                    Path updatepPath = (Path) iterator.next();
+                    TunnelId updateTunnel = getTunnel(updatepPath, childTunnelIds);
+                    if (updateTunnel != null) {
+                        updatePncPath(updateTunnel, constraints);
+                    }
+                }
+            } else if (entry.getKey().equals(DomainManager.Oper.DELETE)) {
+                while (iterator.hasNext()) {
+                    Path deletePath = (Path) iterator.next();
+                    TunnelId deleteTunnel = getTunnel(deletePath, childTunnelIds);
+                    if (deleteTunnel != null) {
+                        releasePath(deleteTunnel);
+                    }
+                }
+            }
+        }
         return true;
     }
 

@@ -99,7 +99,7 @@ public class VnManager implements VnService {
         VirtualNetworkInfo virtualNetwork = vnStore.queryVn(vnName);
         for (Lsp lsp : virtualNetwork.lsp()) {
             String tunnelName = vnName.toString().concat(Long.toString(tunnelIdIdGen.getNewId()));
-            //service.setupPath(lsp.src(), lsp.dst(), tunnelName, getConstraints(constraints), vnName);
+            service.setupPath(lsp.src(), lsp.dst(), tunnelName, getConstraints(constraints), null, vnName);
         }
         return true;
     }
