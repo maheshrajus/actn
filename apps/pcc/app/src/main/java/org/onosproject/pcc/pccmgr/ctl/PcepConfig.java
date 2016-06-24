@@ -3,6 +3,7 @@ package org.onosproject.pcc.pccmgr.ctl;
 import org.onosproject.pcc.pccmgr.api.PcepCfg;
 import org.onosproject.pcc.pccmgr.api.PcepConnectPeer;
 import org.onosproject.pcc.pccmgr.api.PcepPeerCfg;
+import org.onosproject.pce.pceservice.api.PceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,6 +24,7 @@ public final class PcepConfig implements PcepCfg {
     private TreeMap<String, PcepPeerCfg> pcepPeerTree = new TreeMap<>();
     private Controller controller;
     private byte sessionId;
+    PceService pceService;
 
     private PcepConfig() {
 
@@ -44,6 +46,14 @@ public final class PcepConfig implements PcepCfg {
 
     public void setController(Controller controller) {
         this.controller = controller;
+    }
+
+    public void setPceService(PceService pceService) {
+        this.pceService = pceService;
+    }
+
+    public PceService getPceService() {
+        return this.pceService;
     }
 
     public Controller getController() {

@@ -62,7 +62,6 @@ public interface PcepClientDriver extends PcepClient {
 
     Channel getChannel();
 
-    PceService getPceService();
     /**
      * Sets the keep alive time for this pcc.
      *

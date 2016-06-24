@@ -182,11 +182,6 @@ public class PcepClientImpl implements PcepClientDriver {
     }
 
     @Override
-    public PceService getPceService() {
-        return this.pceService;
-    }
-
-    @Override
     public String channelId() {
         return channelId;
     }
