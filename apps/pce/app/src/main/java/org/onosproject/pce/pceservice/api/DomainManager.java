@@ -17,6 +17,7 @@ package org.onosproject.pce.pceservice.api;
 
 import org.onosproject.net.Path;
 
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -25,8 +26,34 @@ import java.util.Set;
 public interface DomainManager {
 
     /**
+     * Operation state.
+     */
+    enum Oper {
+        /**
+         * Signifies that the path is add.
+         */
+        ADD,
+
+        /**
+         * Signifies that the path is updated.
+         */
+        UPDATE,
+
+        /**
+         * Signifies that the path is delete.
+         */
+        DELETE
+    }
+
+    /**
      * Returns domain specific paths.
      *
      */
     Set<Path> getDomainSpecificPaths(Path path);
+
+    /**
+     * Returns domain specific paths to be process based on Oper type.
+     *
+     */
+    Map<Oper, Set<Path>> compareDomainSpecificPaths(Set<Path> oldPaths, Set<Path> newPaths);
 }

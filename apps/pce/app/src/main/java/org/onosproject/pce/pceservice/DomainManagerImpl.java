@@ -16,6 +16,7 @@
 package org.onosproject.pce.pceservice;
 
 import org.onosproject.net.Device;
+import org.onosproject.net.DeviceId;
 import org.onosproject.net.Link;
 import org.onosproject.net.Path;
 import org.onosproject.net.device.DeviceService;
@@ -24,7 +25,9 @@ import org.onosproject.pce.pceservice.api.DomainManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -82,6 +85,40 @@ public class DomainManagerImpl implements DomainManager {
         }
         return paths;
     }
+
+    @Override
+    public Map<Oper, Set<Path>> compareDomainSpecificPaths(Set<Path> oldPaths, Set<Path> newPaths) {
+
+        Map<Oper, Set<Path>> map = new HashMap<>();
+        Set<Path> updatePaths = new HashSet<>();
+
+        for (Path oldpath : oldPaths) {
+            for (Path newPath : newPaths) {
+                if (getSrcDeviceId(oldpath).equals(getSrcDeviceId(newPath))
+                        && getDstDeviceId(oldpath).equals(getDstDeviceId(newPath))) {
+                    updatePaths.add(newPath);
+                    oldPaths.remove(oldpath);
+                    newPaths.remove(newPath);
+                }
+            }
+        }
+
+        map.put(Oper.ADD, newPaths);
+        map.put(Oper.UPDATE, updatePaths);
+        map.put(Oper.DELETE, oldPaths);
+
+        return map;
+    }
+
+    private DeviceId getDstDeviceId(Path path) {
+        int size = path.links().size();
+        return path.links().get(size - 1).dst().deviceId();
+    }
+
+    private DeviceId getSrcDeviceId(Path path) {
+        return path.links().get(0).src().deviceId();
+    }
+
     /*@Override
     public boolean equals(Object obj) {
         if (this == obj) {
