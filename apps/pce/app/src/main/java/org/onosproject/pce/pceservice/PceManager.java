@@ -157,7 +157,6 @@ public class PceManager implements PceService {
     private static final String LINK_NULL = "Link-cannot be null";
     public static final String PCE_SERVICE_APP = "org.onosproject.pce";
     private static final String LOCAL_LSP_ID_GEN_TOPIC = "pcep-local-lsp-id";
-    private static final String SETUP_PATH_ID_GEN_TOPIC = "pcep-setup-path-id";
 
     private static final int PREFIX_LENGTH = 32;
 
@@ -170,7 +169,6 @@ public class PceManager implements PceService {
     private LspType defaultLspType;
     public String pceMode = "PNC";
     private IdGenerator localLspIdIdGen;
-    private IdGenerator setupPathIdIdGen;
     protected DistributedSet<Short> localLspIdFreeList;
 
     // LSR-id and device-id mapping for checking capability if L3 device is not
@@ -307,7 +305,6 @@ public class PceManager implements PceService {
         netCfgService.addListener(cfgListener);
 
         localLspIdIdGen = coreService.getIdGenerator(LOCAL_LSP_ID_GEN_TOPIC);
-        setupPathIdIdGen = coreService.getIdGenerator(SETUP_PATH_ID_GEN_TOPIC);
         localLspIdFreeList = storageService.<Short>setBuilder()
                 .withName("pcepLocalLspIdDeletedList")
                 .withSerializer(Serializer.using(KryoNamespaces.API))
@@ -593,7 +590,9 @@ public class PceManager implements PceService {
 
         if (!result) {
 
-            PcePathReport report = DefaultPcePathReport.builder()
+            // Report error here.
+
+            /* PcePathReport report = DefaultPcePathReport.builder()
                     .pathName(tunnelName)
                     .state(PcePathReport.State.DOWN)
                     .ingress(srcLsrId)
@@ -601,6 +600,7 @@ public class PceManager implements PceService {
                     .build();
 
             pcePathUpdateListener.forEach(item -> item.updatePath(report));
+            */
         }
         return result;
     }
@@ -922,12 +922,15 @@ public class PceManager implements PceService {
 
         if (!result) {
 
-            PcePathReport report = DefaultPcePathReport.builder()
+            // Report Error here
+
+            /* PcePathReport report = DefaultPcePathReport.builder()
                     .state(PcePathReport.State.DOWN)
                     .plspId(plspId)
                     .build();
 
-            pcePathUpdateListener.forEach(item -> item.updatePath(report));
+            pcePathUpdateListener.forEach(item -> item.updatePath(report));*/
+
         }
         return result;
     }
@@ -966,13 +969,14 @@ public class PceManager implements PceService {
         }
 
         if (!result) {
-
-            PcePathReport report = DefaultPcePathReport.builder()
+            // Report Error here
+            /* PcePathReport report = DefaultPcePathReport.builder()
                     .state(PcePathReport.State.DOWN)
                     .plspId(plspId)
                     .build();
 
             pcePathUpdateListener.forEach(item -> item.updatePath(report));
+            */
         }
         return result;
     }
@@ -1170,7 +1174,7 @@ public class PceManager implements PceService {
                         });
                     }
                 }
-                });
+             });
         }
     }
 
@@ -1207,9 +1211,9 @@ public class PceManager implements PceService {
                     pceStore.addFailedPathInfo(new PcePathInfo(tunnel.path().src().deviceId(), tunnel
                             .path().dst().deviceId(), tunnel.tunnelName().value(), constraintList,
                             LspType.valueOf(tunnel.annotations().value(LSP_SIG_TYPE))));
-                    //Release that tunnel calling PCInitiate
-                    releasePath(tunnel.tunnelId());
                 }
+                //Release that tunnel calling PCInitiate
+                releasePath(tunnel.tunnelId());
             }
         }
 
@@ -1584,7 +1588,7 @@ public class PceManager implements PceService {
                 if (FALSE.equalsIgnoreCase(pceInit) && bwConstraintValue != 0 && lspType != WITH_SIGNALLING) {
                     reserveBandwidth(tunnel.path(), bwConstraintValue, null);
                 }
-                if (tunnel.state() == ESTABLISHED) {
+                if (tunnel.state() == ACTIVE) {
                     reportTunnelToListeners(tunnel, true, false);
                 }
                 break;
@@ -1627,7 +1631,7 @@ public class PceManager implements PceService {
                                                                   tunnel.tunnelName().value(), constraints, lspType));
                 }
 
-                if (tunnel.state() == ESTABLISHED) {
+                if (tunnel.state() == ACTIVE) {
                     reportTunnelToListeners(tunnel, true, false);
                 }
 

@@ -16,7 +16,6 @@
 package org.onosproject.pcc.pccmgr.api;
 
 import org.jboss.netty.channel.Channel;
-import org.onosproject.pce.pceservice.api.PceService;
 import org.onosproject.pcep.pcepio.protocol.PcepVersion;
 
 
