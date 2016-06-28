@@ -47,6 +47,7 @@ import org.onlab.packet.TCP;
 import org.onlab.util.Bandwidth;
 import org.onosproject.core.ApplicationId;
 import org.onosproject.core.CoreService;
+
 import org.onosproject.incubator.net.resource.label.LabelResourceAdminService;
 import org.onosproject.incubator.net.resource.label.LabelResourceId;
 import org.onosproject.incubator.net.resource.label.LabelResourceService;
@@ -159,6 +160,7 @@ public class PceManager implements PceService {
     private static final String LINK_NULL = "Link-cannot be null";
     public static final String PCE_SERVICE_APP = "org.onosproject.pce";
     private static final String LOCAL_LSP_ID_GEN_TOPIC = "pcep-local-lsp-id";
+    private static final String SETUP_PATH_ID_GEN_TOPIC = "pcep-setup-path-id";
 
     private static final int PREFIX_LENGTH = 32;
 
@@ -168,9 +170,13 @@ public class PceManager implements PceService {
     private static final String END_OF_SYNC_IP_PREFIX = "0.0.0.0/32";
     public static final int PCEP_PORT = 4189;
 
+    private static final Boolean TUNNEL_INIT = false;
+    private static final Boolean TUNNEL_CREATED = true;
+
     private LspType defaultLspType;
     public String pceMode = "PNC";
     private IdGenerator localLspIdIdGen;
+    private IdGenerator setupPathIdIdGen;
     protected DistributedSet<Short> localLspIdFreeList;
 
     // LSR-id and device-id mapping for checking capability if L3 device is not
@@ -307,6 +313,7 @@ public class PceManager implements PceService {
         netCfgService.addListener(cfgListener);
 
         localLspIdIdGen = coreService.getIdGenerator(LOCAL_LSP_ID_GEN_TOPIC);
+        setupPathIdIdGen = coreService.getIdGenerator(SETUP_PATH_ID_GEN_TOPIC);
         localLspIdFreeList = storageService.<Short>setBuilder()
                 .withName("pcepLocalLspIdDeletedList")
                 .withSerializer(Serializer.using(KryoNamespaces.API))
@@ -522,10 +529,18 @@ public class PceManager implements PceService {
                 if (parentTunnelId == null) {
                     parentTunnelId = tunnelId;
                     pceStore.parentChildTunnelMap().put(parentTunnelId, new HashSet<TunnelId>());
+
+                    Map<TunnelId, Boolean> tunnelStatusMap = new HashMap<>();
+                    tunnelStatusMap.put(parentTunnelId, Boolean.valueOf(TUNNEL_INIT));
+                    pceStore.parentChildTunnelStatusMap().put(parentTunnelId, tunnelStatusMap);
                 } else {
                     // Update tunnel ID map
                     Set<TunnelId> childTunnelIdSet = pceStore.parentChildTunnelMap().get(parentTunnelId);
                     childTunnelIdSet.add(tunnelId);
+
+                    Map<TunnelId, Boolean> childTunnelIdStatus = pceStore.parentChildTunnelStatusMap()
+                                                                         .get(parentTunnelId);
+                    childTunnelIdStatus.put(tunnelId, Boolean.valueOf(TUNNEL_INIT));
                 }
                 computedPath = paths.iterator().next();
                 src = computedPath.src().deviceId();
@@ -752,6 +767,15 @@ public class PceManager implements PceService {
             }
             return false;
         }
+        if (getPceMode().equals("MDSC")) {
+            // Update tunnel ID map
+            Set<TunnelId> childTunnelIdSet = pceStore.parentChildTunnelMap().get(tunnelId);
+            childTunnelIdSet.add(updatedTunnelId);
+
+            Map<TunnelId, Boolean> childTunnelIdStatus = pceStore.parentChildTunnelStatusMap().get(tunnelId);
+            childTunnelIdStatus.put(updatedTunnelId, Boolean.valueOf(TUNNEL_INIT));
+        }
+
         return true;
     }
 
@@ -880,7 +904,7 @@ public class PceManager implements PceService {
                     Path setupPath = (Path) iterator.next();
                     String vnName = tunnel.annotations().value("vnName");
                     setupPath(vnName, setupPath.src().deviceId(),
-                              setupPath.dst().deviceId(), vnName.concat(Long.toString(localLspIdIdGen.getNewId())),
+                              setupPath.dst().deviceId(), vnName.concat(Long.toString(setupPathIdIdGen.getNewId())),
                                       constraints, defaultLspType());
                 }
             } else if (entry.getKey().equals(DomainManager.Oper.UPDATE)) {
@@ -895,8 +919,14 @@ public class PceManager implements PceService {
                 while (iterator.hasNext()) {
                     Path deletePath = (Path) iterator.next();
                     TunnelId deleteTunnel = getTunnel(deletePath, childTunnelIds);
-                    if (deleteTunnel != null) {
-                        releasePath(deleteTunnel);
+                    if (deleteTunnel != null && releasePath(deleteTunnel)) {
+                        // delete from status and parent child map
+                        Set<TunnelId> childTunnelIdSet = pceStore.parentChildTunnelMap().get(tunnelId);
+                        childTunnelIdSet.remove(deleteTunnel);
+
+                        Map<TunnelId, Boolean> childTunnelIdStatus = pceStore
+                                                                        .parentChildTunnelStatusMap().get(tunnelId);
+                        childTunnelIdStatus.remove(deleteTunnel);
                     }
                 }
             }
@@ -1567,6 +1597,64 @@ public class PceManager implements PceService {
         }
     }
 
+    /**
+     * Returns PCE store parent tunnel ID.
+     *
+     * @param tunnelId child tunnel ID
+     * @return parent tunnel ID
+     */
+    public TunnelId getPceStoreParentTunnel(TunnelId tunnelId) {
+        // get the tunnel name and get vnName based in delimeter, get parent tunnel by vnName and check
+        // child tunnel status for all and update parent status. all or none
+        for (Map.Entry<TunnelId, Set<TunnelId>> entry : pceStore.parentChildTunnelMap().entrySet()) {
+            Set<TunnelId> tunnelSet = entry.getValue();
+            if (tunnelSet.contains(tunnelId)) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Update PCE tunnel store status.
+     *
+     * @param tunnel tunnel ID
+     * @param status status to update, false for delete otherwise true
+     */
+    public void updatePceStoreTunnelStatus(TunnelId tunnel, Boolean status) {
+        checkNotNull(tunnel, "Tunnel ID cannot be null");
+
+        TunnelId tunnelId = getPceStoreParentTunnel(tunnel);
+        if (tunnelId == null) {
+            return;
+        }
+        Map<TunnelId, Boolean> childTunnelId = pceStore.parentChildTunnelStatusMap().get(tunnelId);
+        if (childTunnelId.containsKey(tunnelId)) {
+            childTunnelId.remove(tunnelId);
+            childTunnelId.put(tunnelId, status);
+        }
+        return;
+    }
+
+    public void deletePceStoreTunnel(TunnelId tunnel) {
+        checkNotNull(tunnel, "Tunnel ID cannot be null");
+
+        TunnelId tunnelId = getPceStoreParentTunnel(tunnel);
+        if (tunnelId == null) {
+            return;
+        }
+        Map<TunnelId, Boolean> childTunnelId = pceStore.parentChildTunnelStatusMap().get(tunnelId);
+        if (childTunnelId.containsKey(tunnelId)) {
+            childTunnelId.remove(tunnelId);
+        }
+
+        Set<TunnelId> tunnelSet = pceStore.parentChildTunnelMap().get(tunnelId);
+        if (tunnelSet.contains(tunnel)) {
+            tunnelSet.remove(tunnel);
+        }
+        return;
+    }
+
     // Listens on tunnel events.
     private class InnerTunnelListener implements TunnelListener {
         @Override
@@ -1593,6 +1681,7 @@ public class PceManager implements PceService {
                 }
                 if (tunnel.state() == ACTIVE) {
                     reportTunnelToListeners(tunnel, true, false);
+                    updatePceStoreTunnelStatus(tunnel.tunnelId(), TUNNEL_CREATED);
                 }
                 break;
 
@@ -1636,6 +1725,7 @@ public class PceManager implements PceService {
 
                 if (tunnel.state() == ACTIVE) {
                     reportTunnelToListeners(tunnel, true, false);
+                    updatePceStoreTunnelStatus(tunnel.tunnelId(), TUNNEL_CREATED);
                 }
 
                 break;
@@ -1662,6 +1752,7 @@ public class PceManager implements PceService {
                 }
 
                 reportTunnelToListeners(tunnel, true, true);
+                deletePceStoreTunnel(tunnel.tunnelId());
 
                 break;
 

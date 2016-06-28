@@ -90,9 +90,9 @@ public class DistributedPceStore implements PceStore {
 
     // Parent Path tunnel ID and list of child path tunnel ID's
     private final Map<TunnelId, Set<TunnelId>> parentChildTunnelMap = Maps.newConcurrentMap();
-
-    // Add map to store Parent tunnel status and child tunnel status, parent tunnel status should be down till all
+    // Map to store Parent tunnel status and child tunnel status, parent tunnel status should be down till all
     // child tunnel status is up, if any child tunnel status goes down, parent tunnel status should be down.
+    private final Map<TunnelId, Map<TunnelId, Boolean>> parentChildTunnelStatusMap = Maps.newConcurrentMap();
 
     // List of Failed path info
     private DistributedSet<PcePathInfo> failedPathSet;
@@ -437,5 +437,10 @@ public class DistributedPceStore implements PceStore {
     @Override
     public Map<TunnelId, Set<TunnelId>> parentChildTunnelMap() {
         return parentChildTunnelMap;
+    }
+
+    @Override
+    public Map<TunnelId, Map<TunnelId, Boolean>> parentChildTunnelStatusMap() {
+        return parentChildTunnelStatusMap;
     }
 }

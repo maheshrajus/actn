@@ -249,4 +249,9 @@ public class PceStoreAdapter implements PceStore {
     public Map<TunnelId, Set<TunnelId>> parentChildTunnelMap() {
         return null;
     }
+
+    @Override
+    public Map<TunnelId, Map<TunnelId, Boolean>> parentChildTunnelStatusMap() {
+        return null;
+    }
 }

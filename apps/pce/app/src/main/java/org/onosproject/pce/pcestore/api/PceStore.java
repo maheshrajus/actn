@@ -299,5 +299,12 @@ public interface PceStore {
      *
      * @return parent child tunnel map
      */
-    public Map<TunnelId, Set<TunnelId>> parentChildTunnelMap();
+    Map<TunnelId, Set<TunnelId>> parentChildTunnelMap();
+
+    /**
+     * Returns parent and child tunnel status map.
+     *
+     * @return parent child tunnel status map
+     */
+    Map<TunnelId, Map<TunnelId, Boolean>> parentChildTunnelStatusMap();
 }
