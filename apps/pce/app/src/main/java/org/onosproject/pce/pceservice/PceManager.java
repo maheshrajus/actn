@@ -954,7 +954,6 @@ public class PceManager implements PceService {
         }
 
         if (!result) {
-
             // Report Error here
 
             /* PcePathReport report = DefaultPcePathReport.builder()
@@ -1050,6 +1049,19 @@ public class PceManager implements PceService {
             return true;
         }
         return false;
+    }
+
+
+    @Override
+    public Boolean queryParentTunnelStatus(TunnelId tunnelId) {
+        TunnelId parentTunnel = getPceStoreParentTunnel(tunnelId);
+        if (parentTunnel != null) {
+            Map<TunnelId, Boolean> childTunnelId = pceStore.parentChildTunnelStatusMap().get(tunnelId);
+            if (childTunnelId.containsKey(parentTunnel)) {
+                return childTunnelId.get(parentTunnel);
+            }
+        }
+        return null;
     }
 
     @Override
@@ -1558,9 +1570,7 @@ public class PceManager implements PceService {
                 if (specificDevice.annotations().value(LSRID) != null) {
                     pceStore.removeLsrIdDevice(specificDevice.annotations().value(LSRID));
                 }
-
                 break;
-
             default:
                 break;
             }
@@ -1590,7 +1600,6 @@ public class PceManager implements PceService {
                     releaseAdjacencyLabel(link);
                 }
                 break;
-
             default:
                 break;
             }
@@ -1623,15 +1632,30 @@ public class PceManager implements PceService {
      */
     public void updatePceStoreTunnelStatus(TunnelId tunnel, Boolean status) {
         checkNotNull(tunnel, "Tunnel ID cannot be null");
+        boolean allChildTunnelUp = true;
 
         TunnelId tunnelId = getPceStoreParentTunnel(tunnel);
         if (tunnelId == null) {
             return;
         }
         Map<TunnelId, Boolean> childTunnelId = pceStore.parentChildTunnelStatusMap().get(tunnelId);
-        if (childTunnelId.containsKey(tunnelId)) {
-            childTunnelId.remove(tunnelId);
-            childTunnelId.put(tunnelId, status);
+        if (childTunnelId.containsKey(tunnel)) {
+            childTunnelId.put(tunnel, status);
+        }
+
+        // Update parent tunnel status, if all child tunnels are up, update parent, otherwise dont
+        for (TunnelId key : childTunnelId.keySet()) {
+            if (!childTunnelId.get(key).booleanValue()) {
+                // Update parent tunnel status not up.
+                childTunnelId.put(tunnelId, TUNNEL_INIT);
+                allChildTunnelUp = false;
+                break;
+            }
+        }
+
+        if ((childTunnelId.size() > 0)
+                && allChildTunnelUp && !(childTunnelId.get(tunnelId).booleanValue())) {
+            childTunnelId.put(tunnelId, TUNNEL_CREATED);
         }
         return;
     }
@@ -1758,7 +1782,6 @@ public class PceManager implements PceService {
 
             default:
                 break;
-
             }
             return;
         }
@@ -1801,7 +1824,6 @@ public class PceManager implements PceService {
                         }
                     }
                 }
-
                 // Remove lsrId info from map
                 lsrIdDeviceIdMap.remove(lsrId);
             }
@@ -1843,7 +1865,6 @@ public class PceManager implements PceService {
             Map<DeviceId, LabelResourceId> globalNodeLabelMap = pceStore.getGlobalNodeLabels();
 
             for (Entry<DeviceId, LabelResourceId> entry : globalNodeLabelMap.entrySet()) {
-
                 // Convert from DeviceId to TunnelEndPoint
                 Device srcDevice = deviceService.getDevice(entry.getKey());
 
@@ -1897,7 +1918,6 @@ public class PceManager implements PceService {
                 }
             }
         }
-
         return true;
     }
 

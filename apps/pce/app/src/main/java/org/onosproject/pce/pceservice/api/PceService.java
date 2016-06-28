@@ -184,4 +184,12 @@ public interface PceService {
      * @return list of PcePathReport if tunnels exist otherwise empty list.
      */
     List<PcePathReport> queryAllInitiateTunnels();
+
+    /**
+     * Returns parent tunnel status.
+     *
+     * @param tunnelId tunnel ID
+     * @return parent tunnel status.
+     */
+    Boolean queryParentTunnelStatus(TunnelId tunnelId);
 }
