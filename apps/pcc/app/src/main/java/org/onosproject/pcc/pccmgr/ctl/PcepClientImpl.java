@@ -234,7 +234,7 @@ public class PcepClientImpl implements PcepClientDriver {
 
         if ((syncOldStatus == PcepSyncStatus.IN_SYNC) && (syncStatus == PcepSyncStatus.SYNCED)) {
             // Perform end of LSP DB sync actions.
-            this.agent.analyzeSyncMsgList(pceId);
+            return;
         }
     }
 

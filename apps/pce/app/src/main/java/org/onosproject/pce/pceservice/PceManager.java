@@ -120,6 +120,8 @@ import java.util.HashSet;
 import com.google.common.collect.ImmutableSet;
 
 import static org.onosproject.incubator.net.tunnel.Tunnel.Type.MPLS;
+import static org.onosproject.incubator.net.tunnel.Tunnel.Type.SDMPLS;
+import static org.onosproject.incubator.net.tunnel.Tunnel.Type.MDMPLS;
 import static org.onosproject.incubator.net.tunnel.Tunnel.State.INIT;
 import static org.onosproject.incubator.net.tunnel.Tunnel.State.ESTABLISHED;
 import static org.onosproject.incubator.net.tunnel.Tunnel.State.ACTIVE;
@@ -623,7 +625,8 @@ public class PceManager implements PceService {
             return false;
         }
 
-        if (tunnel.type() != MPLS || FALSE.equalsIgnoreCase(tunnel.annotations().value(DELEGATE))) {
+        if (((tunnel.type() != MPLS) && (tunnel.type() != SDMPLS) && (tunnel.type() != MDMPLS))
+                || FALSE.equalsIgnoreCase(tunnel.annotations().value(DELEGATE))) {
             // Only delegated LSPs can be updated.
             return false;
         }
@@ -994,7 +997,7 @@ public class PceManager implements PceService {
     @Override
     public Iterable<Tunnel> queryPath(String vnName) {
         // TODO: query tunnels by vn name
-        return tunnelService.queryTunnel(MPLS);
+        return tunnelService.queryTunnel(MDMPLS);
     }
 
     @Override

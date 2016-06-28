@@ -424,7 +424,13 @@ public class PcepClientControllerImpl implements PcepClientController {
 
             // Query tunnel service and fetch all the tunnels with this PCC as ingress.
             // Organize into two maps, with LSP key if known otherwise with symbolic path name, for quick search.
-            Collection<Tunnel> queriedTunnels = tunnelService.queryTunnel(Tunnel.Type.MPLS);
+            Collection<Tunnel> queriedMplsTunnels = tunnelService.queryTunnel(Tunnel.Type.MPLS);
+            Collection<Tunnel> queriedSdMplsTunnels = tunnelService.queryTunnel(Tunnel.Type.SDMPLS);
+            Collection<Tunnel> queriedMdMplsTunnels = tunnelService.queryTunnel(Tunnel.Type.MDMPLS);
+            Collection<Tunnel> queriedTunnels = new LinkedList<>();
+            queriedTunnels.addAll(queriedMplsTunnels);
+            queriedTunnels.addAll(queriedSdMplsTunnels);
+            queriedTunnels.addAll(queriedMdMplsTunnels);
             for (Tunnel tunnel : queriedTunnels) {
                 if (((IpTunnelEndPoint) tunnel.src()).ip().equals(pccId.ipAddress())) {
                     String pLspId = tunnel.annotations().value(PLSP_ID);

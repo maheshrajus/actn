@@ -24,14 +24,9 @@ import org.apache.felix.scr.annotations.ReferenceCardinality;
 import org.apache.felix.scr.annotations.Service;
 import org.onlab.packet.IpAddress;
 import org.onlab.util.DataRateUnit;
-import org.onosproject.incubator.net.tunnel.IpTunnelEndPoint;
 import org.onosproject.incubator.net.tunnel.Tunnel;
-import org.onosproject.incubator.net.tunnel.Tunnel.State;
-import org.onosproject.incubator.net.tunnel.TunnelService;
-import org.onosproject.net.device.DeviceService;
 import org.onosproject.net.intent.Constraint;
 import org.onosproject.net.intent.constraint.BandwidthConstraint;
-import org.onosproject.pcc.pccmgr.api.LspKey;
 import org.onosproject.pcc.pccmgr.api.PceId;
 import org.onosproject.pcc.pccmgr.api.PcepAgent;
 import org.onosproject.pcc.pccmgr.api.PcepClient;
@@ -41,12 +36,10 @@ import org.onosproject.pcc.pccmgr.api.PcepClientListener;
 import org.onosproject.pcc.pccmgr.api.PcepEventListener;
 import org.onosproject.pcc.pccmgr.api.PcepNodeListener;
 import org.onosproject.pcc.pccmgr.api.PcepPacketListener;
-import org.onosproject.pcc.pccmgr.api.PcepSyncStatus;
 import org.onosproject.pce.pceservice.LspType;
 import org.onosproject.pce.pceservice.api.PcePathUpdateListener;
 import org.onosproject.pce.pceservice.api.PceService;
 import org.onosproject.pce.pceservice.constraint.CostConstraint;
-import org.onosproject.pcep.pcepio.exceptions.PcepParseException;
 import org.onosproject.pcep.pcepio.protocol.PcInitiatedLspRequest;
 import org.onosproject.pcep.pcepio.protocol.PcepAssociationObject;
 import org.onosproject.pcep.pcepio.protocol.PcepAttribute;
@@ -61,9 +54,7 @@ import org.onosproject.pcep.pcepio.protocol.PcepInitiateMsg;
 import org.onosproject.pcep.pcepio.protocol.PcepLspObject;
 import org.onosproject.pcep.pcepio.protocol.PcepMessage;
 import org.onosproject.pcep.pcepio.protocol.PcepMetricObject;
-import org.onosproject.pcep.pcepio.protocol.PcepReportMsg;
 import org.onosproject.pcep.pcepio.protocol.PcepSrpObject;
-import org.onosproject.pcep.pcepio.protocol.PcepStateReport;
 import org.onosproject.pcep.pcepio.protocol.PcepUpdateMsg;
 import org.onosproject.pcep.pcepio.protocol.PcepUpdateRequest;
 import org.onosproject.pcep.pcepio.types.PathSetupTypeTlv;
@@ -74,10 +65,8 @@ import org.onosproject.pcep.pcepio.types.VirtualNetworkTlv;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -87,9 +76,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static org.onosproject.pcc.pccmgr.api.PcepLspSyncAction.*;
-import static org.onosproject.pcc.pccmgr.api.PcepSyncStatus.IN_SYNC;
 import static org.onosproject.pce.pceservice.constraint.CostConstraint.Type.TE_COST;
 import static org.onosproject.pce.pceservice.constraint.CostConstraint.Type.COST;
 import static org.onosproject.pcep.pcepio.protocol.ver1.PcepMetricObjectVer1.IGP_METRIC;
@@ -110,8 +97,7 @@ public class PcepClientControllerImpl implements PcepClientController {
 
     private static final Logger log = LoggerFactory.getLogger(PcepClientControllerImpl.class);
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
-    protected DeviceService deviceService;
+
 
     protected ConcurrentHashMap<PceId, PcepClient> connectedClients =
             new ConcurrentHashMap<>();
@@ -139,8 +125,6 @@ public class PcepClientControllerImpl implements PcepClientController {
     public static final String COST_TYPE = "costType";
     public static final String DELEGATE = "delegation";
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
-    protected TunnelService tunnelService;
 
     @Activate
     public void activate() {
@@ -473,58 +457,6 @@ public class PcepClientControllerImpl implements PcepClientController {
             //now disconnect client
             pc.disconnectClient();
             break;
-        case REPORT:
-            //Only update the listener if respective capability is supported else send PCEP-ERR msg
-            if (pc.capability().statefulPceCapability()) {
-
-                ListIterator<PcepStateReport> listIterator = ((PcepReportMsg) msg).getStateReportList().listIterator();
-                while (listIterator.hasNext()) {
-                    PcepStateReport stateRpt = listIterator.next();
-                    if (stateRpt.getLspObject().getSFlag()) {
-                        if (pc.lspDbSyncStatus() != PcepSyncStatus.IN_SYNC) {
-                            // Initialize LSP DB sync and temporary cache.
-                            pc.setLspDbSyncStatus(PcepSyncStatus.IN_SYNC);
-                            pc.initializeSyncMsgList(pceId);
-                        }
-                        // Store stateRpt in temporary cache.
-                        pc.addSyncMsgToList(pceId, stateRpt);
-
-                        // Don't send to provider as of now.
-                        continue;
-                    } else {
-                        if (pc.lspDbSyncStatus() == PcepSyncStatus.IN_SYNC) {
-                            // Set end of LSPDB sync.
-                            pc.setLspDbSyncStatus(PcepSyncStatus.SYNCED);
-
-                            // Call packet provider to initiate label DB sync (only if PCECC capable).
-                            if (pc.capability().pceccCapability()) {
-                                pc.setLabelDbSyncStatus(IN_SYNC);
-                                for (PcepPacketListener l : pcepPacketListener) {
-                                    l.sendPacketIn(pceId);
-                                }
-                            } else {
-                                // If label db sync is not to be done, handle end of LSPDB sync actions.
-                                agent.analyzeSyncMsgList(pceId);
-                            }
-                            continue;
-                        }
-                    }
-
-                    // It's a usual report message while sync is not undergoing. So process it immediately.
-                    LinkedList<PcepStateReport> llPcRptList = new LinkedList<>();
-                    llPcRptList.add(stateRpt);
-                    PcepMessage pcReportMsg = pc.factory().buildReportMsg().setStateReportList((llPcRptList))
-                            .build();
-                    for (PcepEventListener l : pcepEventListener) {
-                        l.handleMessage(pceId, pcReportMsg);
-                    }
-                }
-            } else {
-                // Send PCEP-ERROR message.
-                pc.sendMessage(Collections.singletonList(getErrMsg(pc.factory(),
-                        ERROR_TYPE_19, ERROR_VALUE_5)));
-            }
-            break;
         case LABEL_RANGE_RESERV:
             break;
         case LS_REPORT: //TODO: need to handle LS report to add or remove node
@@ -649,142 +581,6 @@ public class PcepClientControllerImpl implements PcepClientController {
             for (PcepNodeListener l : pcepNodeListener) {
                 l.deleteNode(pceId);
             }
-        }
-
-        @SuppressWarnings({ "unchecked", "rawtypes" })
-        @Override
-        public boolean analyzeSyncMsgList(PceId pceId) {
-            PcepClient pc = getClient(pceId);
-            /*
-             * PLSP_ID is null while tunnel is created at PCE and PCInit msg carries it as 0. It is allocated by PCC and
-             * in that case it becomes the first PCRpt msg from PCC for this LSP, and hence symbolic path name must be
-             * carried in the PCRpt msg. Draft says: The SYMBOLIC-PATH-NAME TLV "MUST" be included in the LSP object in
-             * the LSP State Report (PCRpt) message when during a given PCEP session an LSP is "first" reported to a
-             * PCE. So two separate lists with separate keys are maintained.
-             */
-            Map<LspKey, Tunnel> preSyncLspDbByKey = new HashMap<>();
-            Map<String, Tunnel> preSyncLspDbByName = new HashMap<>();
-
-            // Query tunnel service and fetch all the tunnels with this PCC as ingress.
-            // Organize into two maps, with LSP key if known otherwise with symbolic path name, for quick search.
-            Collection<Tunnel> queriedTunnels = tunnelService.queryTunnel(Tunnel.Type.MPLS);
-            for (Tunnel tunnel : queriedTunnels) {
-                if (((IpTunnelEndPoint) tunnel.src()).ip().equals(pceId.ipAddress())) {
-                    String pLspId = tunnel.annotations().value(PLSP_ID);
-                    if (pLspId != null) {
-                        String localLspId = tunnel.annotations().value(LOCAL_LSP_ID);
-                        checkNotNull(localLspId);
-                        LspKey lspKey = new LspKey(Integer.valueOf(pLspId), Short.valueOf(localLspId));
-                        preSyncLspDbByKey.put(lspKey, tunnel);
-                    } else {
-                        preSyncLspDbByName.put(tunnel.tunnelName().value(), tunnel);
-                    }
-                }
-            }
-
-            List<PcepStateReport> syncStateRptList = pc.getSyncMsgList(pceId);
-            Iterator<PcepStateReport> stateRptListIterator = syncStateRptList.iterator();
-
-            // For every report, fetch PLSP id, local LSP id and symbolic path name from the message.
-            while (syncStateRptList.iterator().hasNext()) {
-                PcepStateReport stateRpt = stateRptListIterator.next();
-                Tunnel tunnel = null;
-
-                PcepLspObject lspObj = stateRpt.getLspObject();
-                ListIterator<PcepValueType> listTlvIterator = lspObj.getOptionalTlv().listIterator();
-                StatefulIPv4LspIdentifiersTlv ipv4LspIdenTlv = null;
-                SymbolicPathNameTlv pathNameTlv = null;
-
-                while (listTlvIterator.hasNext()) {
-                    PcepValueType tlv = listTlvIterator.next();
-                    switch (tlv.getType()) {
-                    case StatefulIPv4LspIdentifiersTlv.TYPE:
-                        ipv4LspIdenTlv = (StatefulIPv4LspIdentifiersTlv) tlv;
-                        break;
-
-                    case SymbolicPathNameTlv.TYPE:
-                        pathNameTlv = (SymbolicPathNameTlv) tlv;
-                        break;
-
-                    default:
-                        break;
-                    }
-                }
-
-                LspKey lspKeyOfRpt = new LspKey(lspObj.getPlspId(), ipv4LspIdenTlv.getLspId());
-                tunnel = preSyncLspDbByKey.get(lspKeyOfRpt);
-                // PCE tunnel is matched with PCRpt LSP. Now delete it from the preSyncLspDb list as the residual
-                // non-matching list will be processed at the end.
-                if (tunnel != null) {
-                    preSyncLspDbByKey.remove(lspKeyOfRpt);
-                } else if (pathNameTlv != null) {
-                    tunnel = preSyncLspDbByName.get(Arrays.toString(pathNameTlv.getValue()));
-                    if (tunnel != null) {
-                        preSyncLspDbByName.remove(tunnel.tunnelName());
-                    }
-                }
-
-                if (tunnel == null) {
-                    // If remove flag is set, and tunnel is not known to PCE, ignore it.
-                    if (lspObj.getCFlag() && !lspObj.getRFlag()) {
-                        // For initiated LSP, need to send PCInit delete msg.
-                        try {
-                            PcInitiatedLspRequest releaseLspRequest = pc.factory().buildPcInitiatedLspRequest()
-                                    .setLspObject(lspObj).build();
-                            LinkedList<PcInitiatedLspRequest> llPcInitiatedLspRequestList
-                                    = new LinkedList<PcInitiatedLspRequest>();
-                            llPcInitiatedLspRequestList.add(releaseLspRequest);
-
-                            PcepInitiateMsg pcInitiateMsg = pc.factory().buildPcepInitiateMsg()
-                                    .setPcInitiatedLspRequestList(llPcInitiatedLspRequestList).build();
-
-                            for (PcepEventListener l : pcepEventListener) {
-                                l.handleEndOfSyncAction(pceId, pcInitiateMsg, SEND_DELETE);
-                            }
-
-                        } catch (PcepParseException e) {
-                            log.error("Exception occured while sending initiate delete message {}", e.getMessage());
-                        }
-                    }
-                    continue;
-                }
-
-                if (!lspObj.getCFlag()) {
-                    // For learned LSP process both add/update PCRpt.
-                    LinkedList<PcepStateReport> llPcRptList = new LinkedList<>();
-                    llPcRptList.add(stateRpt);
-                    PcepMessage pcReportMsg = pc.factory().buildReportMsg().setStateReportList((llPcRptList))
-                            .build();
-
-                    for (PcepEventListener l : pcepEventListener) {
-                        l.handleMessage(pceId, pcReportMsg);
-                    }
-                    continue;
-                }
-
-                // Implied that tunnel != null and lspObj.getCFlag() is set
-                // State different for PCC sent LSP and PCE known LSP, send PCUpd msg.
-                State tunnelState = PcepLspStatus
-                        .getTunnelStatusFromLspStatus(PcepLspStatus.values()[lspObj.getOFlag()]);
-                if (tunnelState != tunnel.state()) {
-                    for (PcepEventListener l : pcepEventListener) {
-                        l.handleEndOfSyncAction(tunnel, SEND_UPDATE);
-                    }
-                }
-            }
-
-            // Check which tunnels are extra at PCE that were not reported by PCC.
-            Map<Object, Tunnel> preSyncLspDb = (Map) preSyncLspDbByKey;
-            handleResidualTunnels(preSyncLspDb);
-            preSyncLspDbByKey = null;
-
-            preSyncLspDb = (Map) preSyncLspDbByName;
-            handleResidualTunnels(preSyncLspDb);
-            preSyncLspDbByName = null;
-            preSyncLspDb = null;
-
-            pc.removeSyncMsgList(pceId);
-            return true;
         }
 
         /*

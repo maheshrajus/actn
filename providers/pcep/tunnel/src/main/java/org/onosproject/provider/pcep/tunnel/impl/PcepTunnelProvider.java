@@ -130,6 +130,7 @@ import static org.onlab.util.Tools.get;
 import static org.onosproject.incubator.net.tunnel.Tunnel.State.INIT;
 import static org.onosproject.incubator.net.tunnel.Tunnel.Type.MDMPLS;
 import static org.onosproject.incubator.net.tunnel.Tunnel.Type.MPLS;
+import static org.onosproject.incubator.net.tunnel.Tunnel.Type.SDMPLS;
 import static org.onosproject.net.DefaultAnnotations.EMPTY;
 import static org.onosproject.net.DeviceId.deviceId;
 import static org.onosproject.net.PortNumber.portNumber;
@@ -274,13 +275,10 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
 
     @Override
     public void setupTunnel(Tunnel tunnel, Path path) {
-        if (tunnel.type() != MPLS) {
-            log.error("Tunnel Type MPLS is only supported");
-            return;
-        }
-
-        if (tunnel.type() == MDMPLS) {
-            log.error("Tunnel Type should not be MDMPLS");
+        //for parent MPLS nothing to process and finally this status will be set to UP after all
+        // child tunnels are UP. This will be done by PCE app.
+        if ((tunnel.type() != MPLS) && (tunnel.type() != SDMPLS)) {
+            log.error("Tunnel Type MPLS/SDMPLS are only supported");
             return;
         }
 
@@ -314,14 +312,10 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
             updateTunnel(tunnel, path);
             return;
         }
-
-        if (tunnel.type() != MPLS) {
-            log.error("Tunnel Type MPLS is only supported");
-            return;
-        }
-
-        if (tunnel.type() == MDMPLS) {
-            log.error("Tunnel Type should not be MDMPLS");
+        //for parent MPLS nothing to process and finally this status will be set to UP after all
+        // child tunnels are UP. This will be done by PCE app.
+        if ((tunnel.type() != MPLS)  && (tunnel.type() != SDMPLS)) {
+            log.error("Tunnel Type MPLS/SDMPLS are only supported");
             return;
         }
 
@@ -350,23 +344,22 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
     @Override
     public void releaseTunnel(Tunnel tunnel) {
 
-        if (tunnel.type() != MPLS) {
-            log.error("Tunnel Type MPLS is only supported");
-            return;
-        }
+        if ((tunnel.type() != MPLS)  && (tunnel.type() != SDMPLS)) {
+            if (tunnel.type() == MDMPLS) {
+                log.error("Tunnel Type should not be MDMPLS");
+                TunnelDescription td = new DefaultTunnelDescription(tunnel.tunnelId(),
+                        tunnel.src(), tunnel.dst(),
+                        tunnel.type(),
+                        tunnel.groupId(),
+                        tunnel.providerId(),
+                        tunnel.tunnelName(),
+                        tunnel.path(),
+                        (SparseAnnotations) tunnel.annotations());
 
-        if (tunnel.type() == MDMPLS) {
-            log.error("Tunnel Type should not be MDMPLS");
-            TunnelDescription td = new DefaultTunnelDescription(tunnel.tunnelId(),
-                    tunnel.src(), tunnel.dst(),
-                    tunnel.type(),
-                    tunnel.groupId(),
-                    tunnel.providerId(),
-                    tunnel.tunnelName(),
-                    tunnel.path(),
-                    (SparseAnnotations) tunnel.annotations());
-
-            tunnelRemoved(td);
+                tunnelRemoved(td);
+                return;
+            }
+            log.error("Tunnel Type MPLS/SDMPLS are only supported");
             return;
         }
 
@@ -393,23 +386,22 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
 
     @Override
     public void releaseTunnel(ElementId srcElement, Tunnel tunnel) {
-        if (tunnel.type() != MPLS) {
-            log.error("Tunnel Type MPLS is only supported");
-            return;
-        }
+        if ((tunnel.type() != MPLS)  && (tunnel.type() != SDMPLS)) {
+            if (tunnel.type() == MDMPLS) {
+                log.error("Tunnel Type should not be MDMPLS");
+                TunnelDescription td = new DefaultTunnelDescription(tunnel.tunnelId(),
+                        tunnel.src(), tunnel.dst(),
+                        tunnel.type(),
+                        tunnel.groupId(),
+                        tunnel.providerId(),
+                        tunnel.tunnelName(),
+                        tunnel.path(),
+                        (SparseAnnotations) tunnel.annotations());
 
-        if (tunnel.type() == MDMPLS) {
-            log.error("Tunnel Type should not be MDMPLS");
-            TunnelDescription td = new DefaultTunnelDescription(tunnel.tunnelId(),
-                    tunnel.src(), tunnel.dst(),
-                    tunnel.type(),
-                    tunnel.groupId(),
-                    tunnel.providerId(),
-                    tunnel.tunnelName(),
-                    tunnel.path(),
-                    (SparseAnnotations) tunnel.annotations());
-
-            tunnelRemoved(td);
+                tunnelRemoved(td);
+                return;
+            }
+            log.error("Tunnel Type MPLS/SDMPLS are only supported");
             return;
         }
 
@@ -441,13 +433,10 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
 
     @Override
     public void updateTunnel(Tunnel tunnel, Path path) {
-        if (tunnel.type() != MPLS) {
-            log.error("Tunnel Type MPLS is only supported");
-            return;
-        }
-
-        if (tunnel.type() == MDMPLS) {
-            log.error("Tunnel Type should not be MDMPLS");
+        //for parent MPLS nothing to process and finally this status will be set to UP after all
+        // child tunnels are UP. This will be done by PCE app.
+        if ((tunnel.type() != MPLS)  && (tunnel.type() != SDMPLS)) {
+            log.error("Tunnel Type MPLS/SDMPLS are only supported");
             return;
         }
 
@@ -509,14 +498,10 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
 
     @Override
     public void updateTunnel(ElementId srcElement, Tunnel tunnel, Path path) {
-
-        if (tunnel.type() != MPLS) {
-            log.error("Tunnel Type MPLS is only supported");
-            return;
-        }
-
-        if (tunnel.type() == MDMPLS) {
-            log.error("Tunnel Type should not be MDMPLS");
+        //for parent MPLS nothing to process and finally this status will be set to UP after all
+        // child tunnels are UP. This will be done by PCE app.
+        if ((tunnel.type() != MPLS)  && (tunnel.type() != SDMPLS)) {
+            log.error("Tunnel Type MPLS/SDMPLS are only supported");
             return;
         }
 
@@ -560,7 +545,11 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
 
     private TunnelId handleTunnelAdded(TunnelDescription tunnel, State tunnelState) {
 
-        if (tunnel.type() == MPLS) {
+        if (tunnel.type() == MDMPLS) {
+             return null;
+        }
+
+        if ((tunnel.type() == MPLS)  || (tunnel.type() == SDMPLS)) {
             pcepTunnelApiMapper.removeFromCoreTunnelRequestQueue(tunnel.id());
 
             if (tunnelState == null) {
@@ -614,8 +603,10 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
 
     //Handles tunnel updated using tunnel admin service[specially to update annotations].
     private void handleTunnelUpdate(Tunnel tunnel, Path path) {
-
-        if (tunnel.type() == MPLS) {
+        if (tunnel.type() == MDMPLS) {
+            return;
+        }
+        if ((tunnel.type() == MPLS)  || (tunnel.type() == SDMPLS)) {
             pcepTunnelApiMapper.removeFromCoreTunnelRequestQueue(tunnel.tunnelId());
 
             tunnelAdminService.updateTunnel(tunnel, path);
@@ -647,9 +638,11 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
 
     @Override
     public void tunnelRemoved(TunnelDescription tunnel) {
-        if (tunnel.type() == MPLS) {
+
+        if ((tunnel.type() == MPLS)  || (tunnel.type() == SDMPLS) || (tunnel.type() == MDMPLS)) {
             pcepTunnelApiMapper.removeFromCoreTunnelRequestQueue(tunnel.id());
             service.tunnelRemoved(tunnel);
+            return;
         }
 
         Tunnel tunnelOld = tunnelQueryById(tunnel.id());
@@ -678,7 +671,11 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
     }
 
     private void handleTunnelUpdate(TunnelDescription tunnel, State tunnelState) {
-        if (tunnel.type() == MPLS) {
+        if (tunnel.type() == MDMPLS) {
+            return;
+        }
+
+        if ((tunnel.type() == MPLS)  || (tunnel.type() == SDMPLS)) {
             pcepTunnelApiMapper.removeFromCoreTunnelRequestQueue(tunnel.id());
 
             if (tunnelState == null) {
@@ -1023,7 +1020,7 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
 
             // TODO : need to set vn Association Type, ID, Source may need to get from tunnel
             PcepAssociationObject associationObj = pc.factory().buildAssociationObject().setAssociationID((short) 1)
-                    .setAssociationSource(0x01010101).setAssociationType((short)224)
+                    .setAssociationSource(0x01010101).setAssociationType((short) 224)
                     .setOptionalTlv(llOptionalTlv).build();
             llAssociationObj.add(associationObj);
 
