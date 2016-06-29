@@ -101,7 +101,7 @@ public class PceSetupPathCommand extends AbstractShellCommand {
         CostConstraint.Type costType = CostConstraint.Type.values()[cost - 1];
         listConstrnt.add(CostConstraint.of(costType));
 
-        if (!service.setupPath(srcDevice, dstDevice, name, listConstrnt, lspType, null)) {
+        if (PceService.PathErr.SUCCESS != service.setupPath(srcDevice, dstDevice, name, listConstrnt, lspType, null)) {
             error("Path creation failed.");
         }
     }

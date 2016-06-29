@@ -130,7 +130,7 @@ public class PcepErrorMsgVer1 implements PcepErrorMsg {
             //parse <PCErr Message>
             parsePCErrMsg(cb);
 
-            // If other than RP or LS or PCEP-ERROR present then it is error.
+            // If other than RP or LS or SRP or PCEP-ERROR present then it is error.
             if (0 < cb.readableBytes()) {
                 PcepObjectHeader tempObjHeader = PcepObjectHeader.read(cb);
                 throw new PcepParseException("Unexpected Object found. Object Class : " + tempObjHeader.getObjClass());
@@ -175,7 +175,8 @@ public class PcepErrorMsgVer1 implements PcepErrorMsg {
 
             } else if ((tempObjHeader != null) //check whether RP or LS Object is present.
                     && ((tempObjHeader.getObjClass() == PcepRPObjectVer1.RP_OBJ_CLASS)
-                            || (tempObjHeader.getObjClass() == PcepLSObjectVer1.LS_OBJ_CLASS))) {
+                            || (tempObjHeader.getObjClass() == PcepLSObjectVer1.LS_OBJ_CLASS)
+                            || (tempObjHeader.getObjClass() == PcepSrpObjectVer1.SRP_OBJ_CLASS))) {
 
                 this.errInfo = new PcepErrorInfoVer1(null, null, llErrObjList);
                 this.errInfo.read(cb);

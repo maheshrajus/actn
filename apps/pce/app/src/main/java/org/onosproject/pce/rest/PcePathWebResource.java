@@ -137,10 +137,14 @@ public class PcePathWebResource extends AbstractWebResource {
             // Add cost
             listConstrnt.add(path.costConstraint());
 
-            Boolean issuccess = nullIsNotFound(get(PceService.class)
-                                               .setupPath(srcDevice, dstDevice, path.name(), listConstrnt, lspType,
-                                                          null),
-                                               PCE_SETUP_PATH_FAILED);
+            boolean isPathSuccess = true;
+            if (PceService.PathErr.SUCCESS != get(PceService.class)
+                    .setupPath(srcDevice, dstDevice, path.name(), listConstrnt, lspType,
+                               null)) {
+                isPathSuccess = false;
+            }
+
+            Boolean issuccess = nullIsNotFound(isPathSuccess, PCE_SETUP_PATH_FAILED);
             return Response.status(OK).entity(issuccess.toString()).build();
         } catch (IOException e) {
             log.error("Exception while creating path {}.", e.toString());
@@ -177,8 +181,12 @@ public class PcePathWebResource extends AbstractWebResource {
                 constrntList.add(path.costConstraint());
             }
 
-            Boolean result = nullIsNotFound(get(PceService.class).updatePath(TunnelId.valueOf(id), constrntList),
-                                            PCE_PATH_NOT_FOUND);
+            boolean isPathSuccess = true;
+            if (PceService.PathErr.SUCCESS != get(PceService.class).updatePath(TunnelId.valueOf(id), constrntList)) {
+                isPathSuccess = false;
+            }
+
+            Boolean result = nullIsNotFound(isPathSuccess, PCE_PATH_NOT_FOUND);
             return Response.status(OK).entity(result.toString()).build();
         } catch (IOException e) {
             log.error("Update path failed because of exception {}.", e.toString());

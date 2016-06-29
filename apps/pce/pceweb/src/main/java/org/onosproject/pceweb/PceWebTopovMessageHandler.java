@@ -422,7 +422,7 @@ public class PceWebTopovMessageHandler extends UiMessageHandler {
     private void findAndSendPaths(ElementId src, ElementId dst, String bandWidth, String bandWidthType,
                                     String costType, String lspType, String tunnelName) {
         log.debug("src={}; dst={};", src, dst);
-        boolean path;
+        PceService.PathErr path;
         List<Constraint> listConstrnt;
 
         listConstrnt = addBandwidthCostTypeConstraints(bandWidth, bandWidthType, costType);
@@ -444,7 +444,7 @@ public class PceWebTopovMessageHandler extends UiMessageHandler {
         }
 
         path = pceService.setupPath((DeviceId) src, (DeviceId) dst, tunnelName, listConstrnt, lspTypeVal, null);
-        if (!path) {
+        if (PceService.PathErr.SUCCESS != path) {
              log.error("setup path is failed");
              return;
         }
@@ -476,9 +476,9 @@ public class PceWebTopovMessageHandler extends UiMessageHandler {
 
             listConstrnt = addBandwidthCostTypeConstraints(bandWidth, bandWidthType, costType);
             TunnelId tunnelId = TunnelId.valueOf(tunnelIdStr);
-            boolean path = pceService.updatePath(tunnelId, listConstrnt);
+            PceService.PathErr path = pceService.updatePath(tunnelId, listConstrnt);
 
-            if (!path) {
+            if (PceService.PathErr.SUCCESS != path) {
                 log.error("update path is failed");
                 return;
             }

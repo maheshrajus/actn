@@ -40,6 +40,7 @@ import org.onosproject.pce.pceservice.LspType;
 import org.onosproject.pce.pceservice.api.PcePathUpdateListener;
 import org.onosproject.pce.pceservice.api.PceService;
 import org.onosproject.pce.pceservice.constraint.CostConstraint;
+import org.onosproject.pcep.pcepio.exceptions.PcepParseException;
 import org.onosproject.pcep.pcepio.protocol.PcInitiatedLspRequest;
 import org.onosproject.pcep.pcepio.protocol.PcepAssociationObject;
 import org.onosproject.pcep.pcepio.protocol.PcepAttribute;
@@ -77,13 +78,18 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.onosproject.pcc.pccmgr.api.PcepLspSyncAction.*;
+import static org.onosproject.pce.pceservice.api.PceService.PathErr;
 import static org.onosproject.pce.pceservice.constraint.CostConstraint.Type.TE_COST;
 import static org.onosproject.pce.pceservice.constraint.CostConstraint.Type.COST;
 import static org.onosproject.pcep.pcepio.protocol.ver1.PcepMetricObjectVer1.IGP_METRIC;
 import static org.onosproject.pcep.pcepio.protocol.ver1.PcepMetricObjectVer1.TE_METRIC;
 import static org.onosproject.pce.pceservice.LspType.WITH_SIGNALLING;
+import static org.onosproject.pcep.pcepio.types.PcepErrorDetailInfo.ERROR_TYPE_24;
 import static org.onosproject.pcep.pcepio.types.PcepErrorDetailInfo.ERROR_TYPE_19;
+import static org.onosproject.pcep.pcepio.types.PcepErrorDetailInfo.ERROR_TYPE_10;
 import static org.onosproject.pcep.pcepio.types.PcepErrorDetailInfo.ERROR_TYPE_6;
+import static org.onosproject.pcep.pcepio.types.PcepErrorDetailInfo.ERROR_VALUE_8;
+import static org.onosproject.pcep.pcepio.types.PcepErrorDetailInfo.ERROR_VALUE_3;
 import static org.onosproject.pcep.pcepio.types.PcepErrorDetailInfo.ERROR_VALUE_5;
 import static org.onosproject.pcep.pcepio.types.PcepErrorDetailInfo.ERROR_VALUE_2;
 import static org.onosproject.pcep.pcepio.types.PcepErrorDetailInfo.ERROR_VALUE_11;
@@ -205,6 +211,11 @@ public class PcepClientControllerImpl implements PcepClientController {
 
 
     public void processInitiateMsg(PceId pceId, PcepMessage msg) {
+        VirtualNetworkTlv virtualNetworklv = null;
+        PcepEndPointsObject endPointObj = null;
+        SymbolicPathNameTlv pathNameTlv = null;
+        List<Constraint> initConstrntList = null;
+        LspType lspType = null;
         PcepClient pc = getClient(pceId);
         ListIterator<PcInitiatedLspRequest> listIterator
                 = ((PcepInitiateMsg) msg).getPcInitiatedLspRequestList().listIterator();
@@ -215,7 +226,7 @@ public class PcepClientControllerImpl implements PcepClientController {
 
                 ListIterator<PcepValueType> listSrpTlvIterator = srpObj.getOptionalTlv().listIterator();
                 PathSetupTypeTlv pathSetupTlv = null;
-                LspType lspType = WITH_SIGNALLING;
+                lspType = WITH_SIGNALLING;
 
                 while (listSrpTlvIterator.hasNext()) {
                     PcepValueType tlv = listSrpTlvIterator.next();
@@ -232,7 +243,7 @@ public class PcepClientControllerImpl implements PcepClientController {
 
                 PcepLspObject lspObj = initLsp.getLspObject();
                 ListIterator<PcepValueType> listTlvIterator = lspObj.getOptionalTlv().listIterator();
-                SymbolicPathNameTlv pathNameTlv = null;
+                pathNameTlv = null;
 
                 while (listTlvIterator.hasNext()) {
                     PcepValueType tlv = listTlvIterator.next();
@@ -250,9 +261,13 @@ public class PcepClientControllerImpl implements PcepClientController {
                     PcepSrpIdMap.INSTANCE.add(pathNameTlv.getValue(), srpObj.getSrpID());
                     log.info("Adding into SrpID map, symName: " + new String(pathNameTlv.getValue()) +
                                      ", SrpId: " + srpObj.getSrpID());
+                } else {
+                    pc.sendMessage(Collections.singletonList(getErrMsg(pc.factory(), ERROR_TYPE_10,
+                                                                       ERROR_VALUE_8, srpObj.getSrpID())));
+                    continue;
                 }
 
-                PcepEndPointsObject endPointObj = initLsp.getEndPointsObject();
+                endPointObj = initLsp.getEndPointsObject();
 
                 if (srpObj.getRFlag()) {
                     log.info("Remove path with PLSPID " + lspObj.getPlspId());
@@ -271,7 +286,7 @@ public class PcepClientControllerImpl implements PcepClientController {
                         while (associationObj != null) {
                             ListIterator<PcepValueType> listAssTlvIterator
                                     = lspObj.getOptionalTlv().listIterator();
-                            VirtualNetworkTlv virtualNetworklv = null;
+                           virtualNetworklv = null;
 
                             while (listTlvIterator.hasNext()) {
                                 PcepValueType tlv = listTlvIterator.next();
@@ -287,7 +302,7 @@ public class PcepClientControllerImpl implements PcepClientController {
 
                             if (virtualNetworklv != null) {
 
-                                List<Constraint> initConstrntList = new LinkedList<>();
+                                initConstrntList = new LinkedList<>();
                                 PcepBandwidthObject initBandwidthObject
                                         = initLsp.getPcepAttribute().getBandwidthObject();
 
@@ -317,13 +332,6 @@ public class PcepClientControllerImpl implements PcepClientController {
                                         initMetricObj = metricIterator.next();
                                     }
                                 }
-
-                                pceService.setupPath(new String(virtualNetworklv.getValue()),
-                                                             IpAddress.valueOf(endPointObj.getSourceIpAddress()),
-                                                             IpAddress.valueOf(endPointObj.getDestIpAddress()),
-                                                             new String(pathNameTlv.getValue()),
-                                                             initConstrntList, lspType);
-
                             }
 
                             associationObj = iterator.next();
@@ -331,9 +339,125 @@ public class PcepClientControllerImpl implements PcepClientController {
                     }
                 }
             }
+
+            PathErr pathErr = pceService.setupPath(new String(virtualNetworklv.getValue()),
+                                                   IpAddress.valueOf(endPointObj.getSourceIpAddress()),
+                                                   IpAddress.valueOf(endPointObj.getDestIpAddress()),
+                                                   new String(pathNameTlv.getValue()),
+                                                   initConstrntList, lspType);
+
+            if (pathErr == PathErr.COMPUTATION_FAIL) {
+                PcepSrpIdMap.remove(pathNameTlv.getValue());
+                pc.sendMessage(Collections.singletonList(getErrMsg(pc.factory(), ERROR_TYPE_24,
+                                                                   ERROR_VALUE_3, srpObj.getSrpID())));
+            }  else if (pathErr != PathErr.SUCCESS) {
+                log.info("setupPath failed, ErrorValue: " + pathErr);
+                PcepSrpIdMap.remove(pathNameTlv.getValue());
+                pc.sendMessage(Collections.singletonList(getErrMsg(pc.factory(), ERROR_TYPE_24,
+                                                                   ERROR_VALUE_2, srpObj.getSrpID())));
+            }
         }
 
         return;
+    }
+
+    private void processUpdateMsg(PceId pceId, PcepMessage msg) {
+
+        PathErr pathErr;
+        StatefulIPv4LspIdentifiersTlv lspIdentifier = null;
+        SymbolicPathNameTlv pathNameTlv = null;
+        PcepLspObject lspObj = null;
+        List<Constraint> constrntList = null;
+
+        PcepClient pc = getClient(pceId);
+
+        ListIterator<PcepUpdateRequest> listIterator
+                = ((PcepUpdateMsg) msg).getUpdateRequestList().listIterator();
+        while (listIterator.hasNext()) {
+            PcepUpdateRequest updReq = listIterator.next();
+            PcepSrpObject srpObj = updReq.getSrpObject();
+            if (0 != srpObj.getSrpID()) {
+                lspObj = updReq.getLspObject();
+                ListIterator<PcepValueType> listTlvIterator = lspObj.getOptionalTlv().listIterator();
+                lspIdentifier = null;
+
+                while (listTlvIterator.hasNext()) {
+                    PcepValueType tlv = listTlvIterator.next();
+                    switch (tlv.getType()) {
+                        case SymbolicPathNameTlv.TYPE:
+                            pathNameTlv = (SymbolicPathNameTlv) tlv;
+                            break;
+                        case StatefulIPv4LspIdentifiersTlv.TYPE:
+                            lspIdentifier = (StatefulIPv4LspIdentifiersTlv) tlv;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+
+                if (lspIdentifier == null) {
+                    //Attempted LSP Update Request without stateful PCE capability being advertised
+                    pc.sendMessage(Collections.singletonList(getErrMsg(pc.factory(), ERROR_TYPE_6,
+                                                                       ERROR_VALUE_11, srpObj.getSrpID())));
+                    return;
+                }
+
+                if (pathNameTlv != null) {
+                    PcepSrpIdMap.INSTANCE.add(pathNameTlv.getValue(), srpObj.getSrpID());
+                    log.info("Adding symName: " + new String(pathNameTlv.getValue()) +
+                                     ", SrpId: " + srpObj.getSrpID());
+                } else {
+                    pc.sendMessage(Collections.singletonList(getErrMsg(pc.factory(), ERROR_TYPE_10,
+                                                                       ERROR_VALUE_8, srpObj.getSrpID())));
+                    continue;
+                }
+
+                constrntList = new LinkedList<>();
+                PcepBandwidthObject bandwidthObject
+                        = updReq.getMsgPath().getPcepAttribute().getBandwidthObject();
+
+                // Assign bandwidth
+                if (bandwidthObject.getBandwidth() != 0.0) {
+                    constrntList.add(BandwidthConstraint.of(Double.valueOf(bandwidthObject.getBandwidth()),
+                                                            DataRateUnit.valueOf("BPS")));
+                }
+
+                PcepAttribute attributes = updReq.getMsgPath().getPcepAttribute();
+                if (attributes != null && attributes.getMetricObjectList() != null) {
+                    ListIterator<PcepMetricObject> iterator = attributes.getMetricObjectList().listIterator();
+                    PcepMetricObject metricObj = iterator.next();
+
+
+                    while (metricObj != null) {
+                        if (metricObj.getBType() == IGP_METRIC) {
+                            CostConstraint costConstraint = new CostConstraint(COST);
+                            constrntList.add(costConstraint);
+                        } else if (metricObj.getBType() == TE_METRIC) {
+                            CostConstraint costConstraint = new CostConstraint(TE_COST);
+                            constrntList.add(costConstraint);
+                        }
+
+                        metricObj = iterator.next();
+                    }
+                }
+            }
+
+            assert lspIdentifier != null;
+            pathErr = pceService.updatePath(IpAddress.valueOf(lspIdentifier.getIpv4IngressAddress()),
+                                            IpAddress.valueOf(lspIdentifier.getIpv4EgressAddress()),
+                                            String.valueOf(lspObj.getPlspId()), constrntList);
+
+            if (pathErr == PathErr.COMPUTATION_FAIL) {
+                PcepSrpIdMap.remove(pathNameTlv.getValue());
+                pc.sendMessage(Collections.singletonList(getErrMsg(pc.factory(), ERROR_TYPE_24,
+                                                                   ERROR_VALUE_3, srpObj.getSrpID())));
+            } else if (pathErr != PathErr.SUCCESS) {
+                log.info("setupPath failed, ErrorValue: " + pathErr);
+                PcepSrpIdMap.remove(pathNameTlv.getValue());
+                pc.sendMessage(Collections.singletonList(getErrMsg(pc.factory(), ERROR_TYPE_24,
+                                                                   ERROR_VALUE_2, srpObj.getSrpID())));
+            }
+        }
     }
 
     @Override
@@ -370,78 +494,7 @@ public class PcepClientControllerImpl implements PcepClientController {
                 pc.sendMessage(Collections.singletonList(getErrMsg(pc.factory(), ERROR_TYPE_19,
                         ERROR_VALUE_2)));
             } else {
-                ListIterator<PcepUpdateRequest> listIterator
-                        = ((PcepUpdateMsg) msg).getUpdateRequestList().listIterator();
-                while (listIterator.hasNext()) {
-                    PcepUpdateRequest updReq = listIterator.next();
-                    PcepSrpObject srpObj = updReq.getSrpObject();
-                    if (0 != srpObj.getSrpID()) {
-                        PcepLspObject lspObj = updReq.getLspObject();
-                        ListIterator<PcepValueType> listTlvIterator = lspObj.getOptionalTlv().listIterator();
-                        SymbolicPathNameTlv pathNameTlv = null;
-                        StatefulIPv4LspIdentifiersTlv lspIdentifier = null;
-
-                        while (listTlvIterator.hasNext()) {
-                            PcepValueType tlv = listTlvIterator.next();
-                            switch (tlv.getType()) {
-                                case SymbolicPathNameTlv.TYPE:
-                                    pathNameTlv = (SymbolicPathNameTlv) tlv;
-                                    break;
-                                case StatefulIPv4LspIdentifiersTlv.TYPE:
-                                    lspIdentifier = (StatefulIPv4LspIdentifiersTlv) tlv;
-                                    break;
-                                default:
-                                    break;
-                            }
-                        }
-
-                        if (lspIdentifier == null) {
-                            //Attempted LSP Update Request without stateful PCE capability being advertised
-                            pc.sendMessage(Collections.singletonList(getErrMsg(pc.factory(), ERROR_TYPE_6,
-                                    ERROR_VALUE_11)));
-                            return;
-                        }
-
-                        if (pathNameTlv != null) {
-                            PcepSrpIdMap.INSTANCE.add(pathNameTlv.getValue(), srpObj.getSrpID());
-                            log.info("Adding symName: " + new String(pathNameTlv.getValue()) +
-                                             ", SrpId: " + srpObj.getSrpID());
-                        }
-
-                        List<Constraint> constrntList = new LinkedList<>();
-                        PcepBandwidthObject bandwidthObject
-                                = updReq.getMsgPath().getPcepAttribute().getBandwidthObject();
-
-                        // Assign bandwidth
-                        if (bandwidthObject.getBandwidth() != 0.0) {
-                            constrntList.add(BandwidthConstraint.of(Double.valueOf(bandwidthObject.getBandwidth()),
-                                                                    DataRateUnit.valueOf("BPS")));
-                        }
-
-                        PcepAttribute attributes = updReq.getMsgPath().getPcepAttribute();
-                        if (attributes != null && attributes.getMetricObjectList() != null) {
-                            ListIterator<PcepMetricObject> iterator = attributes.getMetricObjectList().listIterator();
-                            PcepMetricObject metricObj = iterator.next();
-
-
-                            while (metricObj != null) {
-                                if (metricObj.getBType() == IGP_METRIC) {
-                                    CostConstraint costConstraint = new CostConstraint(COST);
-                                    constrntList.add(costConstraint);
-                                } else if (metricObj.getBType() == TE_METRIC) {
-                                    CostConstraint costConstraint = new CostConstraint(TE_COST);
-                                    constrntList.add(costConstraint);
-                                }
-
-                                metricObj = iterator.next();
-                            }
-                        }
-
-                        pceService.updatePath(IpAddress.valueOf(lspIdentifier.getIpv4IngressAddress()),
-                                IpAddress.valueOf(lspIdentifier.getIpv4EgressAddress()),
-                                String.valueOf(lspObj.getPlspId()), constrntList);
-                    }
-                }
+                processUpdateMsg(pceId, msg);
             }
 
             break;
@@ -498,6 +551,40 @@ public class PcepClientControllerImpl implements PcepClientController {
 
         llerrObj.add(errObj);
         PcepError pcepErr = factory.buildPcepError().setErrorObjList(llerrObj).build();
+
+        llPcepErr.add(pcepErr);
+
+        PcepErrorInfo errInfo = factory.buildPcepErrorInfo().setPcepErrorList(llPcepErr).build();
+
+        errMsg = factory.buildPcepErrorMsg().setPcepErrorInfo(errInfo).build();
+        return errMsg;
+    }
+
+    private PcepErrorMsg getErrMsg(PcepFactory factory, byte errorType,
+                                   byte errorValue, int srpID) {
+        LinkedList<PcepError> llPcepErr = new LinkedList<>();
+
+        LinkedList<PcepErrorObject> llerrObj = new LinkedList<>();
+        LinkedList<PcepSrpObject> llsrpObj = new LinkedList<>();
+        PcepErrorMsg errMsg;
+
+        PcepSrpObject srpObjTemp = null;
+        try {
+            srpObjTemp = factory.buildSrpObject()
+                    .setRFlag(false)
+                    .setSrpID(srpID)
+                    .build();
+        } catch (PcepParseException e) {
+            e.printStackTrace();
+        }
+
+        llsrpObj.add(srpObjTemp);
+
+        PcepErrorObject errObj = factory.buildPcepErrorObject().setErrorValue(errorValue).setErrorType(errorType)
+                .build();
+
+        llerrObj.add(errObj);
+        PcepError pcepErr = factory.buildPcepError().setErrorObjList(llerrObj).setSrpObjList(llsrpObj).build();
 
         llPcepErr.add(pcepErr);
 

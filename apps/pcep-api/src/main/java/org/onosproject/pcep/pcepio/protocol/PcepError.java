@@ -54,6 +54,20 @@ public interface PcepError {
     void setLSObjList(List<PcepLSObject> lsObjList);
 
     /**
+     * Returns PcepSrpObject.
+     *
+     * @return list of srpObject
+     */
+    List<PcepSrpObject> getSrpObjList();
+
+    /**
+     * Sets the SRP Object List.
+     *
+     * @param srpObjList Pcep Srp Object List
+     */
+    void setSrpObjList(List<PcepSrpObject> srpObjList);
+
+    /**
      * Returns the PcepErrorObject.
      *
      * @return list of type PcepErrorObject
@@ -117,6 +131,21 @@ public interface PcepError {
          * @return builder by setting list of type PcepLSObject
          */
         Builder setLSObjList(List<PcepLSObject> lsObjList);
+
+        /**
+         * Returns PcepSrpObject.
+         *
+         * @return list of srpObject
+         */
+        List<PcepSrpObject> getSrpObjList();
+
+        /**
+         * Sets the SRP Object.
+         *
+         * @param srpObjList list of type Pcep Srp Object
+         * @return builder by setting PcepSrpObject
+         */
+        Builder setSrpObjList(List<PcepSrpObject> srpObjList);
 
         /**
          * Returns the PcepErrorObject.

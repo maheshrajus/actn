@@ -371,7 +371,7 @@ public class PceManager implements PceService {
      * @param lspType type of path to be setup
      * @return false on failure and true on successful path creation
      */
-    private boolean setupPath(String vnName, DeviceId src, DeviceId dst, String tunnelName,
+    private PathErr setupPath(String vnName, DeviceId src, DeviceId dst, String tunnelName,
                               List<Constraint> constraints, LspType lspType) {
         Set<Path> paths = null;
         TunnelId parentTunnelId = null;
@@ -393,7 +393,7 @@ public class PceManager implements PceService {
                     pceStore.addFailedPathInfo(new PcePathInfo(src, dst, tunnelName, constraints, lspType));
                 }
 
-                return false;
+                return PathErr.DEVICE_LSR_NOT_EXIST;
             }
 
             // In future projections instead of annotations will be used to fetch LSR ID.
@@ -405,7 +405,8 @@ public class PceManager implements PceService {
                 if (vnName == null) {
                     pceStore.addFailedPathInfo(new PcePathInfo(src, dst, tunnelName, constraints, lspType));
                 }
-                return false;
+
+                return PathErr.DEVICE_LSR_NOT_EXIST;
             }
 
             // Get device config from netconfig, to ascertain that session with ingress is present.
@@ -415,7 +416,7 @@ public class PceManager implements PceService {
                 if (vnName == null) {
                     pceStore.addFailedPathInfo(new PcePathInfo(src, dst, tunnelName, constraints, lspType));
                 }
-                return false;
+                return PathErr.SESSION_NOT_EXIST;
             }
 
             TunnelEndPoint srcEndPoint = IpTunnelEndPoint.ipTunnelPoint(IpAddress.valueOf(srcLsrId));
@@ -456,7 +457,7 @@ public class PceManager implements PceService {
                  if (vnName == null) {
                       pceStore.addFailedPathInfo(new PcePathInfo(src, dst, tunnelName, constraints, lspType));
                  }
-                 return false;
+                 return PathErr.COMPUTATION_FAIL;
             }
 
             Builder annotationBuilder = DefaultAnnotations.builder();
@@ -485,7 +486,7 @@ public class PceManager implements PceService {
                     if (vnName == null) {
                         pceStore.addFailedPathInfo(new PcePathInfo(src, dst, tunnelName, constraints, lspType));
                     }
-                    return false;
+                    return PathErr.COMPUTATION_FAIL;
                 }
             }
 
@@ -508,7 +509,7 @@ public class PceManager implements PceService {
                      if (vnName == null) {
                          pceStore.addFailedPathInfo(new PcePathInfo(src, dst, tunnelName, constraints, lspType));
                      }
-                     return false;
+                     return PathErr.BW_RESV_FAIL;
                  }
             }
 
@@ -522,7 +523,7 @@ public class PceManager implements PceService {
                     computedPath.links().forEach(ln -> pceStore.releaseLocalReservedBw(LinkKey.linkKey(ln),
                      Double.parseDouble(tunnel.annotations().value(BANDWIDTH))));
                  }
-                 return false;
+                 return PathErr.ERROR;
             }
             computedPath = null;
             if (paths != null) {
@@ -548,7 +549,7 @@ public class PceManager implements PceService {
             }
         } while (computedPath != null);
 
-        return true;
+        return PathErr.SUCCESS;
     }
 
     @Override
@@ -575,7 +576,7 @@ public class PceManager implements PceService {
 
     //[TODO:] handle requests in queue
     @Override
-    public boolean setupPath(DeviceId src, DeviceId dst, String tunnelName, List<Constraint> constraints,
+    public PathErr setupPath(DeviceId src, DeviceId dst, String tunnelName, List<Constraint> constraints,
                              LspType lspType, String vnName) {
         checkNotNull(src);
         checkNotNull(dst);
@@ -589,7 +590,7 @@ public class PceManager implements PceService {
     }
 
     @Override
-    public boolean setupPath(String vnName, IpAddress srcLsrId, IpAddress dstLsrId, String tunnelName,
+    public PathErr setupPath(String vnName, IpAddress srcLsrId, IpAddress dstLsrId, String tunnelName,
                              List<Constraint> constraints, LspType lspType) {
         checkNotNull(srcLsrId);
         checkNotNull(dstLsrId);
@@ -603,12 +604,9 @@ public class PceManager implements PceService {
         DeviceId srcDeviceId = pceStore.getLsrIdDevice(srcLsrId.toString());
         DeviceId dstDeviceId = pceStore.getLsrIdDevice(dstLsrId.toString());
 
-        boolean result = setupPath(vnName, srcDeviceId, dstDeviceId, tunnelName, constraints, lspType);
+        PathErr result = setupPath(vnName, srcDeviceId, dstDeviceId, tunnelName, constraints, lspType);
 
-        if (!result) {
-
-            // Report error here.
-
+        //if (!result) {
             /* PcePathReport report = DefaultPcePathReport.builder()
                     .pathName(tunnelName)
                     .state(PcePathReport.State.DOWN)
@@ -618,32 +616,35 @@ public class PceManager implements PceService {
 
             pcePathUpdateListener.forEach(item -> item.updatePath(report));
             */
-        }
+        // }
         return result;
     }
 
     @Override
-    public boolean updatePath(TunnelId tunnelId, List<Constraint> constraints) {
+    public PathErr updatePath(TunnelId tunnelId, List<Constraint> constraints) {
         checkNotNull(tunnelId);
         if (getPceMode().equals("MDSC")) {
-           return  updateMdscPath(tunnelId, constraints);
+            if (!updateMdscPath(tunnelId, constraints)) {
+                return PathErr.ERROR;
+            }
+           return  PathErr.SUCCESS;
         }
         return updatePncPath(tunnelId, constraints);
     }
 
-    public boolean updatePncPath(TunnelId tunnelId, List<Constraint> constraints) {
+    public PathErr updatePncPath(TunnelId tunnelId, List<Constraint> constraints) {
         checkNotNull(tunnelId);
         Set<Path> computedPathSet = null;
         Tunnel tunnel = tunnelService.queryTunnel(tunnelId);
 
         if (tunnel == null) {
-            return false;
+            return PathErr.TUNNEL_NOT_FOUND;
         }
 
         if (((tunnel.type() != MPLS) && (tunnel.type() != SDMPLS) && (tunnel.type() != MDMPLS))
                 || FALSE.equalsIgnoreCase(tunnel.annotations().value(DELEGATE))) {
             // Only delegated LSPs can be updated.
-            return false;
+            return PathErr.TYPE_MISMATCH;
         }
 
         List<Link> links = tunnel.path().links();
@@ -712,7 +713,7 @@ public class PceManager implements PceService {
 
         // NO-PATH
         if (computedPathSet.isEmpty()) {
-            return false;
+            return PathErr.COMPUTATION_FAIL;
         }
 
         Builder annotationBuilder = DefaultAnnotations.builder();
@@ -742,7 +743,7 @@ public class PceManager implements PceService {
                 labelStack = srTeHandler.computeLabelStack(computedPath);
                 // Failed to form a label stack.
                 if (labelStack == null) {
-                    return false;
+                    return PathErr.COMPUTATION_FAIL;
                 }
             }
         }
@@ -753,7 +754,7 @@ public class PceManager implements PceService {
         // Allocate shared bandwidth.
         if (bwConstraintValue != 0  && lspType != WITH_SIGNALLING) {
             if (!reserveBandwidth(computedPath, bwConstraintValue, shBwConstraint)) {
-                return false;
+                return PathErr.BW_RESV_FAIL;
             }
         }
 
@@ -765,7 +766,7 @@ public class PceManager implements PceService {
                 //resourceService.release(consumerId);
                 releaseSharedBandwidth(updatedTunnel, tunnel);
             }
-            return false;
+            return PathErr.ERROR;
         }
         if (getPceMode().equals("MDSC")) {
             // Update tunnel ID map
@@ -776,7 +777,7 @@ public class PceManager implements PceService {
             childTunnelIdStatus.put(updatedTunnelId, Boolean.valueOf(TUNNEL_INIT));
         }
 
-        return true;
+        return PathErr.SUCCESS;
     }
 
     public TunnelId getTunnel(Path updatepPath, Set<TunnelId> childTunnelIds) {
@@ -935,12 +936,12 @@ public class PceManager implements PceService {
     }
 
     @Override
-    public boolean updatePath(IpAddress srcLsrId, IpAddress dstLsrId, String plspId, List<Constraint> constraints) {
+    public PathErr updatePath(IpAddress srcLsrId, IpAddress dstLsrId, String plspId, List<Constraint> constraints) {
         checkNotNull(plspId);
         checkNotNull(srcLsrId);
         checkNotNull(dstLsrId);
 
-        boolean result = false;
+        PathErr result = null;
         TunnelEndPoint tunSrc = IpTunnelEndPoint.ipTunnelPoint(srcLsrId);
         TunnelEndPoint tunDst = IpTunnelEndPoint.ipTunnelPoint(dstLsrId);
 
@@ -953,9 +954,7 @@ public class PceManager implements PceService {
             result =  updatePath(tunnel.get().tunnelId(), constraints);
         }
 
-        if (!result) {
-            // Report Error here
-
+        // if (!result) {
             /* PcePathReport report = DefaultPcePathReport.builder()
                     .state(PcePathReport.State.DOWN)
                     .plspId(plspId)
@@ -963,7 +962,7 @@ public class PceManager implements PceService {
 
             pcePathUpdateListener.forEach(item -> item.updatePath(report));*/
 
-        }
+        // }
         return result;
     }
 
@@ -1000,16 +999,15 @@ public class PceManager implements PceService {
             result =  tunnelService.downTunnel(appId, tunnel.get().tunnelId());
         }
 
-        if (!result) {
-            // Report Error here
-            /* PcePathReport report = DefaultPcePathReport.builder()
+       /*  if (!result) {
+            PcePathReport report = DefaultPcePathReport.builder()
                     .state(PcePathReport.State.DOWN)
                     .plspId(plspId)
                     .build();
 
             pcePathUpdateListener.forEach(item -> item.updatePath(report));
-            */
-        }
+
+        } */
         return result;
     }
 
@@ -1246,7 +1244,8 @@ public class PceManager implements PceService {
              * If tunnel was UP after recomputation failed then store failed path in PCE store send PCIntiate(remove)
              * and If tunnel is failed and computation fails nothing to do because tunnel status will be same[Failed]
              */
-            if (!updatePath(tunnel.tunnelId(), constraintList) && !tunnel.state().equals(Tunnel.State.FAILED)) {
+            if (PathErr.SUCCESS != updatePath(tunnel.tunnelId(), constraintList)
+                    && !tunnel.state().equals(Tunnel.State.FAILED)) {
 
                 if (tunnel.annotations().value(VN_NAME) != null && tunnel.type() == MPLS) {
                     reportTunnelToListeners(tunnel, false, false);
@@ -1724,7 +1723,6 @@ public class PceManager implements PceService {
                      * unstable so that it can be setup again. Add into failed path store so that it can be recomputed
                      * and setup while global reoptimization.
                      */
-
                     List<Constraint> constraints = new LinkedList<>();
                     String bandwidth = tunnel.annotations().value(BANDWIDTH);
                     if (bandwidth != null) {
@@ -1975,7 +1973,7 @@ public class PceManager implements PceService {
          * Master of ingress node will setup the path failed stored in PCE store.
          */
         if (mastershipService.isLocalMaster(failedPathInfo.src())) {
-            if (setupPath(failedPathInfo.src(), failedPathInfo.dst(), failedPathInfo.name(),
+            if (PathErr.SUCCESS == setupPath(failedPathInfo.src(), failedPathInfo.dst(), failedPathInfo.name(),
                     failedPathInfo.constraints(), failedPathInfo.lspType(), null)) {
                 // If computation is success remove that path
                 pceStore.removeFailedPathInfo(failedPathInfo);

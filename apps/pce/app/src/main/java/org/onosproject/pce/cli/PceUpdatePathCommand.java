@@ -76,7 +76,7 @@ public class PceUpdatePathCommand extends AbstractShellCommand {
             constrntList.add(CostConstraint.of(costType));
         }
 
-        if (!service.updatePath(TunnelId.valueOf(id), constrntList)) {
+        if (PceService.PathErr.SUCCESS != service.updatePath(TunnelId.valueOf(id), constrntList)) {
             error("Path updation failed.");
             return;
         }

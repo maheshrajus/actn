@@ -34,6 +34,47 @@ import org.onosproject.incubator.net.tunnel.TunnelId;
 public interface PceService {
 
     /**
+     * Operation state.
+     */
+    enum PathErr {
+
+        /**
+         * Signifies that the path is susscess.
+         */
+        SUCCESS,
+
+        /**
+         * Signifies that the generic error.
+         */
+        ERROR,
+
+        /**
+         * Signifies that the device or lsrid not exist.
+         */
+        DEVICE_LSR_NOT_EXIST,
+
+        /**
+         * Signifies that the Session not exist.
+         */
+        SESSION_NOT_EXIST,
+
+        /**
+         * Signifies that the Bandwidth reservation Fail.
+         */
+        BW_RESV_FAIL,
+
+        /**
+         * Signifies that the computation fail.
+         */
+        TUNNEL_NOT_FOUND,
+
+        TYPE_MISMATCH, /**
+         * Signifies that the computation fail.
+         */
+        COMPUTATION_FAIL
+    }
+
+    /**
      * Compute new path based on constraints and LSP type.
      *
      * @param src source device
@@ -54,7 +95,7 @@ public interface PceService {
      * @param vnName virtual network
      * @return false on failure and true on successful path creation
      */
-    boolean setupPath(DeviceId src, DeviceId dst, String tunnelName, List<Constraint> constraints, LspType lspType,
+    PathErr setupPath(DeviceId src, DeviceId dst, String tunnelName, List<Constraint> constraints, LspType lspType,
                       String vnName);
 
     /**
@@ -68,7 +109,7 @@ public interface PceService {
      * @param lspType type of path to be setup
      * @return false on failure and true on successful path creation
      */
-    boolean setupPath(String vnName, IpAddress srcLsrId, IpAddress dstLsrId, String tunnelName,
+    PathErr setupPath(String vnName, IpAddress srcLsrId, IpAddress dstLsrId, String tunnelName,
                       List<Constraint> constraints, LspType lspType);
 
     /**
@@ -78,7 +119,7 @@ public interface PceService {
      * @param constraints list of constraints to be applied on path
      * @return false on failure and true on successful path update
      */
-    boolean updatePath(TunnelId tunnelId, List<Constraint> constraints);
+    PathErr updatePath(TunnelId tunnelId, List<Constraint> constraints);
 
     /**
      * Updates an existing path.
@@ -89,7 +130,7 @@ public interface PceService {
      * @param constraints list of constraints to be applied on path
      * @return false on failure and true on successful path update
      */
-    boolean updatePath(IpAddress srcLsrId, IpAddress dstLsrId, String plspId, List<Constraint> constraints);
+    PathErr updatePath(IpAddress srcLsrId, IpAddress dstLsrId, String plspId, List<Constraint> constraints);
 
     /**
      * Releases an existing path.

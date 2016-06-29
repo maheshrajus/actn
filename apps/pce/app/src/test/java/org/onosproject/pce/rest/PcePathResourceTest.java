@@ -254,7 +254,7 @@ public class PcePathResourceTest extends PceResourceTest {
     @Test
     public void testPut() {
         expect(pceService.updatePath((TunnelId) anyObject(), anyObject()))
-                         .andReturn(true)
+                         .andReturn(PceService.PathErr.SUCCESS)
                          .anyTimes();
         replay(pceService);
 

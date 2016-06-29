@@ -96,6 +96,7 @@ public final class PcepErrorDetailInfo {
     public static final byte ERROR_TYPE_9 = 9;
     public static final byte ERROR_TYPE_10 = 10;
     public static final byte ERROR_TYPE_19 = 19;
+    public static final byte ERROR_TYPE_24 = 24;
 
     // Error Values
     public static final byte ERROR_VALUE_1 = 1;

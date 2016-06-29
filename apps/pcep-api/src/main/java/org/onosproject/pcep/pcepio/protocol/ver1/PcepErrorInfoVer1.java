@@ -26,6 +26,7 @@ import org.onosproject.pcep.pcepio.protocol.PcepErrorInfo;
 import org.onosproject.pcep.pcepio.protocol.PcepErrorObject;
 import org.onosproject.pcep.pcepio.protocol.PcepRPObject;
 import org.onosproject.pcep.pcepio.protocol.PcepLSObject;
+import org.onosproject.pcep.pcepio.protocol.PcepSrpObject;
 import org.onosproject.pcep.pcepio.types.PcepObjectHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,6 +82,7 @@ public class PcepErrorInfoVer1 implements PcepErrorInfo {
             cb.resetReaderIndex();
             byte yObjClass = tempObjHeader.getObjClass();
             if ((yObjClass != PcepRPObjectVer1.RP_OBJ_CLASS) && (yObjClass != PcepLSObjectVer1.LS_OBJ_CLASS)
+                    && (yObjClass != PcepSrpObjectVer1.SRP_OBJ_CLASS)
                     && (yObjClass != PcepErrorObjectVer1.ERROR_OBJ_CLASS)) {
                 throw new PcepParseException("Unknown Object is present in PCEP-ERROR. Object Class: " + yObjClass);
             }
@@ -111,6 +113,15 @@ public class PcepErrorInfoVer1 implements PcepErrorInfo {
                 ListIterator<PcepLSObject> teListIterator = llLSObjList.listIterator();
                 while (teListIterator.hasNext()) {
                     teListIterator.next().write(cb);
+                }
+            }
+
+            //SRP Object list is optional
+            List<PcepSrpObject> llSrpObjList = pcepError.getSrpObjList();
+            if (llSrpObjList != null) {
+                ListIterator<PcepSrpObject> srpListIterator = llSrpObjList.listIterator();
+                while (srpListIterator.hasNext()) {
+                    srpListIterator.next().write(cb);
                 }
             }
 

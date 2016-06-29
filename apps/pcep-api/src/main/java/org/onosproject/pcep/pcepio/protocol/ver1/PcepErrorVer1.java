@@ -25,6 +25,7 @@ import org.onosproject.pcep.pcepio.protocol.PcepError;
 import org.onosproject.pcep.pcepio.protocol.PcepErrorObject;
 import org.onosproject.pcep.pcepio.protocol.PcepRPObject;
 import org.onosproject.pcep.pcepio.protocol.PcepLSObject;
+import org.onosproject.pcep.pcepio.protocol.PcepSrpObject;
 import org.onosproject.pcep.pcepio.types.PcepObjectHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,6 +59,7 @@ public class PcepErrorVer1 implements PcepError {
     private boolean isLSObjListSet;
 
     public static final int OBJECT_HEADER_LENGTH = 4;
+    private List<PcepSrpObject> srpObjList;
 
     /**
      * Constructor to initialize variable.
@@ -190,6 +192,46 @@ public class PcepErrorVer1 implements PcepError {
     }
 
     /**
+     * Parse SRP List from the channel buffer.
+     *
+     * @param cb of type channel buffer
+     * @throws PcepParseException if mandatory fields are missing
+     */
+    private void parseSrpList(ChannelBuffer cb) throws PcepParseException {
+        byte yObjClass;
+        byte yObjType;
+
+        srpObjList = new LinkedList<>();
+
+        // caller should verify for SRP object
+        if (cb.readableBytes() < OBJECT_HEADER_LENGTH) {
+            log.error("Unable to find SRP Object");
+            return;
+        }
+
+        cb.markReaderIndex();
+        PcepObjectHeader tempObjHeader = PcepObjectHeader.read(cb);
+        cb.resetReaderIndex();
+        yObjClass = tempObjHeader.getObjClass();
+        yObjType = tempObjHeader.getObjType();
+        PcepSrpObject srpObj;
+        while ((yObjClass == PcepSrpObjectVer1.SRP_OBJ_CLASS) && (yObjType == PcepSrpObjectVer1.SRP_OBJ_TYPE)) {
+            srpObj = PcepSrpObjectVer1.read(cb);
+            srpObjList.add(srpObj);
+
+            if (cb.readableBytes() > OBJECT_HEADER_LENGTH) {
+                cb.markReaderIndex();
+                tempObjHeader = PcepObjectHeader.read(cb);
+                cb.resetReaderIndex();
+                yObjClass = tempObjHeader.getObjClass();
+                yObjType = tempObjHeader.getObjType();
+            } else {
+                break;
+            }
+        }
+    }
+
+    /**
      * parseErrObjList from the channel buffer.
      *
      * @param cb of type channel buffer
@@ -262,6 +304,10 @@ public class PcepErrorVer1 implements PcepError {
             log.debug("LS_LIST");
             pcepError.parseLSList(cb);
             yObjClass = checkNextObject(cb);
+        } else if (yObjClass == PcepSrpObjectVer1.SRP_OBJ_CLASS) {
+            log.info("SRP_LIST");
+            pcepError.parseSrpList(cb);
+            yObjClass = checkNextObject(cb);
         }
 
         if (yObjClass == PcepErrorObjectVer1.ERROR_OBJ_CLASS) {
@@ -332,6 +378,7 @@ public class PcepErrorVer1 implements PcepError {
         private List<PcepRPObject> rpObjList;
         private List<PcepLSObject> lsObjList;
         private List<PcepErrorObject> errObjList;
+        private List<PcepSrpObject> srpObjList;
 
         @Override
         public PcepError build() {
@@ -361,6 +408,17 @@ public class PcepErrorVer1 implements PcepError {
         }
 
         @Override
+        public List<PcepSrpObject> getSrpObjList() {
+            return this.srpObjList;
+        }
+
+        @Override
+        public Builder setSrpObjList(List<PcepSrpObject> srpObjList) {
+            this.srpObjList = srpObjList;
+            return this;
+        }
+
+        @Override
         public List<PcepErrorObject> getErrorObjList() {
             return this.errObjList;
         }
@@ -381,6 +439,16 @@ public class PcepErrorVer1 implements PcepError {
     @Override
     public void setLSObjList(List<PcepLSObject> lsObjList) {
         this.lsObjList = lsObjList;
+    }
+
+    @Override
+    public List<PcepSrpObject> getSrpObjList() {
+        return this.srpObjList;
+    }
+
+    @Override
+    public void setSrpObjList(List<PcepSrpObject> srpObjList) {
+        this.srpObjList = srpObjList;
     }
 
     @Override
