@@ -981,7 +981,7 @@ public class PceManager implements PceService {
     }
 
     @Override
-    public boolean releasePath(IpAddress srcLsrId, IpAddress dstLsrId, String plspId) {
+    public PathErr releasePath(IpAddress srcLsrId, IpAddress dstLsrId, String plspId) {
         checkNotNull(plspId);
         checkNotNull(srcLsrId);
         checkNotNull(dstLsrId);
@@ -999,16 +999,16 @@ public class PceManager implements PceService {
             result =  tunnelService.downTunnel(appId, tunnel.get().tunnelId());
         }
 
-       /*  if (!result) {
-            PcePathReport report = DefaultPcePathReport.builder()
+       if (!result) {
+            /* PcePathReport report = DefaultPcePathReport.builder()
                     .state(PcePathReport.State.DOWN)
                     .plspId(plspId)
                     .build();
 
-            pcePathUpdateListener.forEach(item -> item.updatePath(report));
-
-        } */
-        return result;
+            pcePathUpdateListener.forEach(item -> item.updatePath(report)); */
+           return PathErr.ERROR;
+        }
+        return PathErr.SUCCESS;
     }
 
     @Override

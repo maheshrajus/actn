@@ -216,6 +216,7 @@ public class PcepClientControllerImpl implements PcepClientController {
         SymbolicPathNameTlv pathNameTlv = null;
         List<Constraint> initConstrntList = null;
         LspType lspType = null;
+        PathErr pathErr = null;
         PcepClient pc = getClient(pceId);
         ListIterator<PcInitiatedLspRequest> listIterator
                 = ((PcepInitiateMsg) msg).getPcInitiatedLspRequestList().listIterator();
@@ -271,11 +272,10 @@ public class PcepClientControllerImpl implements PcepClientController {
 
                 if (srpObj.getRFlag()) {
                     log.info("Remove path with PLSPID " + lspObj.getPlspId());
-                    pceService.releasePath(IpAddress.valueOf(endPointObj.getSourceIpAddress()),
+                    pathErr = pceService.releasePath(IpAddress.valueOf(endPointObj.getSourceIpAddress()),
                             IpAddress.valueOf(endPointObj.getDestIpAddress()),
                                     String.valueOf(lspObj.getPlspId()));
                 } else {
-
 
                     if (initLsp.getAssociationObjectList() != null) {
                         ListIterator<PcepAssociationObject> iterator
@@ -337,24 +337,24 @@ public class PcepClientControllerImpl implements PcepClientController {
                             associationObj = iterator.next();
                         }
                     }
+
+                    pathErr = pceService.setupPath(new String(virtualNetworklv.getValue()),
+                                                           IpAddress.valueOf(endPointObj.getSourceIpAddress()),
+                                                           IpAddress.valueOf(endPointObj.getDestIpAddress()),
+                                                           new String(pathNameTlv.getValue()),
+                                                           initConstrntList, lspType);
                 }
-            }
 
-            PathErr pathErr = pceService.setupPath(new String(virtualNetworklv.getValue()),
-                                                   IpAddress.valueOf(endPointObj.getSourceIpAddress()),
-                                                   IpAddress.valueOf(endPointObj.getDestIpAddress()),
-                                                   new String(pathNameTlv.getValue()),
-                                                   initConstrntList, lspType);
-
-            if (pathErr == PathErr.COMPUTATION_FAIL) {
-                PcepSrpIdMap.remove(pathNameTlv.getValue());
-                pc.sendMessage(Collections.singletonList(getErrMsg(pc.factory(), ERROR_TYPE_24,
-                                                                   ERROR_VALUE_3, srpObj.getSrpID())));
-            }  else if (pathErr != PathErr.SUCCESS) {
-                log.info("setupPath failed, ErrorValue: " + pathErr);
-                PcepSrpIdMap.remove(pathNameTlv.getValue());
-                pc.sendMessage(Collections.singletonList(getErrMsg(pc.factory(), ERROR_TYPE_24,
-                                                                   ERROR_VALUE_2, srpObj.getSrpID())));
+                if (pathErr == PathErr.COMPUTATION_FAIL) {
+                    PcepSrpIdMap.remove(pathNameTlv.getValue());
+                    pc.sendMessage(Collections.singletonList(getErrMsg(pc.factory(), ERROR_TYPE_24,
+                                                                       ERROR_VALUE_3, srpObj.getSrpID())));
+                }  else if (pathErr != PathErr.SUCCESS) {
+                    log.info("setupPath failed, ErrorValue: " + pathErr);
+                    PcepSrpIdMap.remove(pathNameTlv.getValue());
+                    pc.sendMessage(Collections.singletonList(getErrMsg(pc.factory(), ERROR_TYPE_24,
+                                                                       ERROR_VALUE_2, srpObj.getSrpID())));
+                }
             }
         }
 

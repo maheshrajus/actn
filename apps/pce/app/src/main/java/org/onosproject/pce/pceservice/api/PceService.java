@@ -148,7 +148,7 @@ public interface PceService {
      * @param plspId plspId of the path
      * @return false on failure and true on successful path removal
      */
-    boolean releasePath(IpAddress srcLsrId, IpAddress dstLsrId, String plspId);
+    PathErr releasePath(IpAddress srcLsrId, IpAddress dstLsrId, String plspId);
 
     /**
      * Queries all paths.
