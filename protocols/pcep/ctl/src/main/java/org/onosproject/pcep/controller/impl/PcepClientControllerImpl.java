@@ -77,8 +77,7 @@ import static org.onosproject.pcep.controller.PcepLspSyncAction.REMOVE;
 import static org.onosproject.pcep.controller.PcepLspSyncAction.SEND_UPDATE;
 import static org.onosproject.pcep.controller.PcepLspSyncAction.SEND_DELETE;
 import static org.onosproject.pcep.controller.PcepLspSyncAction.UNSTABLE;
-import static org.onosproject.pcep.pcepio.types.PcepErrorDetailInfo.ERROR_TYPE_19;
-import static org.onosproject.pcep.pcepio.types.PcepErrorDetailInfo.ERROR_VALUE_5;
+import static org.onosproject.pcep.pcepio.types.PcepErrorDetailInfo.*;
 
 /**
  * Implementation of PCEP client controller.
@@ -205,6 +204,9 @@ public class PcepClientControllerImpl implements PcepClientController {
         case NOTIFICATION:
             break;
         case ERROR:
+            for (PcepEventListener l : pcepEventListener) {
+                l.handleMessage(pccId, msg);
+            }
             break;
         case INITIATE:
             if (!pc.capability().pcInstantiationCapability()) {

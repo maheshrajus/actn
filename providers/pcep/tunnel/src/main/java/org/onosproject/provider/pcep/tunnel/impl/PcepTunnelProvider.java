@@ -90,6 +90,10 @@ import org.onosproject.pcep.pcepio.protocol.PcepAttribute;
 import org.onosproject.pcep.pcepio.protocol.PcepBandwidthObject;
 import org.onosproject.pcep.pcepio.protocol.PcepEndPointsObject;
 import org.onosproject.pcep.pcepio.protocol.PcepEroObject;
+import org.onosproject.pcep.pcepio.protocol.PcepError;
+import org.onosproject.pcep.pcepio.protocol.PcepErrorInfo;
+import org.onosproject.pcep.pcepio.protocol.PcepErrorMsg;
+import org.onosproject.pcep.pcepio.protocol.PcepErrorObject;
 import org.onosproject.pcep.pcepio.protocol.PcepInitiateMsg;
 import org.onosproject.pcep.pcepio.protocol.PcepLspObject;
 import org.onosproject.pcep.pcepio.protocol.PcepMessage;
@@ -135,6 +139,8 @@ import static org.onosproject.net.DefaultAnnotations.EMPTY;
 import static org.onosproject.net.DeviceId.deviceId;
 import static org.onosproject.net.PortNumber.portNumber;
 import static org.onosproject.pcep.api.PcepDpid.uri;
+import static org.onosproject.pcep.pcepio.types.PcepErrorDetailInfo.ERROR_TYPE_24;
+import static org.onosproject.pcep.pcepio.types.PcepErrorDetailInfo.ERROR_VALUE_3;
 import static org.onosproject.provider.pcep.tunnel.impl.LspType.WITH_SIGNALLING;
 import static org.onosproject.provider.pcep.tunnel.impl.LspType.SR_WITHOUT_SIGNALLING;
 import static org.onosproject.pcep.controller.PcepAnnotationKeys.BANDWIDTH;
@@ -1297,15 +1303,51 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
 
         @Override
         public void handleMessage(PccId pccId, PcepMessage msg) {
+            PcepSrpObject srpObj = null;
+            int srpId = 0;
             try {
                 log.debug("tunnel provider handle message {}", msg.getType().toString());
                 switch (msg.getType()) {
+                case ERROR:
+                    PcepErrorInfo errInfo = ((PcepErrorMsg) msg).getPcepErrorInfo();
+
+                    if (null == errInfo) {
+                        break;
+                    }
+
+                    ListIterator<PcepError> errlistIterator = errInfo.getPcepErrorList().listIterator();
+                    PcepErrorObject errObj;
+                    int errorType = 0;
+                    int errorValue = 0;
+                    while (errlistIterator.hasNext()) {
+                        PcepError pcepError = errlistIterator.next();
+                        List<PcepErrorObject> llErrObjList = pcepError.getErrorObjList();
+                        if (llErrObjList != null) {
+                            ListIterator<PcepErrorObject> errObjListIterator = llErrObjList.listIterator();
+                            if (errObjListIterator.hasNext()) {
+                                errObj = errObjListIterator.next();
+                                errorType = errObj.getErrorType();
+                                errorValue = errObj.getErrorValue();
+                            }
+                        }
+
+                        List<PcepSrpObject> srpObjList = pcepError.getSrpObjList();
+                        if ((srpObjList != null) && (errorType == ERROR_TYPE_24)
+                                && (errorValue == ERROR_VALUE_3)) {
+                            ListIterator<PcepSrpObject> srpObjListIterator = srpObjList.listIterator();
+                            while (srpObjListIterator.hasNext()) {
+                                srpObj = srpObjListIterator.next();
+                                srpId = srpObj.getSrpID();
+
+                                handlePcepErrWithSrpId(srpId);
+                            }
+                        }
+                    }
+                    break;
                 case REPORT:
-                    int srpId = 0;
                     LinkedList<PcepStateReport> llStateReportList = null;
                     llStateReportList = ((PcepReportMsg) msg).getStateReportList();
                     ListIterator<PcepStateReport> listIterator = llStateReportList.listIterator();
-                    PcepSrpObject srpObj = null;
                     PcepLspObject lspObj = null;
                     while (listIterator.hasNext()) {
                         PcepStateReport stateRpt = listIterator.next();
@@ -1335,6 +1377,28 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
             } catch (Exception e) {
                 log.error("Exception occured while processing report message {}", e.getMessage());
             }
+        }
+
+        private void handlePcepErrWithSrpId(int srpId) {
+            ProviderId providerId = new ProviderId("pcep", PROVIDER_ID);
+            PcepTunnelData pcepTunnelData = pcepTunnelApiMapper.getDataFromTunnelRequestQueue(srpId);
+
+            Path path = pcepTunnelData.path();
+            Tunnel tunnel = pcepTunnelData.tunnel();
+            Builder annotationBuilder = DefaultAnnotations.builder();
+            annotationBuilder.putAll(pcepTunnelData.tunnel().annotations());
+
+            SparseAnnotations annotations = annotationBuilder.build();
+            DefaultTunnelDescription td = new DefaultTunnelDescription(tunnel.tunnelId(), tunnel.src(),
+                                                                       tunnel.dst(), tunnel.type(), tunnel.groupId(),
+                                                                       providerId, tunnel.tunnelName(), path,
+                                                                       annotations);
+
+            pcepTunnelApiMapper.handleRemoveFromTunnelRequestQueue(srpId, pcepTunnelData);
+
+            log.error("Remove Tunnel for srpId: " + srpId);
+
+            tunnelRemoved(td);
         }
 
         /**

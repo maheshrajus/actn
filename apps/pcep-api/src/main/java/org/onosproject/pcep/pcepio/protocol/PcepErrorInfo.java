@@ -64,6 +64,13 @@ public interface PcepErrorInfo {
     List<Integer> getErrorType();
 
     /**
+     * Returns list of PcepError.
+     *
+     * @return list of PcepError
+     */
+    List<PcepError> getPcepErrorList();
+
+    /**
      * Builder interface with get and set functions to build ErrorInfo.
      */
     interface Builder {

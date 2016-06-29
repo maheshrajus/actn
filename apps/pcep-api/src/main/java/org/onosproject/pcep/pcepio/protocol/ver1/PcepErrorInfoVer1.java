@@ -98,6 +98,18 @@ public class PcepErrorInfoVer1 implements PcepErrorInfo {
         while (listIterator.hasNext()) {
             PcepError pcepError = listIterator.next();
 
+            // <error-obj-list> is mandatory
+            boolean bIsErrorObjListFound = false;
+
+            List<PcepErrorObject> llErrObjList = pcepError.getErrorObjList();
+            if (llErrObjList != null) {
+                ListIterator<PcepErrorObject> errObjListIterator = llErrObjList.listIterator();
+                while (errObjListIterator.hasNext()) {
+                    errObjListIterator.next().write(cb);
+                    bIsErrorObjListFound = true;
+                }
+            }
+
             //RP Object list is optional
             List<PcepRPObject> llRPObjList = pcepError.getRPObjList();
             if (llRPObjList != null) {
@@ -122,18 +134,6 @@ public class PcepErrorInfoVer1 implements PcepErrorInfo {
                 ListIterator<PcepSrpObject> srpListIterator = llSrpObjList.listIterator();
                 while (srpListIterator.hasNext()) {
                     srpListIterator.next().write(cb);
-                }
-            }
-
-            // <error-obj-list> is mandatory
-            boolean bIsErrorObjListFound = false;
-
-            List<PcepErrorObject> llErrObjList = pcepError.getErrorObjList();
-            if (llErrObjList != null) {
-                ListIterator<PcepErrorObject> errObjListIterator = llErrObjList.listIterator();
-                while (errObjListIterator.hasNext()) {
-                    errObjListIterator.next().write(cb);
-                    bIsErrorObjListFound = true;
                 }
             }
 
@@ -162,6 +162,11 @@ public class PcepErrorInfoVer1 implements PcepErrorInfo {
             }
         }
         return errorType;
+    }
+
+    @Override
+    public List<PcepError> getPcepErrorList() {
+        return this.errList;
     }
 
     @Override
