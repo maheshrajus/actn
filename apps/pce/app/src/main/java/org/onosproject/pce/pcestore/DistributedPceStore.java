@@ -20,6 +20,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.collect.ImmutableSet;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -406,6 +407,7 @@ public class DistributedPceStore implements PceStore {
     public boolean allocLocalReservedBw(LinkKey linkkey, Double bandwidth) {
         checkNotNull(linkkey);
         checkNotNull(bandwidth);
+
         Versioned<Double> allocatedBw = localReservedBw.get(linkkey);
         if (allocatedBw != null) {
             localReservedBw.put(linkkey, (allocatedBw.value() + bandwidth));
@@ -442,44 +444,139 @@ public class DistributedPceStore implements PceStore {
 
     @Override
     public boolean addParentTunnel(TunnelId tunnelId, State status) {
+        checkNotNull(tunnelId);
+        checkNotNull(status);
 
-        return true;
+        if (parentChildTunnelStatusMap.get(tunnelId) == null) {
+            Map<TunnelId, State> tunnelStatus = new HashMap<>();
+            tunnelStatus.put(tunnelId, status);
+            parentChildTunnelStatusMap.put(tunnelId, tunnelStatus);
+        }
+        return false;
+    }
+
+    @Override
+    public TunnelId parentTunnel(TunnelId tunnelId) {
+        checkNotNull(tunnelId);
+
+        if (parentChildTunnelStatusMap.get(tunnelId) != null) {
+            return tunnelId;
+        }
+
+        Iterator iterator = parentChildTunnelStatusMap.keySet().iterator();
+        while (iterator.hasNext()) {
+            TunnelId key = (TunnelId) iterator.next();
+            Map<TunnelId, State> childTunnels = parentChildTunnelStatusMap.get(key).value();
+
+            Iterator childIterator = childTunnels.keySet().iterator();
+            while (childIterator.hasNext()) {
+                TunnelId tunnelid = (TunnelId) childIterator.next();
+                if (tunnelid.equals(tunnelId)) {
+                    return tunnelid;
+                }
+            }
+        }
+
+        return null;
     }
 
     @Override
     public boolean removeParentTunnel(TunnelId tunnelId) {
-
-        return true;
+        checkNotNull(tunnelId);
+        if (parentChildTunnelStatusMap.get(tunnelId) != null) {
+            Map<TunnelId, State> childTunnels = parentChildTunnelStatusMap.get(tunnelId).value();
+            childTunnels.keySet().forEach(childTunnels::remove);
+            parentChildTunnelStatusMap.remove(tunnelId);
+        }
+        return false;
     }
 
     @Override
     public boolean updateTunnelStatus(TunnelId tunnelId, State status) {
+        checkNotNull(tunnelId);
+        checkNotNull(status);
 
-        return true;
+        if (parentChildTunnelStatusMap.get(tunnelId) != null) {
+            Map<TunnelId, State> childTunnels = parentChildTunnelStatusMap.get(tunnelId).value();
+            childTunnels.replace(tunnelId, status);
+            return true;
+        }
+        // first get corresponding parent and update child
+        Iterator parentTunnels = parentChildTunnelStatusMap.entrySet().iterator();
+        while (parentTunnels.hasNext()) {
+            TunnelId id = (TunnelId) parentTunnels.next();
+            Map<TunnelId, State> childTunnel = parentChildTunnelStatusMap.get(id).value();
+            for (Map.Entry<TunnelId, State> tunnel : childTunnel.entrySet()) {
+                if (tunnelId.equals(tunnel.getKey())) {
+                    childTunnel.replace(tunnelId, status);
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @Override
     public boolean addChildTunnel(TunnelId parentId, TunnelId childId, State status) {
-
-        return true;
+        if (parentChildTunnelStatusMap.get(parentId) != null) {
+            Map<TunnelId, State> childTunnels = parentChildTunnelStatusMap.get(parentId).value();
+            if (childTunnels.get(childId) == null) {
+                childTunnels.put(childId, status);
+                return true;
+            }
+            childTunnels.replace(childId, status);
+        }
+        return false;
     }
 
     @Override
     public boolean removeChildTunnel(TunnelId parentId, TunnelId childId) {
-
-        return true;
+        if (parentChildTunnelStatusMap.get(parentId) != null) {
+            Map<TunnelId, State> childTunnels = parentChildTunnelStatusMap.get(parentId).value();
+            if (childTunnels.get(childId) == null) {
+                return false;
+            }
+            childTunnels.remove(childId);
+        }
+        return false;
     }
 
     @Override
     public State tunnelStatus(TunnelId tunnelId) {
-
+        if (parentChildTunnelStatusMap.get(tunnelId) != null) {
+            Map<TunnelId, State> childTunnels = parentChildTunnelStatusMap.get(tunnelId).value();
+            if (childTunnels.isEmpty()) {
+                return State.INIT;
+            }
+            return childTunnels.get(tunnelId);
+        }
+        // first get corresponding parent and update child
+        Iterator parentTunnels = parentChildTunnelStatusMap.entrySet().iterator();
+        while (parentTunnels.hasNext()) {
+            TunnelId id = (TunnelId) parentTunnels.next();
+            Map<TunnelId, State> childTunnel = parentChildTunnelStatusMap.get(id).value();
+            for (Map.Entry<TunnelId, State> tunnel : childTunnel.entrySet()) {
+                if (tunnelId.equals(tunnel.getKey())) {
+                    return childTunnel.get(tunnelId);
+                }
+            }
+        }
         return State.INIT;
     }
 
     @Override
     public boolean isAllChildUp(TunnelId parentId) {
-
-        return true;
+        if (parentChildTunnelStatusMap.get(parentId) != null) {
+            Map<TunnelId, State> childTunnels = parentChildTunnelStatusMap.get(parentId).value();
+            for (Map.Entry<TunnelId, State> childTunnel : childTunnels.entrySet()) {
+                if (!childTunnel.getValue().equals(State.ESTABLISHED)) {
+                    return false;
+                }
+            }
+            if (childTunnels.size() > 0) {
+                return true;
+            }
+        }
+        return false;
     }
-
 }

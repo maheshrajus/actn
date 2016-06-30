@@ -1047,15 +1047,7 @@ public class PceManager implements PceService {
 
     @Override
     public Boolean queryParentTunnelStatus(TunnelId tunnelId) {
-        // TODO: After shashi rework
-        /* TunnelId parentTunnel = getPceStoreParentTunnel(tunnelId);
-        if (parentTunnel != null) {
-            Map<TunnelId, Boolean> childTunnelId = pceStore.parentChildTunnelStatusMap().get(tunnelId);
-            if (childTunnelId.containsKey(parentTunnel)) {
-                return childTunnelId.get(parentTunnel);
-            }
-        }*/
-        return false;
+        return pceStore.isAllChildUp(tunnelId);
     }
 
     @Override
@@ -1608,16 +1600,7 @@ public class PceManager implements PceService {
      * @return parent tunnel ID
      */
     public TunnelId getPceStoreParentTunnel(TunnelId tunnelId) {
-        // get the tunnel name and get vnName based in delimeter, get parent tunnel by vnName and check
-        // child tunnel status for all and update parent status. all or none
-        // TODO: After shashi rework
-        /* for (Map.Entry<TunnelId, Set<TunnelId>> entry : pceStore.parentChildTunnelMap().entrySet()) {
-            Set<TunnelId> tunnelSet = entry.getValue();
-            if (tunnelSet.contains(tunnelId)) {
-                return entry.getKey();
-            }
-        } */
-        return null;
+        return pceStore.parentTunnel(tunnelId);
     }
 
     /**
@@ -1626,33 +1609,15 @@ public class PceManager implements PceService {
      * @param tunnel tunnel ID
      * @param status status to update, false for delete otherwise true
      */
-    public void updatePceStoreTunnelStatus(TunnelId tunnel, Boolean status) {
+    public void updatePceStoreTunnelStatus(TunnelId tunnel, Tunnel.State status) {
         checkNotNull(tunnel, "Tunnel ID cannot be null");
-        boolean allChildTunnelUp = true;
 
         TunnelId tunnelId = getPceStoreParentTunnel(tunnel);
         if (tunnelId == null) {
             return;
         }
         // TODO: After shashi rework
-        /*
-        Map<TunnelId, Boolean> childTunnelId = pceStore.parentChildTunnelStatusMap().get(tunnelId);
-        if (childTunnelId.containsKey(tunnel)) {
-            childTunnelId.put(tunnel, status);
-        }
-        // Update parent tunnel status, if all child tunnels are up, update parent, otherwise dont
-        for (TunnelId key : childTunnelId.keySet()) {
-            if (!childTunnelId.get(key).booleanValue()) {
-                // Update parent tunnel status not up.
-                childTunnelId.put(tunnelId, TUNNEL_INIT);
-                allChildTunnelUp = false;
-                break;
-            }
-        }
-        if ((childTunnelId.size() > 0)
-                && allChildTunnelUp && !(childTunnelId.get(tunnelId).booleanValue())) {
-            childTunnelId.put(tunnelId, TUNNEL_CREATED);
-        }*/
+        pceStore.updateTunnelStatus(tunnel, status);
         return;
     }
 
@@ -1663,18 +1628,8 @@ public class PceManager implements PceService {
         if (tunnelId == null) {
             return;
         }
-        // TODO: After shashi rework
-        /*
-        Map<TunnelId, Boolean> childTunnelId = pceStore.parentChildTunnelStatusMap().get(tunnelId);
-        if (childTunnelId.containsKey(tunnelId)) {
-            childTunnelId.remove(tunnelId);
-        }
 
-        Set<TunnelId> tunnelSet = pceStore.parentChildTunnelMap().get(tunnelId);
-        if (tunnelSet.contains(tunnel)) {
-            tunnelSet.remove(tunnel);
-        } */
-
+        pceStore.removeChildTunnel(tunnelId, tunnel);
         return;
     }
 
@@ -1704,7 +1659,7 @@ public class PceManager implements PceService {
                 }
                 if (tunnel.state() == ACTIVE) {
                     reportTunnelToListeners(tunnel, true, false);
-                    updatePceStoreTunnelStatus(tunnel.tunnelId(), TUNNEL_CREATED);
+                    updatePceStoreTunnelStatus(tunnel.tunnelId(), tunnel.state());
                 }
                 break;
 
@@ -1747,7 +1702,7 @@ public class PceManager implements PceService {
 
                 if (tunnel.state() == ACTIVE) {
                     reportTunnelToListeners(tunnel, true, false);
-                    updatePceStoreTunnelStatus(tunnel.tunnelId(), TUNNEL_CREATED);
+                    updatePceStoreTunnelStatus(tunnel.tunnelId(), tunnel.state());
                 }
 
                 break;

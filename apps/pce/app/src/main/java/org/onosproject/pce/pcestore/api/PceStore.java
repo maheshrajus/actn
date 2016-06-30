@@ -295,6 +295,8 @@ public interface PceStore {
      */
     Versioned<Double> getAllocatedLocalReservedBw(LinkKey linkkey);
 
+    TunnelId parentTunnel(TunnelId tunnelId);
+
     boolean addParentTunnel(TunnelId tunnelId, State status);
 
     boolean removeParentTunnel(TunnelId tunnelId);
