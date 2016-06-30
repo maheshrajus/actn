@@ -210,7 +210,7 @@ public interface PceService {
     /**
      * Gets PCE mode.
      *
-     * @param mode PCE mode
+     * @return PCE mode
      */
     String getPceMode();
     /**
@@ -224,7 +224,7 @@ public interface PceService {
      * Returns the tunnels which are initiated.
      * @return list of PcePathReport if tunnels exist otherwise empty list.
      */
-    List<PcePathReport> queryAllInitiateTunnels();
+    List<PcePathReport> queryAllInitiateTunnelsByMdsc();
 
     /**
      * Returns parent tunnel status.

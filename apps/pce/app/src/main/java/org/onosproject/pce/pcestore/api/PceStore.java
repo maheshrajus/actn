@@ -18,6 +18,7 @@ package org.onosproject.pce.pcestore.api;
 import java.util.List;
 
 import org.onosproject.incubator.net.resource.label.LabelResourceId;
+import org.onosproject.incubator.net.tunnel.Tunnel.State;
 import org.onosproject.incubator.net.tunnel.TunnelId;
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.Link;
@@ -294,17 +295,17 @@ public interface PceStore {
      */
     Versioned<Double> getAllocatedLocalReservedBw(LinkKey linkkey);
 
-    /**
-     * Returns parent and child tunnel map.
-     *
-     * @return parent child tunnel map
-     */
-    Map<TunnelId, Set<TunnelId>> parentChildTunnelMap();
+    boolean addParentTunnel(TunnelId tunnelId, State status);
 
-    /**
-     * Returns parent and child tunnel status map.
-     *
-     * @return parent child tunnel status map
-     */
-    Map<TunnelId, Map<TunnelId, Boolean>> parentChildTunnelStatusMap();
+    boolean removeParentTunnel(TunnelId tunnelId);
+
+    boolean updateTunnelStatus(TunnelId tunnelId, State status);
+
+    boolean addChildTunnel(TunnelId parentId, TunnelId childId, State status);
+
+    boolean removeChildTunnel(TunnelId parentId, TunnelId childId);
+
+    State tunnelStatus(TunnelId tunnelId);
+
+    boolean isAllChildUp(TunnelId parentId);
 }

@@ -117,7 +117,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableList;
-import java.util.HashSet;
+
 import com.google.common.collect.ImmutableSet;
 
 import static org.onosproject.incubator.net.tunnel.Tunnel.Type.MPLS;
@@ -179,8 +179,7 @@ public class PceManager implements PceService {
     private IdGenerator setupPathIdIdGen;
     protected DistributedSet<Short> localLspIdFreeList;
 
-    // LSR-id and device-id mapping for checking capability if L3 device is not
-    // having its capability
+    // LSR-id and device-id mapping for checking capability if L3 device is not having its capability
     private Map<String, DeviceId> lsrIdDeviceIdMap = new HashMap<>();
 
     // PCE path update listener set
@@ -188,9 +187,6 @@ public class PceManager implements PceService {
 
     @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
     protected CoreService coreService;
-
-    //@Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
-    //protected ResourceService resourceService;
 
     @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
     protected PathService pathService;
@@ -360,6 +356,49 @@ public class PceManager implements PceService {
         return new TeConstraintBasedLinkWeight(constraints);
     }
 
+    // Setup the path at MDSC and PNC based on mode and split the parent path to child and setup all paths.
+    private PathErr setupPath(String vnName, DeviceId src, DeviceId dst, String tunnelName,
+                              List<Constraint> constraints, LspType lspType) {
+        Set<Path> paths = null;
+
+        //compute the path with given constraints
+        Set<Path> computedPathSet = computePath(src, dst, constraints);
+        if (computedPathSet.isEmpty()) {
+            return PathErr.COMPUTATION_FAIL;
+        }
+        Path computedPath = computedPathSet.iterator().next();
+
+        // In case of MDSC, split the parent tunnel to multiple child tunnels and pass on to PNC for its local handling
+        if (getPceMode().equals("MDSC")) {
+            //Setup path for parent tunnel.
+            setupPath(vnName, src, dst, tunnelName, constraints, WITH_SIGNALLING, MDMPLS, computedPath);
+
+            //Store parent child mapping
+            Collection<Tunnel> tunnels = tunnelService.queryTunnel(TunnelName.tunnelName(tunnelName));
+            Tunnel parentTunnel = tunnels.iterator().next();
+            pceStore.addParentTunnel(parentTunnel.tunnelId(), parentTunnel.state());
+
+            //Split the parent path to multiple child paths and setup the tunnel for each child paths.
+            paths = domainManager().getDomainSpecificPaths(computedPath);
+            if (paths.isEmpty()) {
+                pceStore.removeParentTunnel(parentTunnel.tunnelId());
+                return PathErr.COMPUTATION_FAIL;
+            }
+
+            paths.forEach(path -> {
+                PceManager.this.setupPath(vnName, path.src().deviceId(), path.dst().deviceId(), tunnelName,
+                        constraints, WITH_SIGNALLING, SDMPLS, path);
+                //Store child mapping
+                Collection<Tunnel> childTunnels = tunnelService.queryTunnel(TunnelName.tunnelName(tunnelName));
+                Tunnel childTunnel = childTunnels.iterator().next();
+                pceStore.addChildTunnel(parentTunnel.tunnelId(), childTunnel.tunnelId(), childTunnel.state());
+            });
+        } else {
+            return setupPath(vnName, src, dst, tunnelName, constraints, lspType, MPLS, computedPath);
+        }
+        return PathErr.SUCCESS;
+    }
+
     /**
      * Creates new path based on virtual network name, constraints and LSP type.
      *
@@ -372,183 +411,153 @@ public class PceManager implements PceService {
      * @return false on failure and true on successful path creation
      */
     private PathErr setupPath(String vnName, DeviceId src, DeviceId dst, String tunnelName,
-                              List<Constraint> constraints, LspType lspType) {
-        Set<Path> paths = null;
-        TunnelId parentTunnelId = null;
-        Set<Path> computedPathSet = computePath(src, dst, constraints);
-        Path computedPath = computedPathSet.iterator().next();
+                              List<Constraint> constraints, LspType lspType, Tunnel.Type type, Path computedPath) {
+        LspType localLspType;
 
-        if (getPceMode().equals("MDSC")) {
-            paths = domainManager().getDomainSpecificPaths(computedPath);
+        // If tunnel type is MPLS then take the user requested type else take the default domain specific lsp type
+        if (type == MPLS) {
+            localLspType = lspType;
+        } else {
+            localLspType = defaultLspType();
         }
 
-        do {
-            // Convert from DeviceId to TunnelEndPoint
-            Device srcDevice = deviceService.getDevice(src);
-            Device dstDevice = deviceService.getDevice(dst);
+        // Convert from DeviceId to TunnelEndPoint
+        Device srcDevice = deviceService.getDevice(src);
+        Device dstDevice = deviceService.getDevice(dst);
 
-            if (srcDevice == null || dstDevice == null) {
-                // Device is not known.
-                if (vnName == null) {
-                    pceStore.addFailedPathInfo(new PcePathInfo(src, dst, tunnelName, constraints, lspType));
-                }
-
-                return PathErr.DEVICE_LSR_NOT_EXIST;
+        if (srcDevice == null || dstDevice == null) {
+            // Device is not known.
+            if (vnName == null) {
+                pceStore.addFailedPathInfo(new PcePathInfo(src, dst, tunnelName, constraints, localLspType));
             }
 
-            // In future projections instead of annotations will be used to fetch LSR ID.
-            String srcLsrId = srcDevice.annotations().value(LSRID);
-            String dstLsrId = dstDevice.annotations().value(LSRID);
+            return PathErr.DEVICE_LSR_NOT_EXIST;
+        }
 
-            if (srcLsrId == null || dstLsrId == null) {
-                 // LSR id is not known.
-                if (vnName == null) {
-                    pceStore.addFailedPathInfo(new PcePathInfo(src, dst, tunnelName, constraints, lspType));
-                }
+        // In future projections instead of annotations will be used to fetch LSR ID.
+        String srcLsrId = srcDevice.annotations().value(LSRID);
+        String dstLsrId = dstDevice.annotations().value(LSRID);
 
-                return PathErr.DEVICE_LSR_NOT_EXIST;
+        if (srcLsrId == null || dstLsrId == null) {
+            // LSR id is not known.
+            if (vnName == null) {
+                pceStore.addFailedPathInfo(new PcePathInfo(src, dst, tunnelName, constraints, localLspType));
             }
 
-            // Get device config from netconfig, to ascertain that session with ingress is present.
+            return PathErr.DEVICE_LSR_NOT_EXIST;
+        }
+
+        // If tunnel Type is MPLS it has direct connectivity to the device to need to check the capability.
+        if (type == MPLS) {
+            // Get device config from network config, to ascertain that session with ingress is present.
             DeviceCapability cfg = netCfgService.getConfig(DeviceId.deviceId(srcLsrId), DeviceCapability.class);
             if (cfg == null) {
                 log.debug("No session to ingress.");
                 if (vnName == null) {
-                    pceStore.addFailedPathInfo(new PcePathInfo(src, dst, tunnelName, constraints, lspType));
+                    pceStore.addFailedPathInfo(new PcePathInfo(src, dst, tunnelName, constraints, localLspType));
                 }
                 return PathErr.SESSION_NOT_EXIST;
             }
+        }
 
-            TunnelEndPoint srcEndPoint = IpTunnelEndPoint.ipTunnelPoint(IpAddress.valueOf(srcLsrId));
-            TunnelEndPoint dstEndPoint = IpTunnelEndPoint.ipTunnelPoint(IpAddress.valueOf(dstLsrId));
+        TunnelEndPoint srcEndPoint = IpTunnelEndPoint.ipTunnelPoint(IpAddress.valueOf(srcLsrId));
+        TunnelEndPoint dstEndPoint = IpTunnelEndPoint.ipTunnelPoint(IpAddress.valueOf(dstLsrId));
 
-            double bwConstraintValue = 0;
-            CostConstraint costConstraint = null;
-            if (constraints != null) {
-                constraints.add(CapabilityConstraint.of(CapabilityType.valueOf(lspType.name())));
-                Iterator<Constraint> iterator = constraints.iterator();
+        double bwConstraintValue = 0;
+        CostConstraint costConstraint = null;
+        if (constraints != null) {
+            constraints.add(CapabilityConstraint.of(CapabilityType.valueOf(localLspType.name())));
+            Iterator<Constraint> iterator = constraints.iterator();
 
-                while (iterator.hasNext()) {
-                    Constraint constraint = iterator.next();
-                    if (constraint instanceof BandwidthConstraint) {
-                        bwConstraintValue = ((BandwidthConstraint) constraint).bandwidth().bps();
-                    } else if (constraint instanceof CostConstraint) {
-                        costConstraint = (CostConstraint) constraint;
-                    }
+            while (iterator.hasNext()) {
+                Constraint constraint = iterator.next();
+                if (constraint instanceof BandwidthConstraint) {
+                    bwConstraintValue = ((BandwidthConstraint) constraint).bandwidth().bps();
+                } else if (constraint instanceof CostConstraint) {
+                    costConstraint = (CostConstraint) constraint;
                 }
-
-                /*
-                 * Add cost at the end of the list of constraints. The path computation algorithm also computes
-                 * cumulative cost. The function which checks the limiting/capability constraints also returns
-                 * per link cost. This function can either return the result of limiting/capability constraint
-                 * validation or the value of link cost, depending upon what is the last constraint in the loop.
-                 */
-                if (costConstraint != null) {
-                    constraints.remove(costConstraint);
-                    constraints.add(costConstraint);
-                 }
-            } else {
-                 constraints = new LinkedList<>();
-                 constraints.add(CapabilityConstraint.of(CapabilityType.valueOf(lspType.name())));
             }
 
-            // NO-PATH
-            if (computedPathSet.isEmpty()) {
-                 if (vnName == null) {
-                      pceStore.addFailedPathInfo(new PcePathInfo(src, dst, tunnelName, constraints, lspType));
-                 }
-                 return PathErr.COMPUTATION_FAIL;
-            }
-
-            Builder annotationBuilder = DefaultAnnotations.builder();
-            if (bwConstraintValue != 0) {
-                annotationBuilder.set(BANDWIDTH, String.valueOf(bwConstraintValue));
-            }
-
+            /*
+             * Add cost at the end of the list of constraints. The path computation algorithm also computes
+             * cumulative cost. The function which checks the limiting/capability constraints also returns
+             * per link cost. This function can either return the result of limiting/capability constraint
+             * validation or the value of link cost, depending upon what is the last constraint in the loop.
+             */
             if (costConstraint != null) {
-                annotationBuilder.set(COST_TYPE, String.valueOf(costConstraint.type()));
+                constraints.remove(costConstraint);
+                constraints.add(costConstraint);
             }
+        } else {
+            constraints = new LinkedList<>();
+            constraints.add(CapabilityConstraint.of(CapabilityType.valueOf(localLspType.name())));
+        }
 
-            if (vnName != null) {
-                annotationBuilder.set(VN_NAME, vnName);
-            }
+        Builder annotationBuilder = DefaultAnnotations.builder();
+        if (bwConstraintValue != 0) {
+            annotationBuilder.set(BANDWIDTH, String.valueOf(bwConstraintValue));
+        }
 
-            annotationBuilder.set(LSP_SIG_TYPE, lspType.name());
-            annotationBuilder.set(PCE_INIT, TRUE);
-            annotationBuilder.set(DELEGATE, TRUE);
+        if (costConstraint != null) {
+            annotationBuilder.set(COST_TYPE, String.valueOf(costConstraint.type()));
+        }
 
-            LabelStack labelStack = null;
+        if (vnName != null) {
+            annotationBuilder.set(VN_NAME, vnName);
+        }
 
-            if (lspType == SR_WITHOUT_SIGNALLING) {
-                labelStack = srTeHandler.computeLabelStack(computedPath);
-                // Failed to form a label stack.
-                if (labelStack == null) {
-                    if (vnName == null) {
-                        pceStore.addFailedPathInfo(new PcePathInfo(src, dst, tunnelName, constraints, lspType));
-                    }
-                    return PathErr.COMPUTATION_FAIL;
+        annotationBuilder.set(LSP_SIG_TYPE, localLspType.name());
+        annotationBuilder.set(PCE_INIT, TRUE);
+        annotationBuilder.set(DELEGATE, TRUE);
+
+        LabelStack labelStack = null;
+
+        if (localLspType == SR_WITHOUT_SIGNALLING) {
+            labelStack = srTeHandler.computeLabelStack(computedPath);
+            // Failed to form a label stack.
+            if (labelStack == null) {
+                if (vnName == null) {
+                    pceStore.addFailedPathInfo(new PcePathInfo(src, dst, tunnelName, constraints, localLspType));
                 }
+                return PathErr.COMPUTATION_FAIL;
             }
+        }
 
-            if (lspType != WITH_SIGNALLING) {
+        if (localLspType != WITH_SIGNALLING) {
                 /*
                  * Local LSP id which is assigned by RSVP for RSVP signalled LSPs, will be assigned by
                  * PCE for non-RSVP signalled LSPs.
                  */
-                annotationBuilder.set(LOCAL_LSP_ID, String.valueOf(getNextLocalLspId()));
-            }
+            annotationBuilder.set(LOCAL_LSP_ID, String.valueOf(getNextLocalLspId()));
+        }
 
-            // For SR-TE tunnels, call SR manager for label stack and put it inside tunnel.
-            Tunnel tunnel = new DefaultTunnel(null, srcEndPoint, dstEndPoint, MPLS, INIT, null, null,
-                                          TunnelName.tunnelName(tunnelName), computedPath,
-                                          labelStack, annotationBuilder.build());
+        // For SR-TE tunnels, call SR manager for label stack and put it inside tunnel.
+        Tunnel tunnel = new DefaultTunnel(null, srcEndPoint, dstEndPoint, type, INIT, null, null,
+                TunnelName.tunnelName(tunnelName), computedPath,
+                labelStack, annotationBuilder.build());
 
-            // Allocate bandwidth.
-            if (bwConstraintValue != 0 && lspType != WITH_SIGNALLING) {
-                 if (!reserveBandwidth(computedPath, bwConstraintValue, null)) {
-                     if (vnName == null) {
-                         pceStore.addFailedPathInfo(new PcePathInfo(src, dst, tunnelName, constraints, lspType));
-                     }
-                     return PathErr.BW_RESV_FAIL;
-                 }
-            }
-
-            TunnelId tunnelId = tunnelService.setupTunnel(appId, src, tunnel, computedPath);
-            if (tunnelId == null) {
-                 if (vnName == null) {
-                    pceStore.addFailedPathInfo(new PcePathInfo(src, dst, tunnelName, constraints, lspType));
-                 }
-                 if (bwConstraintValue != 0 && lspType != WITH_SIGNALLING) {
-                    //resourceService.release(consumerId);
-                    computedPath.links().forEach(ln -> pceStore.releaseLocalReservedBw(LinkKey.linkKey(ln),
-                     Double.parseDouble(tunnel.annotations().value(BANDWIDTH))));
-                 }
-                 return PathErr.ERROR;
-            }
-            computedPath = null;
-            if (paths != null) {
-                if (parentTunnelId == null) {
-                    parentTunnelId = tunnelId;
-                    pceStore.parentChildTunnelMap().put(parentTunnelId, new HashSet<TunnelId>());
-
-                    Map<TunnelId, Boolean> tunnelStatusMap = new HashMap<>();
-                    tunnelStatusMap.put(parentTunnelId, Boolean.valueOf(TUNNEL_INIT));
-                    pceStore.parentChildTunnelStatusMap().put(parentTunnelId, tunnelStatusMap);
-                } else {
-                    // Update tunnel ID map
-                    Set<TunnelId> childTunnelIdSet = pceStore.parentChildTunnelMap().get(parentTunnelId);
-                    childTunnelIdSet.add(tunnelId);
-
-                    Map<TunnelId, Boolean> childTunnelIdStatus = pceStore.parentChildTunnelStatusMap()
-                                                                         .get(parentTunnelId);
-                    childTunnelIdStatus.put(tunnelId, Boolean.valueOf(TUNNEL_INIT));
+        // Allocate bandwidth.
+        if (bwConstraintValue != 0 && localLspType != WITH_SIGNALLING) {
+            if (!reserveBandwidth(computedPath, bwConstraintValue, null)) {
+                if (vnName == null) {
+                    pceStore.addFailedPathInfo(new PcePathInfo(src, dst, tunnelName, constraints, localLspType));
                 }
-                computedPath = paths.iterator().next();
-                src = computedPath.src().deviceId();
-                dst = computedPath.dst().deviceId();
+                return PathErr.BW_RESV_FAIL;
             }
-        } while (computedPath != null);
+        }
 
+        TunnelId tunnelId = tunnelService.setupTunnel(appId, src, tunnel, computedPath);
+        if (tunnelId == null) {
+            if (vnName == null) {
+                pceStore.addFailedPathInfo(new PcePathInfo(src, dst, tunnelName, constraints, localLspType));
+            }
+            if (bwConstraintValue != 0 && localLspType != WITH_SIGNALLING) {
+                //resourceService.release(consumerId);
+                computedPath.links().forEach(ln -> pceStore.releaseLocalReservedBw(LinkKey.linkKey(ln),
+                        Double.parseDouble(tunnel.annotations().value(BANDWIDTH))));
+            }
+            return PathErr.ERROR;
+        }
         return PathErr.SUCCESS;
     }
 
@@ -581,7 +590,7 @@ public class PceManager implements PceService {
         checkNotNull(src);
         checkNotNull(dst);
         checkNotNull(tunnelName);
-        //checkNotNull(lspType);
+
         if (lspType == null) {
             lspType = defaultLspType();
         }
@@ -595,7 +604,7 @@ public class PceManager implements PceService {
         checkNotNull(srcLsrId);
         checkNotNull(dstLsrId);
         checkNotNull(tunnelName);
-        //checkNotNull(lspType);
+
         if (lspType == null) {
             lspType = defaultLspType();
         }
@@ -606,17 +615,6 @@ public class PceManager implements PceService {
 
         PathErr result = setupPath(vnName, srcDeviceId, dstDeviceId, tunnelName, constraints, lspType);
 
-        //if (!result) {
-            /* PcePathReport report = DefaultPcePathReport.builder()
-                    .pathName(tunnelName)
-                    .state(PcePathReport.State.DOWN)
-                    .ingress(srcLsrId)
-                    .egress(dstLsrId)
-                    .build();
-
-            pcePathUpdateListener.forEach(item -> item.updatePath(report));
-            */
-        // }
         return result;
     }
 
@@ -770,11 +768,11 @@ public class PceManager implements PceService {
         }
         if (getPceMode().equals("MDSC")) {
             // Update tunnel ID map
-            Set<TunnelId> childTunnelIdSet = pceStore.parentChildTunnelMap().get(tunnelId);
+            // TODO: After shashi rework
+            /* Set<TunnelId> childTunnelIdSet = pceStore.parentChildTunnelMap().get(tunnelId);
             childTunnelIdSet.add(updatedTunnelId);
-
             Map<TunnelId, Boolean> childTunnelIdStatus = pceStore.parentChildTunnelStatusMap().get(tunnelId);
-            childTunnelIdStatus.put(updatedTunnelId, Boolean.valueOf(TUNNEL_INIT));
+            childTunnelIdStatus.put(updatedTunnelId, Boolean.valueOf(TUNNEL_INIT)); */
         }
 
         return PathErr.SUCCESS;
@@ -890,12 +888,13 @@ public class PceManager implements PceService {
         newPaths = domainManager().getDomainSpecificPaths(computedPathSet.iterator().next());
         Map<DomainManager.Oper, Set<Path>> setPath = domainManager().compareDomainSpecificPaths(oldPaths, newPaths);
 
-        for (Map.Entry<TunnelId, Set<TunnelId>> map : pceStore.parentChildTunnelMap().entrySet()) {
+        // TODO: After shashi rework
+        /*for (Map.Entry<TunnelId, Set<TunnelId>> map : pceStore.parentChildTunnelMap().entrySet()) {
             TunnelId parentTunnel = map.getKey();
             if (parentTunnel.equals(tunnelId)) {
                 childTunnelIds = map.getValue();
             }
-        }
+        }*/
 
         for (Map.Entry<DomainManager.Oper, Set<Path>> entry : setPath.entrySet()) {
             Set<Path> path = entry.getValue();
@@ -922,12 +921,12 @@ public class PceManager implements PceService {
                     TunnelId deleteTunnel = getTunnel(deletePath, childTunnelIds);
                     if (deleteTunnel != null && releasePath(deleteTunnel)) {
                         // delete from status and parent child map
-                        Set<TunnelId> childTunnelIdSet = pceStore.parentChildTunnelMap().get(tunnelId);
+                        // TODO: After shashi rework
+                        /*Set<TunnelId> childTunnelIdSet = pceStore.parentChildTunnelMap().get(tunnelId);
                         childTunnelIdSet.remove(deleteTunnel);
-
                         Map<TunnelId, Boolean> childTunnelIdStatus = pceStore
                                                                         .parentChildTunnelStatusMap().get(tunnelId);
-                        childTunnelIdStatus.remove(deleteTunnel);
+                        childTunnelIdStatus.remove(deleteTunnel); */
                     }
                 }
             }
@@ -953,15 +952,12 @@ public class PceManager implements PceService {
         if (tunnel.isPresent()) {
             result =  updatePath(tunnel.get().tunnelId(), constraints);
         }
-
         // if (!result) {
             /* PcePathReport report = DefaultPcePathReport.builder()
                     .state(PcePathReport.State.DOWN)
                     .plspId(plspId)
                     .build();
-
             pcePathUpdateListener.forEach(item -> item.updatePath(report));*/
-
         // }
         return result;
     }
@@ -975,7 +971,6 @@ public class PceManager implements PceService {
         if (tunnel == null) {
             return false;
         }
-
         // 2. Call tunnel service.
         return tunnelService.downTunnel(appId, tunnel.tunnelId());
     }
@@ -1052,18 +1047,19 @@ public class PceManager implements PceService {
 
     @Override
     public Boolean queryParentTunnelStatus(TunnelId tunnelId) {
-        TunnelId parentTunnel = getPceStoreParentTunnel(tunnelId);
+        // TODO: After shashi rework
+        /* TunnelId parentTunnel = getPceStoreParentTunnel(tunnelId);
         if (parentTunnel != null) {
             Map<TunnelId, Boolean> childTunnelId = pceStore.parentChildTunnelStatusMap().get(tunnelId);
             if (childTunnelId.containsKey(parentTunnel)) {
                 return childTunnelId.get(parentTunnel);
             }
-        }
-        return null;
+        }*/
+        return false;
     }
 
     @Override
-    public List<PcePathReport> queryAllInitiateTunnels() {
+    public List<PcePathReport> queryAllInitiateTunnelsByMdsc() {
 
         List<PcePathReport> pcePathList = new LinkedList<PcePathReport>();
         Collection<Tunnel> tunnels = tunnelService.queryTunnel(MPLS);
@@ -1205,6 +1201,7 @@ public class PceManager implements PceService {
         public void event(TopologyEvent event) {
              event.reasons().forEach(e -> {
                 //If event type is link removed, get the impacted tunnel
+                //Recompute on topology event only for MPLS tunnels. Parent and child tunnels will react to report
                 if (e instanceof LinkEvent) {
                     LinkEvent linkEvent = (LinkEvent) e;
                     if (linkEvent.type() == LinkEvent.Type.LINK_REMOVED) {
@@ -1583,7 +1580,6 @@ public class PceManager implements PceService {
         @Override
         public void event(LinkEvent event) {
             Link link = (Link) event.subject();
-
             switch (event.type()) {
 
             case LINK_ADDED:
@@ -1614,12 +1610,13 @@ public class PceManager implements PceService {
     public TunnelId getPceStoreParentTunnel(TunnelId tunnelId) {
         // get the tunnel name and get vnName based in delimeter, get parent tunnel by vnName and check
         // child tunnel status for all and update parent status. all or none
-        for (Map.Entry<TunnelId, Set<TunnelId>> entry : pceStore.parentChildTunnelMap().entrySet()) {
+        // TODO: After shashi rework
+        /* for (Map.Entry<TunnelId, Set<TunnelId>> entry : pceStore.parentChildTunnelMap().entrySet()) {
             Set<TunnelId> tunnelSet = entry.getValue();
             if (tunnelSet.contains(tunnelId)) {
                 return entry.getKey();
             }
-        }
+        } */
         return null;
     }
 
@@ -1637,11 +1634,12 @@ public class PceManager implements PceService {
         if (tunnelId == null) {
             return;
         }
+        // TODO: After shashi rework
+        /*
         Map<TunnelId, Boolean> childTunnelId = pceStore.parentChildTunnelStatusMap().get(tunnelId);
         if (childTunnelId.containsKey(tunnel)) {
             childTunnelId.put(tunnel, status);
         }
-
         // Update parent tunnel status, if all child tunnels are up, update parent, otherwise dont
         for (TunnelId key : childTunnelId.keySet()) {
             if (!childTunnelId.get(key).booleanValue()) {
@@ -1651,11 +1649,10 @@ public class PceManager implements PceService {
                 break;
             }
         }
-
         if ((childTunnelId.size() > 0)
                 && allChildTunnelUp && !(childTunnelId.get(tunnelId).booleanValue())) {
             childTunnelId.put(tunnelId, TUNNEL_CREATED);
-        }
+        }*/
         return;
     }
 
@@ -1666,6 +1663,8 @@ public class PceManager implements PceService {
         if (tunnelId == null) {
             return;
         }
+        // TODO: After shashi rework
+        /*
         Map<TunnelId, Boolean> childTunnelId = pceStore.parentChildTunnelStatusMap().get(tunnelId);
         if (childTunnelId.containsKey(tunnelId)) {
             childTunnelId.remove(tunnelId);
@@ -1674,7 +1673,8 @@ public class PceManager implements PceService {
         Set<TunnelId> tunnelSet = pceStore.parentChildTunnelMap().get(tunnelId);
         if (tunnelSet.contains(tunnel)) {
             tunnelSet.remove(tunnel);
-        }
+        } */
+
         return;
     }
 

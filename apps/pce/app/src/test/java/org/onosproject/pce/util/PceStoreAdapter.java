@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.onosproject.incubator.net.resource.label.LabelResourceId;
+import org.onosproject.incubator.net.tunnel.Tunnel;
 import org.onosproject.incubator.net.tunnel.TunnelId;
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.Link;
@@ -246,12 +247,37 @@ public class PceStoreAdapter implements PceStore {
     }
 
     @Override
-    public Map<TunnelId, Set<TunnelId>> parentChildTunnelMap() {
+    public boolean addParentTunnel(TunnelId tunnelId, Tunnel.State status) {
+        return false;
+    }
+
+    @Override
+    public boolean removeParentTunnel(TunnelId tunnelId) {
+        return false;
+    }
+
+    @Override
+    public boolean updateTunnelStatus(TunnelId tunnelId, Tunnel.State status) {
+        return false;
+    }
+
+    @Override
+    public boolean addChildTunnel(TunnelId parentId, TunnelId childId, Tunnel.State status) {
+        return false;
+    }
+
+    @Override
+    public boolean removeChildTunnel(TunnelId parentId, TunnelId childId) {
+        return false;
+    }
+
+    @Override
+    public Tunnel.State tunnelStatus(TunnelId tunnelId) {
         return null;
     }
 
     @Override
-    public Map<TunnelId, Map<TunnelId, Boolean>> parentChildTunnelStatusMap() {
-        return null;
+    public boolean isAllChildUp(TunnelId parentId) {
+        return false;
     }
 }
