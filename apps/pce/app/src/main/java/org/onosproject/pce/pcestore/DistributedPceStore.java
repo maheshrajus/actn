@@ -465,14 +465,12 @@ public class DistributedPceStore implements PceStore {
 
         Iterator iterator = parentChildTunnelStatusMap.keySet().iterator();
         while (iterator.hasNext()) {
-            TunnelId key = (TunnelId) iterator.next();
-            Map<TunnelId, State> childTunnels = parentChildTunnelStatusMap.get(key).value();
+            TunnelId parentTunnel = (TunnelId) iterator.next();
+            Map<TunnelId, State> childTunnels = parentChildTunnelStatusMap.get(parentTunnel).value();
 
-            Iterator childIterator = childTunnels.keySet().iterator();
-            while (childIterator.hasNext()) {
-                TunnelId tunnelid = (TunnelId) childIterator.next();
-                if (tunnelid.equals(tunnelId)) {
-                    return tunnelid;
+            for (Map.Entry<TunnelId, State> tunnel : childTunnels.entrySet()) {
+                if (tunnelId.equals(tunnel.getKey())) {
+                    return parentTunnel;
                 }
             }
         }
