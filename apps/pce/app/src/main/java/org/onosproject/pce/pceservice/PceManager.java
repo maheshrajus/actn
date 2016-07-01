@@ -309,6 +309,7 @@ public class PceManager implements PceService {
         netCfgService.addListener(cfgListener);
 
         localLspIdIdGen = coreService.getIdGenerator(LOCAL_LSP_ID_GEN_TOPIC);
+        localLspIdIdGen.getNewId(); // To prevent 0, the 1st value generated from being used in protocol.
         setupPathIdIdGen = coreService.getIdGenerator(SETUP_PATH_ID_GEN_TOPIC);
         localLspIdFreeList = storageService.<Short>setBuilder()
                 .withName("pcepLocalLspIdDeletedList")
