@@ -83,7 +83,6 @@ import org.onosproject.net.device.DeviceService;
 import org.onosproject.net.flowobjective.FlowObjectiveService;
 import org.onosproject.net.flowobjective.Objective;
 import org.onosproject.net.intent.Constraint;
-import org.onosproject.net.intent.constraint.BandwidthConstraint;
 import org.onosproject.net.link.LinkListener;
 import org.onosproject.net.link.LinkEvent;
 import org.onosproject.net.link.LinkService;
@@ -472,8 +471,8 @@ public class PceManager implements PceService {
 
             while (iterator.hasNext()) {
                 Constraint constraint = iterator.next();
-                if (constraint instanceof BandwidthConstraint) {
-                    bwConstraintValue = ((BandwidthConstraint) constraint).bandwidth().bps();
+                if (constraint instanceof PceBandwidthConstraint) {
+                    bwConstraintValue = ((PceBandwidthConstraint) constraint).bandwidth().bps();
                 } else if (constraint instanceof CostConstraint) {
                     costConstraint = (CostConstraint) constraint;
                 }
@@ -651,7 +650,7 @@ public class PceManager implements PceService {
         double bwConstraintValue = 0;
         String costType = null;
         SharedBandwidthConstraint shBwConstraint = null;
-        BandwidthConstraint bwConstraint = null;
+        PceBandwidthConstraint bwConstraint = null;
         CostConstraint costConstraint = null;
 
         if (constraints != null) {
@@ -659,8 +658,8 @@ public class PceManager implements PceService {
             Iterator<Constraint> iterator = constraints.iterator();
             while (iterator.hasNext()) {
                 Constraint constraint = iterator.next();
-                if (constraint instanceof BandwidthConstraint) {
-                    bwConstraint = (BandwidthConstraint) constraint;
+                if (constraint instanceof PceBandwidthConstraint) {
+                    bwConstraint = (PceBandwidthConstraint) constraint;
                     bwConstraintValue = bwConstraint.bandwidth().bps();
                 } else if (constraint instanceof CostConstraint) {
                     costConstraint = (CostConstraint) constraint;
@@ -820,7 +819,7 @@ public class PceManager implements PceService {
         double bwConstraintValue = 0;
         String costType = null;
         SharedBandwidthConstraint shBwConstraint = null;
-        BandwidthConstraint bwConstraint = null;
+        PceBandwidthConstraint bwConstraint = null;
         CostConstraint costConstraint = null;
 
         if (constraints != null) {
@@ -828,8 +827,8 @@ public class PceManager implements PceService {
             Iterator<Constraint> iterator = constraints.iterator();
             while (iterator.hasNext()) {
                 Constraint constraint = iterator.next();
-                if (constraint instanceof BandwidthConstraint) {
-                    bwConstraint = (BandwidthConstraint) constraint;
+                if (constraint instanceof PceBandwidthConstraint) {
+                    bwConstraint = (PceBandwidthConstraint) constraint;
                     bwConstraintValue = bwConstraint.bandwidth().bps();
                 } else if (constraint instanceof CostConstraint) {
                     costConstraint = (CostConstraint) constraint;
@@ -1221,7 +1220,7 @@ public class PceManager implements PceService {
 
             if (tunnel.annotations().value(BANDWIDTH) != null) {
                 //Requested bandwidth will be same as previous allocated bandwidth for the tunnel
-                BandwidthConstraint localConst = new BandwidthConstraint(Bandwidth.bps(Double.parseDouble(tunnel
+                PceBandwidthConstraint localConst = new PceBandwidthConstraint(Bandwidth.bps(Double.parseDouble(tunnel
                         .annotations().value(BANDWIDTH))));
                 constraintList.add(localConst);
             }
@@ -1682,7 +1681,7 @@ public class PceManager implements PceService {
                     List<Constraint> constraints = new LinkedList<>();
                     String bandwidth = tunnel.annotations().value(BANDWIDTH);
                     if (bandwidth != null) {
-                        constraints.add(new BandwidthConstraint(Bandwidth
+                        constraints.add(new PceBandwidthConstraint(Bandwidth
                                 .bps(Double.parseDouble(bandwidth))));
                     }
 

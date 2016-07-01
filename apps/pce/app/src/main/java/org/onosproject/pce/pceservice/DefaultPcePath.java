@@ -23,9 +23,9 @@ import java.util.Objects;
 import org.onlab.util.DataRateUnit;
 import org.onosproject.incubator.net.tunnel.Tunnel;
 import org.onosproject.incubator.net.tunnel.TunnelId;
-import org.onosproject.net.intent.constraint.BandwidthConstraint;
 import org.onosproject.net.intent.Constraint;
 import org.onosproject.pce.pceservice.constraint.CostConstraint;
+import org.onosproject.pce.pceservice.constraint.PceBandwidthConstraint;
 
 /**
  * Implementation of an entity which provides functionalities of pce path.
@@ -271,7 +271,7 @@ public final class DefaultPcePath implements PcePath {
 
         @Override
         public Builder bandwidthConstraint(String bandwidth) {
-            this.bandwidthConstraint = BandwidthConstraint.of(Double.valueOf(bandwidth), DataRateUnit
+            this.bandwidthConstraint = PceBandwidthConstraint.of(Double.valueOf(bandwidth), DataRateUnit
                     .valueOf("BPS"));
             return this;
         }
@@ -295,7 +295,7 @@ public final class DefaultPcePath implements PcePath {
             // Bandwidth
             String bandwidth = tunnel.annotations().value(PcepAnnotationKeys.BANDWIDTH);
             if (bandwidth != null) {
-                this.bandwidthConstraint = BandwidthConstraint.of(Double.parseDouble(bandwidth),
+                this.bandwidthConstraint = PceBandwidthConstraint.of(Double.parseDouble(bandwidth),
                                                                   DataRateUnit.valueOf("BPS"));
             }
 

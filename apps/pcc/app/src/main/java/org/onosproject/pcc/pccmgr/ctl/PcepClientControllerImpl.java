@@ -26,7 +26,6 @@ import org.onlab.packet.IpAddress;
 import org.onlab.util.DataRateUnit;
 import org.onosproject.incubator.net.tunnel.Tunnel;
 import org.onosproject.net.intent.Constraint;
-import org.onosproject.net.intent.constraint.BandwidthConstraint;
 import org.onosproject.pcc.pccmgr.api.PceId;
 import org.onosproject.pcc.pccmgr.api.PcepAgent;
 import org.onosproject.pcc.pccmgr.api.PcepClient;
@@ -40,6 +39,7 @@ import org.onosproject.pce.pceservice.LspType;
 import org.onosproject.pce.pceservice.api.PcePathUpdateListener;
 import org.onosproject.pce.pceservice.api.PceService;
 import org.onosproject.pce.pceservice.constraint.CostConstraint;
+import org.onosproject.pce.pceservice.constraint.PceBandwidthConstraint;
 import org.onosproject.pcep.pcepio.exceptions.PcepParseException;
 import org.onosproject.pcep.pcepio.protocol.PcInitiatedLspRequest;
 import org.onosproject.pcep.pcepio.protocol.PcepAssociationObject;
@@ -308,7 +308,7 @@ public class PcepClientControllerImpl implements PcepClientController {
 
                                 // Assign bandwidth
                                 if (initBandwidthObject.getBandwidth() != 0.0) {
-                                    initConstrntList.add(BandwidthConstraint.of(
+                                    initConstrntList.add(PceBandwidthConstraint.of(
                                             Double.valueOf(initBandwidthObject.getBandwidth()),
                                             DataRateUnit.valueOf("BPS")));
                                 }
@@ -418,7 +418,7 @@ public class PcepClientControllerImpl implements PcepClientController {
 
                 // Assign bandwidth
                 if (bandwidthObject.getBandwidth() != 0.0) {
-                    constrntList.add(BandwidthConstraint.of(Double.valueOf(bandwidthObject.getBandwidth()),
+                    constrntList.add(PceBandwidthConstraint.of(Double.valueOf(bandwidthObject.getBandwidth()),
                                                             DataRateUnit.valueOf("BPS")));
                 }
 

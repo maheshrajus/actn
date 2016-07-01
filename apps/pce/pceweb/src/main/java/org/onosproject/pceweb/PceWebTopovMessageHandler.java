@@ -30,6 +30,7 @@ import org.onosproject.net.Path;
 import org.onosproject.net.topology.TopologyEvent;
 import org.onosproject.net.topology.TopologyListener;
 import org.onosproject.net.topology.TopologyService;
+import org.onosproject.pce.pceservice.constraint.PceBandwidthConstraint;
 import org.onosproject.ui.RequestHandler;
 import org.onosproject.ui.UiConnection;
 import org.onosproject.ui.UiMessageHandler;
@@ -45,7 +46,6 @@ import org.onosproject.net.intent.Constraint;
 import org.onosproject.pce.pceservice.LspType;
 import org.onosproject.pce.pceservice.api.PceService;
 import org.onosproject.pce.pceservice.constraint.CostConstraint;
-import org.onosproject.net.intent.constraint.BandwidthConstraint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.onosproject.incubator.net.tunnel.IpTunnelEndPoint;
@@ -457,7 +457,7 @@ public class PceWebTopovMessageHandler extends UiMessageHandler {
      * @param bandWidth bandWidth
      * @param bandWidthType is the kbps or mbps
      * @param costType is igp or te
-     * @param tunnelName tunnel id
+     * @param tunnelIdStr tunnel id
      */
     private void findAndSendPathsUpdate(String bandWidth, String bandWidthType, String costType, String tunnelIdStr) {
         if (tunnelIdStr != null) {
@@ -488,7 +488,7 @@ public class PceWebTopovMessageHandler extends UiMessageHandler {
     /**
      * Handles the remove path and highlights the paths if existed.
      *
-     * @param tunnelIdName tunnelId
+     * @param tunnelIdStr tunnelId
      */
     private void findAndSendPathsRemove(String tunnelIdStr) {
         if (tunnelIdStr != null) {
@@ -518,7 +518,6 @@ public class PceWebTopovMessageHandler extends UiMessageHandler {
      * @param bandWidth bandWidth
      * @param bandWidthType is the kbps or mbps
      * @param costType is igp or te
-     * @param listConstrnt list of constraints
      * @return
      */
     private List<Constraint> addBandwidthCostTypeConstraints(String bandWidth,
@@ -550,7 +549,7 @@ public class PceWebTopovMessageHandler extends UiMessageHandler {
         }
 
         if (bwValue != 0.0) {
-            listConstrnt.add(BandwidthConstraint.of(bwValue, DataRateUnit.valueOf(BANDWIDTH_BPS)));
+            listConstrnt.add(PceBandwidthConstraint.of(bwValue, DataRateUnit.valueOf(BANDWIDTH_BPS)));
         }
 
         if (costTypeVal != null) {
