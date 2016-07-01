@@ -83,33 +83,32 @@ import org.onosproject.pcep.controller.PcepEventListener;
 import org.onosproject.pcep.controller.PcepLspStatus;
 import org.onosproject.pcep.controller.PcepLspSyncAction;
 import org.onosproject.pcep.controller.SrpIdGenerators;
-import org.onosproject.pcep.pcepio.exceptions.PcepParseException;
-import org.onosproject.pcep.pcepio.protocol.PcInitiatedLspRequest;
-import org.onosproject.pcep.pcepio.protocol.PcepAssociationObject;
-import org.onosproject.pcep.pcepio.protocol.PcepAttribute;
-import org.onosproject.pcep.pcepio.protocol.PcepBandwidthObject;
-import org.onosproject.pcep.pcepio.protocol.PcepEndPointsObject;
-import org.onosproject.pcep.pcepio.protocol.PcepEroObject;
-import org.onosproject.pcep.pcepio.protocol.PcepError;
-import org.onosproject.pcep.pcepio.protocol.PcepErrorInfo;
-import org.onosproject.pcep.pcepio.protocol.PcepErrorMsg;
-import org.onosproject.pcep.pcepio.protocol.PcepErrorObject;
-import org.onosproject.pcep.pcepio.protocol.PcepInitiateMsg;
-import org.onosproject.pcep.pcepio.protocol.PcepLspObject;
-import org.onosproject.pcep.pcepio.protocol.PcepMessage;
-import org.onosproject.pcep.pcepio.protocol.PcepMetricObject;
-import org.onosproject.pcep.pcepio.protocol.PcepMsgPath;
-import org.onosproject.pcep.pcepio.protocol.PcepReportMsg;
-import org.onosproject.pcep.pcepio.protocol.PcepSrpObject;
-import org.onosproject.pcep.pcepio.protocol.PcepStateReport;
-import org.onosproject.pcep.pcepio.protocol.PcepUpdateMsg;
-import org.onosproject.pcep.pcepio.protocol.PcepUpdateRequest;
-import org.onosproject.pcep.pcepio.types.IPv4SubObject;
-import org.onosproject.pcep.pcepio.types.PathSetupTypeTlv;
-import org.onosproject.pcep.pcepio.types.PcepValueType;
-import org.onosproject.pcep.pcepio.types.StatefulIPv4LspIdentifiersTlv;
-import org.onosproject.pcep.pcepio.types.SymbolicPathNameTlv;
-import org.onosproject.pcep.pcepio.types.VirtualNetworkTlv;
+import org.onosproject.pcep.controller.PcepSyncStatus;
+import org.onosproject.pcepio.exceptions.PcepParseException;
+import org.onosproject.pcepio.protocol.PcInitiatedLspRequest;
+import org.onosproject.pcepio.protocol.PcepAttribute;
+import org.onosproject.pcepio.protocol.PcepBandwidthObject;
+import org.onosproject.pcepio.protocol.PcepEndPointsObject;
+import org.onosproject.pcepio.protocol.PcepEroObject;
+import org.onosproject.pcepio.protocol.PcepInitiateMsg;
+import org.onosproject.pcepio.protocol.PcepLspObject;
+import org.onosproject.pcepio.protocol.PcepMessage;
+import org.onosproject.pcepio.protocol.PcepMetricObject;
+import org.onosproject.pcepio.protocol.PcepMsgPath;
+import org.onosproject.pcepio.protocol.PcepNai;
+import org.onosproject.pcepio.protocol.PcepReportMsg;
+import org.onosproject.pcepio.protocol.PcepSrpObject;
+import org.onosproject.pcepio.protocol.PcepStateReport;
+import org.onosproject.pcepio.protocol.PcepUpdateMsg;
+import org.onosproject.pcepio.protocol.PcepUpdateRequest;
+import org.onosproject.pcepio.types.IPv4SubObject;
+import org.onosproject.pcepio.types.PathSetupTypeTlv;
+import org.onosproject.pcepio.types.PcepNaiIpv4Adjacency;
+import org.onosproject.pcepio.types.PcepNaiIpv4NodeId;
+import org.onosproject.pcepio.types.PcepValueType;
+import org.onosproject.pcepio.types.SrEroSubObject;
+import org.onosproject.pcepio.types.StatefulIPv4LspIdentifiersTlv;
+import org.onosproject.pcepio.types.SymbolicPathNameTlv;
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Modified;
 import org.slf4j.Logger;
@@ -1046,6 +1045,11 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
      */
     private void pcepSetupTunnel(Tunnel tunnel, Path path, PcepClient pc) {
         try {
+            if (!(pc.lspDbSyncStatus().equals(PcepSyncStatus.SYNCED))) {
+                log.error("Setup tunnel has failed as LSP DB sync is not finished");
+                return;
+            }
+
             int srpId = SrpIdGenerators.create();
             Collection<Tunnel> tunnels = tunnelService.queryTunnel(tunnel.src(), tunnel.dst());
             for (Tunnel t : tunnels) {
@@ -1099,6 +1103,11 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
      */
     private void pcepReleaseTunnel(Tunnel tunnel, PcepClient pc) {
         try {
+            if (!(pc.lspDbSyncStatus().equals(PcepSyncStatus.SYNCED))) {
+                log.error("Release tunnel has failed as LSP DB sync is not finished");
+                return;
+            }
+
             PcepTunnelData pcepTunnelData = new PcepTunnelData(tunnel, DELETE);
             pcepTunnelApiMapper.addToCoreTunnelRequestQueue(pcepTunnelData);
             int srpId = SrpIdGenerators.create();
