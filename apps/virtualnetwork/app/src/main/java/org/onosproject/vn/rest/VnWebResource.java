@@ -20,13 +20,13 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.onosproject.incubator.net.tunnel.Tunnel;
 import org.onosproject.net.DeviceId;
+import org.onosproject.net.intent.Constraint;
 import org.onosproject.pce.pceservice.DefaultPcePath;
 import org.onosproject.pce.pceservice.PcePath;
+import org.onosproject.pce.pceservice.constraint.CostConstraint;
 import org.onosproject.rest.AbstractWebResource;
 import org.onosproject.vn.vnservice.VirtualNetwork;
 import org.onosproject.vn.vnservice.api.VnService;
-import org.onosproject.vn.vnservice.constraint.VnConstraint;
-import org.onosproject.vn.vnservice.constraint.VnCost;
 import org.onosproject.vn.store.EndPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -129,7 +129,7 @@ public class VnWebResource extends AbstractWebResource {
 
             List<DeviceId> src = new LinkedList<>();
             List<DeviceId> dst = new LinkedList<>();
-            List<VnConstraint> constraints = new LinkedList<>();
+            List<Constraint> constraints = new LinkedList<>();
 
             src.addAll(vn.endPoint().src().stream().collect(Collectors.toList()));
 
@@ -138,18 +138,18 @@ public class VnWebResource extends AbstractWebResource {
 
             // Add bandwidth
             constraints.add(vn.bandwidth());
-            VnCost vnCost = (VnCost) vn.cost();
-            if ((vnCost.type().type() != 1) && (vnCost.type().type() != 2)) {
+            CostConstraint cost = (CostConstraint) vn.cost();
+            if ((cost.type().type() != 1) && (cost.type().type() != 2)) {
                 throw new IOException("Invalid cost type");
             }
 
             // Add cost
             constraints.add(vn.cost());
 
-            Boolean issuccess = nullIsNotFound(get(VnService.class)
-                                               .setupVn(vn.vnName(), constraints, endPoint),
+            Boolean isSuccess = nullIsNotFound(get(VnService.class)
+                                               .setupVn(vn.vnName(), endPoint, constraints),
                                                VIRTUAL_NETWORK_SETUP_FAILED);
-            return Response.status(OK).entity(issuccess.toString()).build();
+            return Response.status(OK).entity(isSuccess.toString()).build();
         } catch (IOException e) {
             log.error("Exception while creating virtual network {}.", e.toString());
             throw new IllegalArgumentException(e);
@@ -174,7 +174,7 @@ public class VnWebResource extends AbstractWebResource {
             ObjectNode jsonTree = (ObjectNode) mapper().readTree(stream);
             JsonNode vn = jsonTree.get("vn");
             VirtualNetwork virtualNetwork = codec(VirtualNetwork.class).decode((ObjectNode) vn, this);
-            List<VnConstraint> constraints = new LinkedList<>();
+            List<Constraint> constraints = new LinkedList<>();
             boolean updateEndPoints = false;
 
             if ((virtualNetwork.endPoint().src().size() != 0)
@@ -200,7 +200,7 @@ public class VnWebResource extends AbstractWebResource {
 
             // Assign cost
             if (virtualNetwork.cost() != null) {
-                VnCost vnCost = (VnCost) virtualNetwork.cost();
+                CostConstraint vnCost = (CostConstraint) virtualNetwork.cost();
                 if ((vnCost.type().type() != 1) && (vnCost.type().type() != 2)) {
                     throw new IOException("Invalid cost type");
                 }

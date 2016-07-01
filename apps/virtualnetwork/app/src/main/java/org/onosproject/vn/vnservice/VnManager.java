@@ -21,20 +21,15 @@ import org.apache.felix.scr.annotations.Deactivate;
 import org.apache.felix.scr.annotations.Reference;
 import org.apache.felix.scr.annotations.ReferenceCardinality;
 import org.apache.felix.scr.annotations.Service;
-import org.onlab.util.Bandwidth;
 import org.onosproject.core.ApplicationId;
 import org.onosproject.core.CoreService;
 import org.onosproject.core.IdGenerator;
 import org.onosproject.incubator.net.tunnel.Tunnel;
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.intent.Constraint;
+import org.onosproject.pce.pceservice.LspType;
 import org.onosproject.pce.pceservice.api.PceService;
-import org.onosproject.pce.pceservice.constraint.CostConstraint;
-import org.onosproject.pce.pceservice.constraint.SharedBandwidthConstraint;
 import org.onosproject.vn.vnservice.api.VnService;
-import org.onosproject.vn.vnservice.constraint.VnBandwidth;
-import org.onosproject.vn.vnservice.constraint.VnConstraint;
-import org.onosproject.vn.vnservice.constraint.VnCost;
 import org.onosproject.vn.store.EndPoint;
 import org.onosproject.vn.store.Lsp;
 import org.onosproject.vn.store.VirtualNetworkInfo;
@@ -90,29 +85,16 @@ public class VnManager implements VnService {
     }
 
     @Override
-    public boolean setupVn(String vnName, List<VnConstraint> constraints, EndPoint endPoint) {
+    public boolean setupVn(String vnName, EndPoint endPoint, List<Constraint> constraints) {
         //TODO:
-        if (!vnStore.setupVn(vnName, constraints, endPoint)) {
+        if (!vnStore.setupVn(vnName, endPoint, constraints)) {
             return false;
         }
 
         VirtualNetworkInfo virtualNetwork = vnStore.queryVn(vnName);
         for (Lsp lsp : virtualNetwork.lsp()) {
-            String tunnelName = vnName.toString().concat(Long.toString(tunnelIdIdGen.getNewId()));
-            service.setupPath(lsp.src(), lsp.dst(), tunnelName, getConstraints(constraints), null, vnName);
-        }
-        return true;
-    }
-
-    @Override
-    public boolean setupVn(String vnName, EndPoint endPoint) {
-        if (!vnStore.setupVn(vnName, endPoint)) {
-            return false;
-        }
-        VirtualNetworkInfo virtualNetwork = vnStore.queryVn(vnName);
-        for (Lsp lsp : virtualNetwork.lsp()) {
-            String tunnelName = vnName.toString().concat(Long.toString(tunnelIdIdGen.getNewId()));
-            service.setupPath(lsp.src(), lsp.dst(), tunnelName, null, null, vnName);
+            String tunnelName = vnName.concat(Long.toString(tunnelIdIdGen.getNewId()));
+            service.setupPath(lsp.src(), lsp.dst(), tunnelName, constraints, LspType.WITH_SIGNALLING, vnName);
         }
         return true;
     }
@@ -138,8 +120,8 @@ public class VnManager implements VnService {
             if (!lsps.contains(lsp)) {
                 // not present in update request, so delete existing
                 for (Tunnel t : tunnels) {
-                    if ((t.src().equals(lsp.src())) && (t.dst().equals(lsp.dst()))) {
-                        service.releasePath(t.tunnelId());
+                    if (t.path().src().deviceId().equals(lsp.src()) && t.path().dst().deviceId().equals(lsp.dst())) {
+                             service.releasePath(t.tunnelId());
                     }
                 }
                 virtualNetwork.lsp().remove(lsp);
@@ -149,9 +131,9 @@ public class VnManager implements VnService {
         for (Lsp lsp : lsps) {
             if (!virtualNetwork.lsp().contains(lsp)) {
               // new entry, setup path
-                String tunnelName = vnName.toString().concat(Long.toString(tunnelIdIdGen.getNewId()));
+                String tunnelName = vnName.concat(Long.toString(tunnelIdIdGen.getNewId()));
                 service.setupPath(lsp.src(), lsp.dst(), tunnelName,
-                                  getConstraints(virtualNetwork.constraints()), null, vnName);
+                        virtualNetwork.constraints(), LspType.WITH_SIGNALLING, vnName);
             }
         }
 
@@ -161,39 +143,15 @@ public class VnManager implements VnService {
         return true;
     }
 
-    private List<Constraint> getConstraints(List<VnConstraint> constraint) {
-        List<Constraint> pceConstraint = new LinkedList<>();
-        for (VnConstraint c : constraint) {
-            if (c.getType() == VnBandwidth.TYPE) {
-                VnBandwidth vnBandwidth = (VnBandwidth) c;
-                SharedBandwidthConstraint bandWidth = SharedBandwidthConstraint.of(null, Bandwidth.bps(100),
-                                                                                   vnBandwidth.bandWidthValue());
-                pceConstraint.add(bandWidth);
-            } else if (c.getType() == VnCost.TYPE) {
-                VnCost vnCost = (VnCost) c;
-                int cost = vnCost.type().type();
-                CostConstraint.Type type = CostConstraint.Type.COST;
-                if (cost == 1) {
-                    type = CostConstraint.Type.COST;
-                } else if (cost == 2) {
-                    type = CostConstraint.Type.TE_COST;
-                }
-                CostConstraint costConstraint = new CostConstraint(type);
-                pceConstraint.add(costConstraint);
-            }
-        }
-        return pceConstraint;
-    }
-
     @Override
-    public boolean updateVn(String vnName, List<VnConstraint> constraint) {
+    public boolean updateVn(String vnName, List<Constraint> constraint) {
        if (!vnStore.updateVn(vnName, constraint)) {
            return false;
        }
 
        Iterable<Tunnel> tunnels = service.queryPath(vnName);
        for (Tunnel t : tunnels) {
-           service.updatePath(t.tunnelId(), getConstraints(constraint));
+           service.updatePath(t.tunnelId(), constraint);
        }
        return true;
     }

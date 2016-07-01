@@ -19,10 +19,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.onosproject.codec.CodecContext;
 import org.onosproject.codec.JsonCodec;
+import org.onosproject.pce.pceservice.constraint.CostConstraint;
+import org.onosproject.pce.pceservice.constraint.PceBandwidthConstraint;
 import org.onosproject.vn.vnservice.DefaultVirtualNetwork;
 import org.onosproject.vn.vnservice.VirtualNetwork;
-import org.onosproject.vn.vnservice.constraint.VnBandwidth;
-import org.onosproject.vn.vnservice.constraint.VnCost;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +44,6 @@ public final class VnCodec extends JsonCodec<VirtualNetwork> {
     private static final String ENDPOINT = "endPoint";
     private static final String SRC_ENDPOINT = "source";
     private static final String DST_ENDPOINT = "destination";
-    private static final String MISSING_MEMBER_MESSAGE = " member is required in virtual network";
 
     @Override
     public VirtualNetwork decode(ObjectNode json, CodecContext context) {
@@ -114,8 +113,8 @@ public final class VnCodec extends JsonCodec<VirtualNetwork> {
     @Override
     public ObjectNode encode(VirtualNetwork vn, CodecContext context) {
         checkNotNull(vn, "virtual network output cannot be null");
-        VnCost vnCost = (VnCost) vn.cost();
-        VnBandwidth vnbandwidth = (VnBandwidth) vn.bandwidth();
+        CostConstraint vnCost = (CostConstraint) vn.cost();
+        PceBandwidthConstraint vnBandwidth = (PceBandwidthConstraint) vn.bandwidth();
 
         ObjectNode result = context.mapper()
                 .createObjectNode()
@@ -130,7 +129,7 @@ public final class VnCodec extends JsonCodec<VirtualNetwork> {
         ObjectNode constraintNode = context.mapper()
                 .createObjectNode()
                 .put(COST_TYPE, vnCost.type().toString())
-                .put(BANDWIDTH, String.valueOf(vnbandwidth.bandWidthValue().bps()));
+                .put(BANDWIDTH, String.valueOf(vnBandwidth.bandwidth().bps()));
 
         result.set(CONSTRAINT, constraintNode);
         return result;

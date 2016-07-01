@@ -21,10 +21,10 @@ import org.apache.karaf.shell.commands.Option;
 import org.onlab.util.Bandwidth;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.net.DeviceId;
+import org.onosproject.net.intent.Constraint;
+import org.onosproject.pce.pceservice.constraint.CostConstraint;
+import org.onosproject.pce.pceservice.constraint.PceBandwidthConstraint;
 import org.onosproject.vn.vnservice.api.VnService;
-import org.onosproject.vn.vnservice.constraint.VnBandwidth;
-import org.onosproject.vn.vnservice.constraint.VnConstraint;
-import org.onosproject.vn.vnservice.constraint.VnCost;
 import org.onosproject.vn.store.EndPoint;
 import org.slf4j.Logger;
 
@@ -63,7 +63,7 @@ public class VnSetupCommand extends AbstractShellCommand {
 
         List<DeviceId> src = new LinkedList<>();
         List<DeviceId> dst = new LinkedList<>();
-        List<VnConstraint> constraints = new LinkedList<>();
+        List<Constraint> constraints = new LinkedList<>();
 
         VnService service = get(VnService.class);
 
@@ -81,32 +81,30 @@ public class VnSetupCommand extends AbstractShellCommand {
         }
         EndPoint endPoint = new EndPoint(src, dst);
         if (bandWidth == null && costType == null) {
-            if (!service.setupVn(vnName, endPoint)) {
+            if (!service.setupVn(vnName, endPoint, null)) {
                 error("Virtual network creation failed.");
             }
             return;
         }
 
         if (costType != null) {
-            if ((costType.intValue() < 1) || (costType.intValue() > 2)) {
+            if (costType < 1 || costType > 2) {
                 error("The cost attribute value either IGP cost(1) or TE cost(2).");
                 return;
             }
 
-            VnCost.Type enCostType = VnCost.Type.values()[costType - 1];
-            VnCost cost = VnCost.of(enCostType);
+            CostConstraint cost = CostConstraint.of(CostConstraint.Type.values()[costType - 1]);
 
             constraints.add(cost);
         }
 
         if (bandWidth != null) {
-            VnBandwidth vnBandWidth = new VnBandwidth(Bandwidth.bps(bandWidth));
+            PceBandwidthConstraint vnBandWidth = new PceBandwidthConstraint(Bandwidth.bps(bandWidth));
             constraints.add(vnBandWidth);
         }
 
-        if (!service.setupVn(vnName, constraints, endPoint)) {
+        if (!service.setupVn(vnName, endPoint, constraints)) {
             error("Virtual network creation failed.");
         }
-        return;
     }
 }

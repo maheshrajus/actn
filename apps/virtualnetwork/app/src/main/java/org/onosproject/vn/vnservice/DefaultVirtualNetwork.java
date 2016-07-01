@@ -16,11 +16,11 @@
 
 package org.onosproject.vn.vnservice;
 
-import org.onlab.util.Bandwidth;
+import org.onlab.util.DataRateUnit;
 import org.onosproject.net.DeviceId;
-import org.onosproject.vn.vnservice.constraint.VnBandwidth;
-import org.onosproject.vn.vnservice.constraint.VnConstraint;
-import org.onosproject.vn.vnservice.constraint.VnCost;
+import org.onosproject.net.intent.Constraint;
+import org.onosproject.pce.pceservice.constraint.CostConstraint;
+import org.onosproject.pce.pceservice.constraint.PceBandwidthConstraint;
 import org.onosproject.vn.store.EndPoint;
 import org.onosproject.vn.store.VirtualNetworkInfo;
 
@@ -37,8 +37,8 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 public final class DefaultVirtualNetwork implements VirtualNetwork {
 
     private String vnName;
-    private VnConstraint cost; // cost constraint
-    private VnConstraint bandwidth; // bandwidth constraint
+    private Constraint cost; // cost constraint
+    private Constraint bandwidth; // bandwidth constraint
     private List<String> source; // Ingress
     private List<String> destination; // Egress
     private EndPoint endPoint;
@@ -51,7 +51,7 @@ public final class DefaultVirtualNetwork implements VirtualNetwork {
      * @param bandwidth bandwidth constraint
      * @param endPoint end point
      */
-    private DefaultVirtualNetwork(String vnName, VnConstraint cost, VnConstraint bandwidth, EndPoint endPoint) {
+    private DefaultVirtualNetwork(String vnName, Constraint cost, Constraint bandwidth, EndPoint endPoint) {
 
         this.vnName = vnName;
         this.cost = cost;
@@ -65,12 +65,12 @@ public final class DefaultVirtualNetwork implements VirtualNetwork {
     }
 
     @Override
-    public VnConstraint cost() {
+    public Constraint cost() {
         return cost;
     }
 
     @Override
-    public VnConstraint bandwidth() {
+    public Constraint bandwidth() {
         return bandwidth;
     }
 
@@ -170,8 +170,8 @@ public final class DefaultVirtualNetwork implements VirtualNetwork {
     public static final class Builder implements VirtualNetwork.Builder {
         private String vnName;
         //private List<VnConstraint> constraints;
-        private VnConstraint cost; // cost constraint
-        private VnConstraint bandwidth; // bandwidth constraint
+        private Constraint cost; // cost constraint
+        private Constraint bandwidth; // bandwidth constraint
         private List<String> source;
         private List<String> destination;
 
@@ -192,7 +192,7 @@ public final class DefaultVirtualNetwork implements VirtualNetwork {
         @Override
         public Builder bandwidth(String bandwidth) {
             if (null != cost) {
-                this.bandwidth = VnBandwidth.of(Bandwidth.bps(Double.valueOf(bandwidth)));
+                this.bandwidth = PceBandwidthConstraint.of(Double.valueOf(bandwidth), DataRateUnit.BPS);
             }
             return this;
         }
@@ -212,7 +212,7 @@ public final class DefaultVirtualNetwork implements VirtualNetwork {
         @Override
         public VirtualNetwork.Builder cost(String costType) {
             if (null != costType) {
-                this.cost = VnCost.of(VnCost.Type.values()[(Integer.valueOf(costType) - 1)]);
+                this.cost = CostConstraint.of(CostConstraint.Type.values()[(Integer.valueOf(costType) - 1)]);
             }
             return this;
         }
@@ -228,12 +228,12 @@ public final class DefaultVirtualNetwork implements VirtualNetwork {
 
             destination.addAll(vn.endPoint().dst().stream().map(DeviceId::toString).collect(Collectors.toList()));
 
-            for (VnConstraint c : vn.constraints()) {
-                if (c.getType() == VnBandwidth.TYPE) {
-                    VnBandwidth vnBandwidth = (VnBandwidth) c;
+            for (Constraint c : vn.constraints()) {
+                if (c instanceof PceBandwidthConstraint) {
+                    PceBandwidthConstraint vnBandwidth = (PceBandwidthConstraint) c;
                     this.bandwidth = vnBandwidth;
-                } else if (c.getType() == VnCost.TYPE) {
-                    VnCost vnCost = (VnCost) c;
+                } else if (c instanceof CostConstraint) {
+                    CostConstraint vnCost = (CostConstraint) c;
                     this.cost = vnCost;
                 }
             }

@@ -20,10 +20,10 @@ import org.apache.karaf.shell.commands.Command;
 import org.apache.karaf.shell.commands.Option;
 import org.onlab.util.Bandwidth;
 import org.onosproject.cli.AbstractShellCommand;
+import org.onosproject.net.intent.Constraint;
+import org.onosproject.pce.pceservice.constraint.CostConstraint;
+import org.onosproject.pce.pceservice.constraint.PceBandwidthConstraint;
 import org.onosproject.vn.vnservice.api.VnService;
-import org.onosproject.vn.vnservice.constraint.VnBandwidth;
-import org.onosproject.vn.vnservice.constraint.VnConstraint;
-import org.onosproject.vn.vnservice.constraint.VnCost;
 import org.onosproject.vn.store.VirtualNetworkInfo;
 import org.slf4j.Logger;
 
@@ -55,7 +55,7 @@ public class VnUpdateConstraintsCommand extends AbstractShellCommand {
         log.info("executing vn-updateConstraints");
 
         VnService service = get(VnService.class);
-        List<VnConstraint> constraint = new LinkedList<>();
+        List<Constraint> constraint = new LinkedList<>();
 
         if (bandWidth == null && costType == null) {
             error("constraints cannot be null.");
@@ -67,22 +67,22 @@ public class VnUpdateConstraintsCommand extends AbstractShellCommand {
             error("Virtual network does not exist.");
             return;
         }
-        VnBandwidth bandWidthConstraints;
+        PceBandwidthConstraint bandWidthConstraints;
         if (bandWidth != null) {
-            bandWidthConstraints = new VnBandwidth(Bandwidth.bps(bandWidth));
+            bandWidthConstraints = new PceBandwidthConstraint(Bandwidth.bps(bandWidth));
             //vnData.setBandWidth(bandWidthConstraints);
             constraint.add(bandWidthConstraints);
         }
 
         if (costType != null) {
-            if ((costType.intValue() < 1) || (costType.intValue() > 2)) {
+            if (costType < 1 || costType > 2) {
                 error("The cost attribute value either IGP cost(1) or TE cost(2).");
                 return;
             }
 
-            VnCost.Type enCostType = VnCost.Type.values()[costType - 1];
-            VnCost costConstraint = VnCost.of(enCostType);
-            constraint.add(costConstraint);
+            CostConstraint cost = CostConstraint.of(CostConstraint.Type.values()[costType - 1]);
+
+            constraint.add(cost);
         }
 
         if (!service.updateVn(vnName, constraint)) {

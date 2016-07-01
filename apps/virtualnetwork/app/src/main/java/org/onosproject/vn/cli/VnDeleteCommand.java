@@ -41,7 +41,6 @@ public class VnDeleteCommand extends AbstractShellCommand {
 
         if (!service.deleteVn(vnName)) {
             error("Virtual network deletion failed.");
-            return;
         }
     }
 }

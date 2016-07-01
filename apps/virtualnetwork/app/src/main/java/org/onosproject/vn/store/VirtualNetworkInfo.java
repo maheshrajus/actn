@@ -17,7 +17,7 @@ package org.onosproject.vn.store;
 
 import com.google.common.base.MoreObjects;
 import org.onosproject.net.DeviceId;
-import org.onosproject.vn.vnservice.constraint.VnConstraint;
+import org.onosproject.net.intent.Constraint;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 public final class VirtualNetworkInfo {
 
     private String vnName;
-    private List<VnConstraint> constraints;
+    private List<Constraint> constraints;
     private EndPoint endPoint;
     private List<Lsp> lsp;
 
@@ -46,7 +46,7 @@ public final class VirtualNetworkInfo {
      * @param constraints  constraints
      * @param endPoint end point
      */
-    public VirtualNetworkInfo(String vnName, List<VnConstraint> constraints, EndPoint endPoint) {
+    public VirtualNetworkInfo(String vnName, List<Constraint> constraints, EndPoint endPoint) {
        this.vnName = vnName;
        this.constraints = constraints;
        this.endPoint = endPoint;
@@ -94,11 +94,11 @@ public final class VirtualNetworkInfo {
      *
      * @return constraints
      */
-    public List<VnConstraint> constraints() {
+    public List<Constraint> constraints() {
        return constraints;
     }
 
-    public void setConstraint(List<VnConstraint> constraints) {
+    public void setConstraint(List<Constraint> constraints) {
         this.constraints = constraints;
     }
 

@@ -16,7 +16,7 @@
 package org.onosproject.vn.vnservice.api;
 
 import org.onosproject.incubator.net.tunnel.Tunnel;
-import org.onosproject.vn.vnservice.constraint.VnConstraint;
+import org.onosproject.net.intent.Constraint;
 import org.onosproject.vn.store.EndPoint;
 import org.onosproject.vn.store.VirtualNetworkInfo;
 
@@ -32,20 +32,11 @@ public interface VnService {
      * Creates new path based on constraints and LSP type.
      *
      * @param vnName VN name
-     * @param constraints VN constraints
      * @param endPoint end points
+     * @param constraints constraints
      * @return false on failure and true on successful path creation
      */
-    boolean setupVn(String vnName, List<VnConstraint> constraints, EndPoint endPoint);
-
-    /**
-     * Creates new path based on constraints and LSP type.
-     *
-     * @param vnName VN name
-     * @param endPoint end points
-     * @return false on failure and true on successful path creation
-     */
-    boolean setupVn(String vnName, EndPoint endPoint);
+    boolean setupVn(String vnName, EndPoint endPoint, List<Constraint> constraints);
 
     /**
      * Updates existing end points.
@@ -63,7 +54,7 @@ public interface VnService {
      * @param constraints constraints
      * @return false on failure and true on successful path update
      */
-    boolean updateVn(String vnName, List<VnConstraint> constraints);
+    boolean updateVn(String vnName, List<Constraint> constraints);
 
     /**
      * Removes an existing path.

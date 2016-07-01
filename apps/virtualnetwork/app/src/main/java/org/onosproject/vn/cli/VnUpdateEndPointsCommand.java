@@ -70,7 +70,6 @@ public class VnUpdateEndPointsCommand extends AbstractShellCommand {
         //System.out.print(vnData.toString());
         if (!service.updateVn(vnName, endPoint)) {
             error("Virtual network updation failed.");
-            return;
         }
 
     }

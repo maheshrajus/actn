@@ -30,7 +30,10 @@ import org.onosproject.net.HostId;
 import org.onosproject.net.Link;
 import org.onosproject.net.Path;
 import org.onosproject.net.device.DeviceService;
+import org.onosproject.net.intent.Constraint;
 import org.onosproject.net.link.LinkService;
+import org.onosproject.pce.pceservice.constraint.CostConstraint;
+import org.onosproject.pce.pceservice.constraint.PceBandwidthConstraint;
 import org.onosproject.ui.RequestHandler;
 import org.onosproject.ui.UiConnection;
 import org.onosproject.ui.UiMessageHandler;
@@ -45,9 +48,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.onosproject.vn.vnservice.api.VnService;
-import org.onosproject.vn.vnservice.constraint.VnBandwidth;
-import org.onosproject.vn.vnservice.constraint.VnConstraint;
-import org.onosproject.vn.vnservice.constraint.VnCost;
 import org.onosproject.vn.store.EndPoint;
 import org.onosproject.vn.store.VirtualNetworkInfo;
 
@@ -251,13 +251,13 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
             arrayNode.add(vnInfo.vnName().toString());
 
             // filling the bandwidth and cost related constraints.
-            List<VnConstraint> listConstraints = vnInfo.constraints();
-            for (VnConstraint constrn : listConstraints) {
-                if (constrn.getType() == TYPE_BW) {
+            List<Constraint> listConstraints = vnInfo.constraints();
+            for (Constraint constrn : listConstraints) {
+                if (constrn instanceof PceBandwidthConstraint) {
                     arrayNode.add(FILL_BW);
                     arrayNode.add("200"); // TODO:
                 }
-                if (constrn.getType() == TYPE_COST) {
+                if (constrn instanceof CostConstraint) {
                     arrayNode.add(FILL_COST);
                     arrayNode.add("1"); // TODO:
                 }
@@ -291,7 +291,7 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
             String bandWidth = string(payload, BANDWIDTH);
             String bandWidthType = string(payload, BANDWIDTHTYPE);
             String costType = string(payload, COSTTYPE);
-            List<VnConstraint> constraints;
+            List<Constraint> constraints;
 
             constraints = buildCostAndBandWidthConstraints(bandWidth,
                     bandWidthType, costType);
@@ -398,9 +398,9 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
      *
      * @param h
      *            highlights
-     * @param elemId
+     * @param devId
      *            device to be add badge
-     * @param type
+     * @param asNum
      *            device type
      * @return highlights
      */
@@ -421,11 +421,11 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
 
     private void setupVnHandle(String bandWidth, String bandWidthType,
             String costType, String vnName) {
-        List<VnConstraint> constraints;
+        List<Constraint> constraints;
         EndPoint endPoint = new EndPoint(srcList, dstList);
 
         if (bandWidth == null && costType == null) {
-            if (!vnService.setupVn(vnName, endPoint)) {
+            if (!vnService.setupVn(vnName, endPoint, null)) {
                 log.error("Virtual network creation failed.");
             }
             return;
@@ -433,7 +433,7 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
 
         constraints = buildCostAndBandWidthConstraints(bandWidth,
                 bandWidthType, costType);
-        if (!vnService.setupVn(vnName, constraints, endPoint)) {
+        if (!vnService.setupVn(vnName, endPoint, constraints)) {
             log.error("Virtual network creation failed.");
         }
         // clear the src and dst list after setup.
@@ -442,9 +442,9 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
 
     }
 
-    private List<VnConstraint> buildCostAndBandWidthConstraints(
+    private List<Constraint> buildCostAndBandWidthConstraints(
             String bandWidth, String bandWidthType, String costType) {
-        List<VnConstraint> constraints = new LinkedList<>();
+        List<Constraint> constraints = new LinkedList<>();
 
         // bandwidth
         double bwValue = 0.0;
@@ -458,25 +458,25 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
         }
 
         // Cost type
-        VnCost.Type costTypeVal = null;
+        CostConstraint.Type costTypeVal = null;
         switch (costType) {
         case COST_TYPE_IGP:
-            costTypeVal = VnCost.Type.COST;
+            costTypeVal = CostConstraint.Type.COST;
             break;
         case COST_TYPE_TE:
-            costTypeVal = VnCost.Type.TE_COST;
+            costTypeVal = CostConstraint.Type.TE_COST;
             break;
         default:
             break;
         }
 
         if (bwValue != 0.0) {
-            VnBandwidth vnBandWidth = new VnBandwidth(Bandwidth.bps(bwValue));
+            PceBandwidthConstraint vnBandWidth = new PceBandwidthConstraint(Bandwidth.bps(bwValue));
             constraints.add(vnBandWidth);
         }
 
         if (costTypeVal != null) {
-            constraints.add(VnCost.of(costTypeVal));
+            constraints.add(CostConstraint.of(costTypeVal));
         }
 
         return constraints;

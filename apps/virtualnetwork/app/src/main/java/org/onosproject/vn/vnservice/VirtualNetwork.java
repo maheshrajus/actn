@@ -16,7 +16,7 @@
 
 package org.onosproject.vn.vnservice;
 
-import org.onosproject.vn.vnservice.constraint.VnConstraint;
+import org.onosproject.net.intent.Constraint;
 import org.onosproject.vn.store.EndPoint;
 import org.onosproject.vn.store.VirtualNetworkInfo;
 
@@ -67,14 +67,14 @@ public interface VirtualNetwork {
      *
      * @return cost constraint
      */
-    VnConstraint cost();
+    Constraint cost();
 
     /**
      * Returns the attribute bandwidth constraint.
      *
      * @return bandwidth constraint
      */
-    VnConstraint bandwidth();
+    Constraint bandwidth();
 
     /**
      * Copies only non-null or non-zero member variables.

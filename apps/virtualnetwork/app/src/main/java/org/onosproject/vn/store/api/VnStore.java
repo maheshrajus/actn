@@ -15,7 +15,7 @@
  */
 package org.onosproject.vn.store.api;
 
-import org.onosproject.vn.vnservice.constraint.VnConstraint;
+import org.onosproject.net.intent.Constraint;
 import org.onosproject.vn.store.EndPoint;
 import org.onosproject.vn.store.VirtualNetworkInfo;
 
@@ -35,16 +35,8 @@ public interface VnStore {
      * @param endPoint virtual network endpoint
      * @return success or failure
      */
-    boolean setupVn(String vnName, List<VnConstraint> constraints, EndPoint endPoint);
+    boolean setupVn(String vnName, EndPoint endPoint, List<Constraint> constraints);
 
-    /**
-     * Setup virtual network map with bandwidth, cost, endpoint.
-     *
-     * @param vnName virtual network name
-     * @param endPoint virtual network endpoint
-     * @return success or failure
-     */
-    boolean setupVn(String vnName, EndPoint endPoint);
 
     /**
      * Updates virtual network map with cost.
@@ -53,7 +45,7 @@ public interface VnStore {
      * @param constraints virtual network constraints
      * @return success or failure
      */
-    boolean updateVn(String vnName, List<VnConstraint> constraints);
+    boolean updateVn(String vnName, List<Constraint> constraints);
 
     /**
      * Updates virtual network map with endpoint.

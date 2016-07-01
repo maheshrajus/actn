@@ -22,13 +22,13 @@ import org.apache.felix.scr.annotations.Reference;
 import org.apache.felix.scr.annotations.ReferenceCardinality;
 import org.apache.felix.scr.annotations.Service;
 import org.onlab.util.KryoNamespace;
+import org.onosproject.net.intent.Constraint;
+import org.onosproject.pce.pceservice.constraint.CostConstraint;
+import org.onosproject.pce.pceservice.constraint.PceBandwidthConstraint;
 import org.onosproject.store.serializers.KryoNamespaces;
 import org.onosproject.store.service.ConsistentMap;
 import org.onosproject.store.service.Serializer;
 import org.onosproject.store.service.StorageService;
-import org.onosproject.vn.vnservice.constraint.VnBandwidth;
-import org.onosproject.vn.vnservice.constraint.VnConstraint;
-import org.onosproject.vn.vnservice.constraint.VnCost;
 import org.onosproject.vn.store.api.VnStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,9 +64,8 @@ public class DistributedVnStore implements VnStore {
                         new KryoNamespace.Builder()
                                 .register(KryoNamespaces.API)
                                 .register(VirtualNetworkInfo.class,
-                                          VnCost.class,
-                                          VnCost.Type.class,
-                                          VnBandwidth.class,
+                                          CostConstraint.class,
+                                          PceBandwidthConstraint.class,
                                           EndPoint.class,
                                           Lsp.class)
                                 .build()))
@@ -87,7 +86,7 @@ public class DistributedVnStore implements VnStore {
     }
 
     @Override
-    public boolean setupVn(String vnName, List<VnConstraint> constraints, EndPoint endPoint) {
+    public boolean setupVn(String vnName, EndPoint endPoint, List<Constraint> constraints) {
         checkNotNull(vnName, VN_NAME_NULL);
         checkNotNull(constraints, CONSTRAINT_NULL);
         checkNotNull(endPoint, ENDPOINT_NULL);
@@ -98,19 +97,9 @@ public class DistributedVnStore implements VnStore {
         return true;
     }
 
-    @Override
-    public boolean setupVn(String vnName, EndPoint endPoint) {
-        checkNotNull(vnName, VN_NAME_NULL);
-        checkNotNull(endPoint, ENDPOINT_NULL);
-
-        VirtualNetworkInfo vnData = new VirtualNetworkInfo(vnName, null, endPoint);
-        vnDataMap.put(vnName, vnData);
-
-        return true;
-    }
 
     @Override
-    public boolean updateVn(String vnName, List<VnConstraint> constraint) {
+    public boolean updateVn(String vnName, List<Constraint> constraint) {
         checkNotNull(vnName, VN_NAME_NULL);
         checkNotNull(constraint, CONSTRAINT_NULL);
 
