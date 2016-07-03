@@ -15,18 +15,20 @@
  */
 package org.onosproject.pce.pceservice;
 
+import org.onosproject.net.DefaultPath;
 import org.onosproject.net.Device;
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.Link;
 import org.onosproject.net.Path;
 import org.onosproject.net.device.DeviceService;
-import org.onosproject.net.topology.PathService;
 import org.onosproject.pce.pceservice.api.DomainManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -40,48 +42,34 @@ public class DomainManagerImpl implements DomainManager {
 
     protected DeviceService deviceService;
 
-    protected PathService pathService;
     /**
      * Creates new instance of domain manager.
      */
-    public DomainManagerImpl(DeviceService deviceService, PathService pathService) {
+    public DomainManagerImpl(DeviceService deviceService) {
         this.deviceService = deviceService;
-        this.pathService = pathService;
     }
 
     @Override
     public Set<Path> getDomainSpecificPaths(Path path) {
         checkNotNull(path, "Path cannot be null");
         Set<Path> paths = new HashSet<>();
-        Device currentDevice;
-        Device lastDevice = null;
-        Device firstDevice = null;
-        int prevAsNumber = 0;
+        List<Link> links = new LinkedList<>();
+        Device srcDevice;
+        Device dstDevice;
 
         for (Link link : path.links()) {
-            currentDevice = deviceService.getDevice(link.src().deviceId());
-            String asNumber = currentDevice.annotations().value("asNumber");
-            if (asNumber != null) {
-                if (firstDevice == null) {
-                    firstDevice = currentDevice;
-                    prevAsNumber = Integer.valueOf(asNumber);
-                }
+            srcDevice = deviceService.getDevice(link.src().deviceId());
+            dstDevice = deviceService.getDevice(link.dst().deviceId());
 
-                if (prevAsNumber == Integer.valueOf(asNumber)) {
-                    lastDevice = currentDevice;
-                    continue;
-                }
-                // If AS Number is different then add to set of path
-                //TODO: check with satish
-                paths.addAll(pathService.getPaths(firstDevice.id(), lastDevice.id()));
-
-                prevAsNumber = Integer.valueOf(asNumber);
-                firstDevice = currentDevice;
+            if (srcDevice.annotations().value("asNumber").equals(dstDevice.annotations().value("asNumber"))) {
+                links.add(link);
+            } else {
+                paths.add(new DefaultPath(null, links, 0.0));
+                links = new LinkedList<>();
             }
         }
-
-        if ((firstDevice != null) && (lastDevice != null)) {
-            paths.addAll(pathService.getPaths(firstDevice.id(), lastDevice.id()));
+        if (!links.isEmpty()) {
+            paths.add(new DefaultPath(null, links, 0.0));
         }
         return paths;
     }

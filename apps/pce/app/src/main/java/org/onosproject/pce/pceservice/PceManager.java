@@ -246,7 +246,7 @@ public class PceManager implements PceService {
 
     private PceService pceService;
 
-    private DomainManager domainManager = (DomainManager) new DomainManagerImpl(deviceService, pathService);
+    private DomainManager domainManager;
 
     // TODO: Move this to Topology+ later
     private final ConfigFactory<LinkKey, TeLinkConfig> configFactory =
@@ -295,6 +295,7 @@ public class PceManager implements PceService {
     @Activate
     protected void activate() {
         appId = coreService.registerApplication(PCE_SERVICE_APP);
+        domainManager = new DomainManagerImpl(deviceService);
         crHandler = BasicPceccHandler.getInstance();
         crHandler.initialize(labelRsrcService, flowObjectiveService, appId, pceStore);
 
@@ -386,10 +387,11 @@ public class PceManager implements PceService {
             }
 
             paths.forEach(path -> {
-                PceManager.this.setupPath(vnName, path.src().deviceId(), path.dst().deviceId(), tunnelName,
+                String childTunnelName = tunnelName.concat("C-" + Long.toString(setupPathIdIdGen.getNewId()));
+                PceManager.this.setupPath(vnName, path.src().deviceId(), path.dst().deviceId(), childTunnelName,
                         constraints, WITH_SIGNALLING, SDMPLS, path);
                 //Store child mapping
-                Collection<Tunnel> childTunnels = tunnelService.queryTunnel(TunnelName.tunnelName(tunnelName));
+                Collection<Tunnel> childTunnels = tunnelService.queryTunnel(TunnelName.tunnelName(childTunnelName));
                 Tunnel childTunnel = childTunnels.iterator().next();
                 pceStore.addChildTunnel(parentTunnel.tunnelId(), childTunnel.tunnelId(), childTunnel.state());
             });
@@ -466,7 +468,10 @@ public class PceManager implements PceService {
         double bwConstraintValue = 0;
         CostConstraint costConstraint = null;
         if (constraints != null) {
-            constraints.add(CapabilityConstraint.of(CapabilityType.valueOf(localLspType.name())));
+            if (type == MPLS) {
+                constraints.add(CapabilityConstraint.of(CapabilityType.valueOf(localLspType.name())));
+            }
+
             Iterator<Constraint> iterator = constraints.iterator();
 
             while (iterator.hasNext()) {
@@ -488,7 +493,7 @@ public class PceManager implements PceService {
                 constraints.remove(costConstraint);
                 constraints.add(costConstraint);
             }
-        } else {
+        } else if (type == MPLS) {
             constraints = new LinkedList<>();
             constraints.add(CapabilityConstraint.of(CapabilityType.valueOf(localLspType.name())));
         }
@@ -567,14 +572,17 @@ public class PceManager implements PceService {
             return ImmutableSet.of();
         }
 
-        if (constraints == null) {
-            constraints = new LinkedList<>();
-            constraints.add(CapabilityConstraint.of(CapabilityType.WITH_SIGNALLING));
-        } else {
-            if (constraints.stream().filter(con -> con instanceof CapabilityConstraint).count() == 0) {
+        if (!getPceMode().equals("MDSC")) {
+            if (constraints == null) {
+                constraints = new LinkedList<>();
                 constraints.add(CapabilityConstraint.of(CapabilityType.WITH_SIGNALLING));
+            } else {
+                if (constraints.stream().filter(con -> con instanceof CapabilityConstraint).count() == 0) {
+                    constraints.add(CapabilityConstraint.of(CapabilityType.WITH_SIGNALLING));
+                }
             }
         }
+
 
         Set<Path> paths = pathService.getPaths(src, dst, weight(constraints));
         if (!paths.isEmpty()) {
@@ -613,9 +621,8 @@ public class PceManager implements PceService {
         DeviceId srcDeviceId = pceStore.getLsrIdDevice(srcLsrId.toString());
         DeviceId dstDeviceId = pceStore.getLsrIdDevice(dstLsrId.toString());
 
-        PathErr result = setupPath(vnName, srcDeviceId, dstDeviceId, tunnelName, constraints, lspType);
+        return setupPath(vnName, srcDeviceId, dstDeviceId, tunnelName, constraints, lspType);
 
-        return result;
     }
 
     @Override
