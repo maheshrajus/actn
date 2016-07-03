@@ -233,4 +233,6 @@ public interface PceService {
      * @return parent tunnel status.
      */
     Boolean queryParentTunnelStatus(TunnelId tunnelId);
+
+    long generatePathId();
 }

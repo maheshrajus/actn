@@ -147,6 +147,7 @@ public class PcepClientControllerImpl implements PcepClientController {
     public void deactivate() {
         // Close all connected clients
         closeConnectedClients();
+        pceService.removeListener(pcePathListener);
         ctrl.stop();
         log.info("Stopped");
     }
