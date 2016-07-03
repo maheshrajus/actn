@@ -451,6 +451,7 @@ public class DistributedPceStore implements PceStore {
             Map<TunnelId, State> tunnelStatus = new HashMap<>();
             tunnelStatus.put(tunnelId, status);
             parentChildTunnelStatusMap.put(tunnelId, tunnelStatus);
+            return true;
         }
         return false;
     }
@@ -486,7 +487,7 @@ public class DistributedPceStore implements PceStore {
             childTunnels.keySet().forEach(childTunnels::remove);
             parentChildTunnelStatusMap.remove(tunnelId);
         }
-        return false;
+        return true;
     }
 
     @Override
@@ -520,9 +521,10 @@ public class DistributedPceStore implements PceStore {
             Map<TunnelId, State> childTunnels = parentChildTunnelStatusMap.get(parentId).value();
             if (childTunnels.get(childId) == null) {
                 childTunnels.put(childId, status);
-                return true;
+            } else {
+                childTunnels.replace(childId, status);
             }
-            childTunnels.replace(childId, status);
+            return true;
         }
         return false;
     }
@@ -531,10 +533,10 @@ public class DistributedPceStore implements PceStore {
     public boolean removeChildTunnel(TunnelId parentId, TunnelId childId) {
         if (parentChildTunnelStatusMap.get(parentId) != null) {
             Map<TunnelId, State> childTunnels = parentChildTunnelStatusMap.get(parentId).value();
-            if (childTunnels.get(childId) == null) {
-                return false;
+            if (childTunnels.get(childId) != null) {
+                childTunnels.remove(childId);
+                return true;
             }
-            childTunnels.remove(childId);
         }
         return false;
     }
