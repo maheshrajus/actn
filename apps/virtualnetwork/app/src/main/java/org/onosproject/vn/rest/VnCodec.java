@@ -21,8 +21,8 @@ import org.onosproject.codec.CodecContext;
 import org.onosproject.codec.JsonCodec;
 import org.onosproject.pce.pceservice.constraint.CostConstraint;
 import org.onosproject.pce.pceservice.constraint.PceBandwidthConstraint;
-import org.onosproject.vn.vnservice.DefaultVirtualNetwork;
-import org.onosproject.vn.vnservice.VirtualNetwork;
+
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

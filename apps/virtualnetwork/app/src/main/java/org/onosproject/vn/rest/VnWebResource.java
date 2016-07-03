@@ -26,7 +26,7 @@ import org.onosproject.pce.pceservice.PcePath;
 import org.onosproject.pce.pceservice.constraint.CostConstraint;
 import org.onosproject.rest.AbstractWebResource;
 import org.onosproject.vn.api.VnEndPoints;
-import org.onosproject.vn.vnservice.VirtualNetwork;
+
 import org.onosproject.vn.vnservice.api.VnService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

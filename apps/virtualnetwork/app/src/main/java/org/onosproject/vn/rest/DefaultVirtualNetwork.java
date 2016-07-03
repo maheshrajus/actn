@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.onosproject.vn.vnservice;
+package org.onosproject.vn.rest;
 
 import org.onlab.util.DataRateUnit;
 import org.onosproject.net.DeviceId;
