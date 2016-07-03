@@ -16,13 +16,11 @@
 package org.onosproject.vn.store;
 
 import com.google.common.base.MoreObjects;
-import org.onosproject.net.DeviceId;
 import org.onosproject.net.intent.Constraint;
+import org.onosproject.vn.api.VnEndPoints;
 
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * Input path information to compute CSPF path.
@@ -32,8 +30,8 @@ public final class VirtualNetworkInfo {
 
     private String vnName;
     private List<Constraint> constraints;
-    private EndPoint endPoint;
-    private List<Lsp> lsp;
+    private VnEndPoints endPoint;
+
 
     public void setVnName(String vnName) {
         this.vnName = vnName;
@@ -46,27 +44,10 @@ public final class VirtualNetworkInfo {
      * @param constraints  constraints
      * @param endPoint end point
      */
-    public VirtualNetworkInfo(String vnName, List<Constraint> constraints, EndPoint endPoint) {
+    public VirtualNetworkInfo(String vnName, List<Constraint> constraints, VnEndPoints endPoint) {
        this.vnName = vnName;
        this.constraints = constraints;
        this.endPoint = endPoint;
-       lsp(endPoint);
-    }
-
-    private void lsp(EndPoint endPoint) {
-        List<DeviceId> src = endPoint.src();
-        List<DeviceId> dst = endPoint.dst();
-        this.lsp = new LinkedList<>();
-
-        for (DeviceId source : src) {
-            lsp.addAll(dst.stream().filter(destination -> !source.equals(destination))
-                       .map(destination -> new Lsp(source, destination)).collect(Collectors.toList()));
-        }
-        return;
-    }
-
-    public List<Lsp> lsp() {
-        return lsp;
     }
 
     /**
@@ -81,13 +62,12 @@ public final class VirtualNetworkInfo {
      *
      * @return end points
      */
-    public EndPoint endPoint() {
+    public VnEndPoints endPoint() {
        return endPoint;
     }
 
-    public void setEndPoint(EndPoint endPoint) {
+    public void setEndPoint(VnEndPoints endPoint) {
         this.endPoint = endPoint;
-        lsp(endPoint);
     }
     /**
      * Returns constraints.
@@ -136,7 +116,6 @@ public final class VirtualNetworkInfo {
                 .add("vnName", vnName.toString())
                 .add("constraints", constraints)
                 .add("endPoint", endPoint)
-                .add("lsp", lsp)
                 .toString();
     }
 }

@@ -17,7 +17,7 @@
 package org.onosproject.vn.vnservice;
 
 import org.onosproject.net.intent.Constraint;
-import org.onosproject.vn.store.EndPoint;
+import org.onosproject.vn.api.VnEndPoints;
 import org.onosproject.vn.store.VirtualNetworkInfo;
 
 import java.util.List;
@@ -89,7 +89,7 @@ public interface VirtualNetwork {
      *
      * @return end point
      */
-    EndPoint endPoint();
+    VnEndPoints endPoint();
 
     /**
      * Builder for pce path.

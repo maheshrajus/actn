@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.onosproject.vn.store;
+package org.onosproject.vn.api;
 
 import com.google.common.base.MoreObjects;
 import org.onosproject.net.DeviceId;
 
-import java.util.List;
 import java.util.Objects;
 
 //import org.onosproject.net.DeviceId;
@@ -27,10 +26,10 @@ import java.util.Objects;
  * Input path information to compute CSPF path.
  * This path information will be stored in pce store and will be used later to recalculate the path.
  */
-public final class EndPoint {
+public final class PathEndPoint {
 
-    private List<DeviceId> src;
-    private List<DeviceId> dst;
+    private DeviceId src;
+    private DeviceId dst;
 
     /**
      * Initialization of member variables.
@@ -38,7 +37,7 @@ public final class EndPoint {
      * @param src soure end point
      * @param dst destination end point
      */
-    public EndPoint(List<DeviceId> src, List<DeviceId> dst) {
+    public PathEndPoint(DeviceId src, DeviceId dst) {
        this.src = src;
        this.dst = dst;
     }
@@ -48,7 +47,7 @@ public final class EndPoint {
      *
      * @return source device id
      */
-    public List<DeviceId> src() {
+    public DeviceId src() {
        return src;
     }
 
@@ -57,7 +56,7 @@ public final class EndPoint {
      *
      * @return destination device id
      */
-    public List<DeviceId> dst() {
+    public DeviceId dst() {
        return dst;
     }
 
@@ -71,8 +70,8 @@ public final class EndPoint {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof EndPoint) {
-            final EndPoint other = (EndPoint) obj;
+        if (obj instanceof PathEndPoint) {
+            final PathEndPoint other = (PathEndPoint) obj;
             return Objects.equals(this.src, other.src) &&
                     Objects.equals(this.dst, other.dst);
         }

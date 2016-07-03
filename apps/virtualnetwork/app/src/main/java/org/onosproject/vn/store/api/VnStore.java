@@ -16,7 +16,7 @@
 package org.onosproject.vn.store.api;
 
 import org.onosproject.net.intent.Constraint;
-import org.onosproject.vn.store.EndPoint;
+import org.onosproject.vn.api.VnEndPoints;
 import org.onosproject.vn.store.VirtualNetworkInfo;
 
 import java.util.List;
@@ -35,7 +35,7 @@ public interface VnStore {
      * @param endPoint virtual network endpoint
      * @return success or failure
      */
-    boolean setupVn(String vnName, EndPoint endPoint, List<Constraint> constraints);
+    boolean add(String vnName, VnEndPoints endPoint, List<Constraint> constraints);
 
 
     /**
@@ -45,7 +45,7 @@ public interface VnStore {
      * @param constraints virtual network constraints
      * @return success or failure
      */
-    boolean updateVn(String vnName, List<Constraint> constraints);
+    boolean update(String vnName, List<Constraint> constraints);
 
     /**
      * Updates virtual network map with endpoint.
@@ -54,7 +54,7 @@ public interface VnStore {
      * @param endPoint virtual network endpoint
      * @return success or failure
      */
-    boolean updateVn(String vnName, EndPoint endPoint);
+    boolean update(String vnName, VnEndPoints endPoint);
 
     /**
      * Removes virtual network.
@@ -62,7 +62,7 @@ public interface VnStore {
      * @param vnName virtual network
      * @return success or failure
      */
-    boolean deleteVn(String vnName);
+    boolean delete(String vnName);
 
     /**
      * Returns virtual network.
@@ -70,12 +70,12 @@ public interface VnStore {
      * @param vnName virtual network
      * @return virtual network data
      */
-    VirtualNetworkInfo queryVn(String vnName);
+    VirtualNetworkInfo query(String vnName);
 
     /**
      * Returns all virtual network.
      *
      * @return virtual networks
      */
-    Map<String, VirtualNetworkInfo> queryAllVn();
+    Map<String, VirtualNetworkInfo> queryAll();
 }

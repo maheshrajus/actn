@@ -13,23 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.onosproject.vn.store;
+package org.onosproject.vn.api;
 
 import com.google.common.base.MoreObjects;
 import org.onosproject.net.DeviceId;
 
+import java.util.List;
 import java.util.Objects;
-
-//import org.onosproject.net.DeviceId;
 
 /**
  * Input path information to compute CSPF path.
  * This path information will be stored in pce store and will be used later to recalculate the path.
  */
-public final class Lsp {
+public final class VnEndPoints {
 
-    private DeviceId src;
-    private DeviceId dst;
+    private List<DeviceId> src;
+    private List<DeviceId> dst;
 
     /**
      * Initialization of member variables.
@@ -37,7 +36,7 @@ public final class Lsp {
      * @param src soure end point
      * @param dst destination end point
      */
-    public Lsp(DeviceId src, DeviceId dst) {
+    public VnEndPoints(List<DeviceId> src, List<DeviceId> dst) {
        this.src = src;
        this.dst = dst;
     }
@@ -47,7 +46,7 @@ public final class Lsp {
      *
      * @return source device id
      */
-    public DeviceId src() {
+    public List<DeviceId> src() {
        return src;
     }
 
@@ -56,7 +55,7 @@ public final class Lsp {
      *
      * @return destination device id
      */
-    public DeviceId dst() {
+    public List<DeviceId> dst() {
        return dst;
     }
 
@@ -70,8 +69,8 @@ public final class Lsp {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof Lsp) {
-            final Lsp other = (Lsp) obj;
+        if (obj instanceof VnEndPoints) {
+            final VnEndPoints other = (VnEndPoints) obj;
             return Objects.equals(this.src, other.src) &&
                     Objects.equals(this.dst, other.dst);
         }

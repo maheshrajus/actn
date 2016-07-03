@@ -21,7 +21,7 @@ import org.onosproject.net.DeviceId;
 import org.onosproject.net.intent.Constraint;
 import org.onosproject.pce.pceservice.constraint.CostConstraint;
 import org.onosproject.pce.pceservice.constraint.PceBandwidthConstraint;
-import org.onosproject.vn.store.EndPoint;
+import org.onosproject.vn.api.VnEndPoints;
 import org.onosproject.vn.store.VirtualNetworkInfo;
 
 import java.util.LinkedList;
@@ -41,7 +41,7 @@ public final class DefaultVirtualNetwork implements VirtualNetwork {
     private Constraint bandwidth; // bandwidth constraint
     private List<String> source; // Ingress
     private List<String> destination; // Egress
-    private EndPoint endPoint;
+    private VnEndPoints endPoint;
 
     /**
      * Initializes virtual network attributes.
@@ -51,7 +51,7 @@ public final class DefaultVirtualNetwork implements VirtualNetwork {
      * @param bandwidth bandwidth constraint
      * @param endPoint end point
      */
-    private DefaultVirtualNetwork(String vnName, Constraint cost, Constraint bandwidth, EndPoint endPoint) {
+    private DefaultVirtualNetwork(String vnName, Constraint cost, Constraint bandwidth, VnEndPoints endPoint) {
 
         this.vnName = vnName;
         this.cost = cost;
@@ -85,7 +85,7 @@ public final class DefaultVirtualNetwork implements VirtualNetwork {
     }
 
     @Override
-    public EndPoint endPoint() {
+    public VnEndPoints endPoint() {
         return endPoint;
     }
 
@@ -254,7 +254,7 @@ public final class DefaultVirtualNetwork implements VirtualNetwork {
             }
 
             return new DefaultVirtualNetwork(vnName, cost, bandwidth,
-                                             new EndPoint(srcDeviceId, dstDeviceId));
+                                             new VnEndPoints(srcDeviceId, dstDeviceId));
         }
     }
 }

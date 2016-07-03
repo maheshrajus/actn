@@ -19,8 +19,8 @@ import org.apache.karaf.shell.commands.Argument;
 import org.apache.karaf.shell.commands.Command;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.net.DeviceId;
+import org.onosproject.vn.api.VnEndPoints;
 import org.onosproject.vn.vnservice.api.VnService;
-import org.onosproject.vn.store.EndPoint;
 import org.slf4j.Logger;
 
 import java.util.LinkedList;
@@ -65,7 +65,7 @@ public class VnUpdateEndPointsCommand extends AbstractShellCommand {
                     dst.add(DeviceId.deviceId(endPointElement));
                 }
         }
-        EndPoint endPoint = new EndPoint(src, dst);
+        VnEndPoints endPoint = new VnEndPoints(src, dst);
 
         //System.out.print(vnData.toString());
         if (!service.updateVn(vnName, endPoint)) {

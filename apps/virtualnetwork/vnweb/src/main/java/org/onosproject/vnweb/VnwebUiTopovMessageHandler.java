@@ -18,7 +18,6 @@ package org.onosproject.vnweb;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableSet;
-
 import org.onlab.osgi.ServiceDirectory;
 import org.onlab.util.Bandwidth;
 import org.onosproject.incubator.net.tunnel.Tunnel;
@@ -42,14 +41,13 @@ import org.onosproject.ui.topo.Highlights;
 import org.onosproject.ui.topo.LinkHighlight;
 import org.onosproject.ui.topo.Mod;
 import org.onosproject.ui.topo.NodeBadge;
-import org.onosproject.ui.topo.TopoUtils;
 import org.onosproject.ui.topo.TopoJson;
+import org.onosproject.ui.topo.TopoUtils;
+import org.onosproject.vn.api.VnEndPoints;
+import org.onosproject.vn.store.VirtualNetworkInfo;
+import org.onosproject.vn.vnservice.api.VnService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.onosproject.vn.vnservice.api.VnService;
-import org.onosproject.vn.store.EndPoint;
-import org.onosproject.vn.store.VirtualNetworkInfo;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -57,7 +55,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import static org.onosproject.ui.topo.LinkHighlight.Flavor.*;
+import static org.onosproject.ui.topo.LinkHighlight.Flavor.PRIMARY_HIGHLIGHT;
 
 /**
  * Skeletal ONOS UI Topology-Overlay message handler.
@@ -295,7 +293,7 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
 
             constraints = buildCostAndBandWidthConstraints(bandWidth,
                     bandWidthType, costType);
-            EndPoint endPoint = new EndPoint(srcList, dstList);
+            VnEndPoints endPoint = new VnEndPoints(srcList, dstList);
             if (!vnService.updateVn(vnName, endPoint)) {
                 log.error("Virtual network creation failed.");
             }
@@ -422,7 +420,7 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
     private void setupVnHandle(String bandWidth, String bandWidthType,
             String costType, String vnName) {
         List<Constraint> constraints;
-        EndPoint endPoint = new EndPoint(srcList, dstList);
+        VnEndPoints endPoint = new VnEndPoints(srcList, dstList);
 
         if (bandWidth == null && costType == null) {
             if (!vnService.setupVn(vnName, endPoint, null)) {

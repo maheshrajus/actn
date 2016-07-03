@@ -17,7 +17,7 @@ package org.onosproject.vn.vnservice.api;
 
 import org.onosproject.incubator.net.tunnel.Tunnel;
 import org.onosproject.net.intent.Constraint;
-import org.onosproject.vn.store.EndPoint;
+import org.onosproject.vn.api.VnEndPoints;
 import org.onosproject.vn.store.VirtualNetworkInfo;
 
 import java.util.List;
@@ -36,7 +36,7 @@ public interface VnService {
      * @param constraints constraints
      * @return false on failure and true on successful path creation
      */
-    boolean setupVn(String vnName, EndPoint endPoint, List<Constraint> constraints);
+    boolean setupVn(String vnName, VnEndPoints endPoint, List<Constraint> constraints);
 
     /**
      * Updates existing end points.
@@ -45,7 +45,7 @@ public interface VnService {
      * @param endpoints end points
      * @return false on failure and true on successful path update
      */
-    boolean updateVn(String vnName, EndPoint endpoints);
+    boolean updateVn(String vnName, VnEndPoints endpoints);
 
     /**
      * Updates existing end points.

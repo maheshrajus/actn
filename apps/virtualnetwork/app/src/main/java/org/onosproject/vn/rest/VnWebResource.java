@@ -25,9 +25,9 @@ import org.onosproject.pce.pceservice.DefaultPcePath;
 import org.onosproject.pce.pceservice.PcePath;
 import org.onosproject.pce.pceservice.constraint.CostConstraint;
 import org.onosproject.rest.AbstractWebResource;
+import org.onosproject.vn.api.VnEndPoints;
 import org.onosproject.vn.vnservice.VirtualNetwork;
 import org.onosproject.vn.vnservice.api.VnService;
-import org.onosproject.vn.store.EndPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -134,7 +134,7 @@ public class VnWebResource extends AbstractWebResource {
             src.addAll(vn.endPoint().src().stream().collect(Collectors.toList()));
 
             dst.addAll(vn.endPoint().dst().stream().collect(Collectors.toList()));
-            EndPoint endPoint = new EndPoint(src, dst);
+            VnEndPoints endPoint = new VnEndPoints(src, dst);
 
             // Add bandwidth
             constraints.add(vn.bandwidth());

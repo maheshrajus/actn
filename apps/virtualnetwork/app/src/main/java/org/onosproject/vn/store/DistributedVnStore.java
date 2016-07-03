@@ -29,6 +29,8 @@ import org.onosproject.store.serializers.KryoNamespaces;
 import org.onosproject.store.service.ConsistentMap;
 import org.onosproject.store.service.Serializer;
 import org.onosproject.store.service.StorageService;
+import org.onosproject.vn.api.PathEndPoint;
+import org.onosproject.vn.api.VnEndPoints;
 import org.onosproject.vn.store.api.VnStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,8 +68,8 @@ public class DistributedVnStore implements VnStore {
                                 .register(VirtualNetworkInfo.class,
                                           CostConstraint.class,
                                           PceBandwidthConstraint.class,
-                                          EndPoint.class,
-                                          Lsp.class)
+                                          VnEndPoints.class,
+                                          PathEndPoint.class)
                                 .build()))
                 .build();
 
@@ -80,13 +82,7 @@ public class DistributedVnStore implements VnStore {
     }
 
     @Override
-    public Map<String, VirtualNetworkInfo> queryAllVn() {
-        return vnDataMap.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, e -> (VirtualNetworkInfo) e.getValue().value()));
-    }
-
-    @Override
-    public boolean setupVn(String vnName, EndPoint endPoint, List<Constraint> constraints) {
+    public boolean add(String vnName, VnEndPoints endPoint, List<Constraint> constraints) {
         checkNotNull(vnName, VN_NAME_NULL);
         checkNotNull(constraints, CONSTRAINT_NULL);
         checkNotNull(endPoint, ENDPOINT_NULL);
@@ -99,12 +95,12 @@ public class DistributedVnStore implements VnStore {
 
 
     @Override
-    public boolean updateVn(String vnName, List<Constraint> constraint) {
+    public boolean update(String vnName, List<Constraint> constraint) {
         checkNotNull(vnName, VN_NAME_NULL);
         checkNotNull(constraint, CONSTRAINT_NULL);
 
         if (!vnDataMap.containsKey((vnName))) {
-            log.debug("Virtual network does not exist whose name is {}.", vnName.toString());
+            log.debug("Virtual network does not exist whose name is {}.", vnName);
             return false;
         }
 
@@ -116,12 +112,12 @@ public class DistributedVnStore implements VnStore {
     }
 
     @Override
-    public boolean updateVn(String vnName, EndPoint endPoint) {
+    public boolean update(String vnName, VnEndPoints endPoint) {
         checkNotNull(vnName, VN_NAME_NULL);
         checkNotNull(endPoint, ENDPOINT_NULL);
 
         if (!vnDataMap.containsKey((vnName))) {
-            log.debug("Virtual network does not exist whose name is {}.", vnName.toString());
+            log.debug("Virtual network does not exist whose name is {}.", vnName);
             return false;
         }
 
@@ -133,11 +129,11 @@ public class DistributedVnStore implements VnStore {
     }
 
     @Override
-    public boolean deleteVn(String vnName) {
+    public boolean delete(String vnName) {
         checkNotNull(vnName, VN_NAME_NULL);
 
         if (!vnDataMap.containsKey((vnName))) {
-            log.debug("Virtual network does not exist whose name is {}.", vnName.toString());
+            log.debug("Virtual network does not exist whose name is {}.", vnName);
             return false;
         }
 
@@ -147,13 +143,19 @@ public class DistributedVnStore implements VnStore {
     }
 
     @Override
-    public VirtualNetworkInfo queryVn(String vnName) {
+    public VirtualNetworkInfo query(String vnName) {
         checkNotNull(vnName, VN_NAME_NULL);
 
         if (!vnDataMap.containsKey((vnName))) {
-            log.debug("Virtual network does not exist whose name is {}.", vnName.toString());
+            log.debug("Virtual network does not exist whose name is {}.", vnName);
             return null;
         }
         return vnDataMap.get(vnName).value();
+    }
+
+    @Override
+    public Map<String, VirtualNetworkInfo> queryAll() {
+        return vnDataMap.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> (VirtualNetworkInfo) e.getValue().value()));
     }
 }

@@ -29,11 +29,11 @@ import org.onosproject.net.DeviceId;
 import org.onosproject.net.intent.Constraint;
 import org.onosproject.pce.pceservice.LspType;
 import org.onosproject.pce.pceservice.api.PceService;
-import org.onosproject.vn.vnservice.api.VnService;
-import org.onosproject.vn.store.EndPoint;
-import org.onosproject.vn.store.Lsp;
+import org.onosproject.vn.api.PathEndPoint;
+import org.onosproject.vn.api.VnEndPoints;
 import org.onosproject.vn.store.VirtualNetworkInfo;
 import org.onosproject.vn.store.api.VnStore;
+import org.onosproject.vn.vnservice.api.VnService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,6 +66,7 @@ public class VnManager implements VnService {
     protected PceService service;
 
     private IdGenerator tunnelIdIdGen;
+    private List<PathEndPoint> pathEndPoint;
     /**
      * Creates new instance of vnManager.
      */
@@ -85,59 +86,66 @@ public class VnManager implements VnService {
     }
 
     @Override
-    public boolean setupVn(String vnName, EndPoint endPoint, List<Constraint> constraints) {
+    public boolean setupVn(String vnName, VnEndPoints endPoint, List<Constraint> constraints) {
         //TODO:
-        if (!vnStore.setupVn(vnName, endPoint, constraints)) {
+        if (!vnStore.add(vnName, endPoint, constraints)) {
             return false;
         }
 
-        VirtualNetworkInfo virtualNetwork = vnStore.queryVn(vnName);
-        for (Lsp lsp : virtualNetwork.lsp()) {
+        List<PathEndPoint> endPoints = pathEndPoint(endPoint);
+        for (PathEndPoint ep : endPoints) {
             String tunnelName = vnName.concat(Long.toString(tunnelIdIdGen.getNewId()));
-            service.setupPath(lsp.src(), lsp.dst(), tunnelName, constraints, LspType.WITH_SIGNALLING, vnName);
+            service.setupPath(ep.src(), ep.dst(), tunnelName, constraints, LspType.WITH_SIGNALLING, vnName);
         }
         return true;
     }
 
+    private List<PathEndPoint> pathEndPoint(VnEndPoints endPoint) {
+        List<DeviceId> src = endPoint.src();
+        List<DeviceId> dst = endPoint.dst();
+        this.pathEndPoint = new LinkedList<>();
+
+        for (DeviceId source : src) {
+            pathEndPoint.addAll(dst.stream().filter(destination -> !source.equals(destination))
+                               .map(destination -> new PathEndPoint(source, destination)).collect(Collectors.toList()));
+        }
+        return pathEndPoint;
+    }
+
     @Override
-    public boolean updateVn(String vnName, EndPoint endPoint) {
+    public boolean updateVn(String vnName, VnEndPoints endPoint) {
         checkNotNull(endPoint, "End point cannot be null");
-        VirtualNetworkInfo virtualNetwork = vnStore.queryVn(vnName);
+        VirtualNetworkInfo virtualNetwork = vnStore.query(vnName);
         if (virtualNetwork == null) {
             return false;
         }
-        List<Lsp> lsps = new LinkedList<>();
-        List<DeviceId> src = endPoint.src();
-        List<DeviceId> dst = endPoint.dst();
+        List<PathEndPoint> newPathEndPoints = pathEndPoint(endPoint);
 
-        for (DeviceId source : src) {
-            lsps.addAll(dst.stream().filter(destination -> !source.equals(destination))
-                                .map(destination -> new Lsp(source, destination)).collect(Collectors.toList()));
-        }
         // Check if any tunnel not provided in update, if not delete existing
         Iterable<Tunnel> tunnels = service.queryPath(vnName);
-        for (Lsp lsp : virtualNetwork.lsp()) {
-            if (!lsps.contains(lsp)) {
+        List<PathEndPoint> oldPathEndPoints = pathEndPoint(virtualNetwork.endPoint());
+        for (PathEndPoint ep : oldPathEndPoints) {
+            if (!newPathEndPoints.contains(ep)) {
                 // not present in update request, so delete existing
                 for (Tunnel t : tunnels) {
-                    if (t.path().src().deviceId().equals(lsp.src()) && t.path().dst().deviceId().equals(lsp.dst())) {
+                    if (t.path().src().deviceId().equals(ep.src()) && t.path().dst().deviceId().equals(ep.dst())) {
                              service.releasePath(t.tunnelId());
                     }
                 }
-                virtualNetwork.lsp().remove(lsp);
+                oldPathEndPoints.remove(ep);
             }
         }
 
-        for (Lsp lsp : lsps) {
-            if (!virtualNetwork.lsp().contains(lsp)) {
+        for (PathEndPoint ep : newPathEndPoints) {
+            if (!oldPathEndPoints.contains(ep)) {
               // new entry, setup path
                 String tunnelName = vnName.concat(Long.toString(tunnelIdIdGen.getNewId()));
-                service.setupPath(lsp.src(), lsp.dst(), tunnelName,
+                service.setupPath(ep.src(), ep.dst(), tunnelName,
                         virtualNetwork.constraints(), LspType.WITH_SIGNALLING, vnName);
             }
         }
 
-        if (!vnStore.updateVn(vnName, endPoint)) {
+        if (!vnStore.update(vnName, endPoint)) {
             return false;
         }
         return true;
@@ -145,7 +153,7 @@ public class VnManager implements VnService {
 
     @Override
     public boolean updateVn(String vnName, List<Constraint> constraint) {
-       if (!vnStore.updateVn(vnName, constraint)) {
+       if (!vnStore.update(vnName, constraint)) {
            return false;
        }
 
@@ -158,7 +166,7 @@ public class VnManager implements VnService {
 
     @Override
     public boolean deleteVn(String vnName) {
-        VirtualNetworkInfo virtualNetwork = vnStore.queryVn(vnName);
+        VirtualNetworkInfo virtualNetwork = vnStore.query(vnName);
         if (virtualNetwork == null) {
             return true;
         }
@@ -167,7 +175,7 @@ public class VnManager implements VnService {
             service.releasePath(t.tunnelId());
         }
 
-        if (!vnStore.deleteVn(vnName)) {
+        if (!vnStore.delete(vnName)) {
             return false;
         }
         return true;
@@ -175,20 +183,20 @@ public class VnManager implements VnService {
 
     @Override
     public VirtualNetworkInfo queryVn(String vnName) {
-        return vnStore.queryVn(vnName);
+        return vnStore.query(vnName);
     }
 
     @Override
     public List<VirtualNetworkInfo> queryAllVn() {
-        Map<String, VirtualNetworkInfo> vnMap = vnStore.queryAllVn();
+        Map<String, VirtualNetworkInfo> vnMap = vnStore.queryAll();
         List<VirtualNetworkInfo> vn = new LinkedList<>();
-        vn.addAll(vnMap.keySet().stream().map(vnName -> vnStore.queryVn(vnName)).collect(Collectors.toList()));
+        vn.addAll(vnMap.keySet().stream().map(vnName -> vnStore.query(vnName)).collect(Collectors.toList()));
         return vn;
     }
 
     @Override
     public Iterable<Tunnel> queryAllVnTunnels() {
-        Map<String, VirtualNetworkInfo> vnMap = vnStore.queryAllVn();
+        Map<String, VirtualNetworkInfo> vnMap = vnStore.queryAll();
         List<Tunnel> allTunnels = new LinkedList<>();
         Iterable<Tunnel> tunnels;
         for (Map.Entry<String, VirtualNetworkInfo> entry : vnMap.entrySet()) {
@@ -203,7 +211,7 @@ public class VnManager implements VnService {
     }
     @Override
     public Iterable<Tunnel> queryVnTunnels(String vnName) {
-        VirtualNetworkInfo vnInfo = vnStore.queryVn(vnName);
+        VirtualNetworkInfo vnInfo = vnStore.query(vnName);
         if (vnInfo != null) {
             return service.queryPath(vnName);
         }
