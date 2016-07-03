@@ -252,6 +252,11 @@ public class PceStoreAdapter implements PceStore {
     }
 
     @Override
+    public Map<TunnelId, Tunnel.State> childTunnel(TunnelId parentTunnelId) {
+        return null;
+    }
+
+    @Override
     public boolean addParentTunnel(TunnelId tunnelId, Tunnel.State status) {
         return false;
     }

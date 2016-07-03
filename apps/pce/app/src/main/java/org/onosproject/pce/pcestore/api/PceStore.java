@@ -297,6 +297,8 @@ public interface PceStore {
 
     TunnelId parentTunnel(TunnelId tunnelId);
 
+    Map<TunnelId, State> childTunnel(TunnelId parentTunnelId);
+
     boolean addParentTunnel(TunnelId tunnelId, State status);
 
     boolean removeParentTunnel(TunnelId tunnelId);

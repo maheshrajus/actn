@@ -23,7 +23,6 @@ import org.apache.felix.scr.annotations.ReferenceCardinality;
 import org.apache.felix.scr.annotations.Service;
 import org.onosproject.core.ApplicationId;
 import org.onosproject.core.CoreService;
-import org.onosproject.core.IdGenerator;
 import org.onosproject.incubator.net.tunnel.Tunnel;
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.intent.Constraint;
@@ -53,7 +52,6 @@ public class VnManager implements VnService {
     private static final Logger log = LoggerFactory.getLogger(VnManager.class);
 
     private static final String VN_TUNNEL_ID_GEN_TOPIC = "vn-tunnel-id";
-    public static final String VN_SERVICE_APP = "org.onosproject.vn";
     private ApplicationId appId;
 
     @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
@@ -64,8 +62,6 @@ public class VnManager implements VnService {
 
     @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
     protected PceService service;
-
-    private IdGenerator tunnelIdIdGen;
     private List<PathEndPoint> pathEndPoint;
     /**
      * Creates new instance of vnManager.
@@ -75,8 +71,6 @@ public class VnManager implements VnService {
 
     @Activate
     protected void activate() {
-        appId = coreService.registerApplication(VN_SERVICE_APP);
-        tunnelIdIdGen = coreService.getIdGenerator(VN_TUNNEL_ID_GEN_TOPIC);
         log.info("Started");
     }
 
@@ -94,7 +88,7 @@ public class VnManager implements VnService {
 
         List<PathEndPoint> endPoints = pathEndPoint(endPoint);
         for (PathEndPoint ep : endPoints) {
-            String tunnelName = vnName.concat(Long.toString(tunnelIdIdGen.getNewId()));
+            String tunnelName = vnName.concat(Long.toString(service.generatePathId()));
             service.setupPath(ep.src(), ep.dst(), tunnelName, constraints, LspType.WITH_SIGNALLING, vnName);
         }
         return true;
@@ -139,7 +133,7 @@ public class VnManager implements VnService {
         for (PathEndPoint ep : newPathEndPoints) {
             if (!oldPathEndPoints.contains(ep)) {
               // new entry, setup path
-                String tunnelName = vnName.concat(Long.toString(tunnelIdIdGen.getNewId()));
+                String tunnelName = vnName.concat(Long.toString(service.generatePathId()));
                 service.setupPath(ep.src(), ep.dst(), tunnelName,
                         virtualNetwork.constraints(), LspType.WITH_SIGNALLING, vnName);
             }

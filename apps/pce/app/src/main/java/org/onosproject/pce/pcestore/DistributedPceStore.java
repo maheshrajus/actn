@@ -480,6 +480,18 @@ public class DistributedPceStore implements PceStore {
     }
 
     @Override
+    public Map<TunnelId, State> childTunnel(TunnelId tunnelId) {
+        checkNotNull(tunnelId);
+
+        if (parentChildTunnelStatusMap.get(tunnelId) == null) {
+            return null;
+        }
+
+        return parentChildTunnelStatusMap.get(tunnelId).value();
+
+    }
+
+    @Override
     public boolean removeParentTunnel(TunnelId tunnelId) {
         checkNotNull(tunnelId);
         if (parentChildTunnelStatusMap.get(tunnelId) != null) {

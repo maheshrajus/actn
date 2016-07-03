@@ -175,7 +175,7 @@ public class PceManager implements PceService {
     private LspType defaultLspType;
     public String pceMode = "PNC";
     private IdGenerator localLspIdIdGen;
-    private IdGenerator setupPathIdIdGen;
+    private IdGenerator setupPathIdGen;
     protected DistributedSet<Short> localLspIdFreeList;
 
     // LSR-id and device-id mapping for checking capability if L3 device is not having its capability
@@ -310,7 +310,8 @@ public class PceManager implements PceService {
 
         localLspIdIdGen = coreService.getIdGenerator(LOCAL_LSP_ID_GEN_TOPIC);
         localLspIdIdGen.getNewId(); // To prevent 0, the 1st value generated from being used in protocol.
-        setupPathIdIdGen = coreService.getIdGenerator(SETUP_PATH_ID_GEN_TOPIC);
+        setupPathIdGen = coreService.getIdGenerator(SETUP_PATH_ID_GEN_TOPIC);
+        setupPathIdGen.getNewId();
         localLspIdFreeList = storageService.<Short>setBuilder()
                 .withName("pcepLocalLspIdDeletedList")
                 .withSerializer(Serializer.using(KryoNamespaces.API))
@@ -399,6 +400,11 @@ public class PceManager implements PceService {
             return setupPath(vnName, src, dst, tunnelName, constraints, lspType, MPLS, computedPath);
         }
         return PathErr.SUCCESS;
+    }
+
+    @Override
+    public long generatePathId() {
+        return setupPathIdGen.getNewId();
     }
 
     /**
@@ -774,12 +780,8 @@ public class PceManager implements PceService {
             return PathErr.ERROR;
         }
         if (getPceMode().equals("MDSC")) {
-            // Update tunnel ID map
-            // TODO: After shashi rework
-            /* Set<TunnelId> childTunnelIdSet = pceStore.parentChildTunnelMap().get(tunnelId);
-            childTunnelIdSet.add(updatedTunnelId);
-            Map<TunnelId, Boolean> childTunnelIdStatus = pceStore.parentChildTunnelStatusMap().get(tunnelId);
-            childTunnelIdStatus.put(updatedTunnelId, Boolean.valueOf(TUNNEL_INIT)); */
+            // Update tunne in parent child map and its status
+            pceStore.addChildTunnel(tunnelId, updatedTunnelId, Tunnel.State.INIT);
         }
 
         return PathErr.SUCCESS;
@@ -810,7 +812,6 @@ public class PceManager implements PceService {
         Tunnel tunnel = tunnelService.queryTunnel(tunnelId);
         Set<Path> oldPaths = null;
         Set<Path> newPaths = null;
-        Set<TunnelId> childTunnelIds = null;
 
         if (tunnel == null) {
             return false;
@@ -894,15 +895,7 @@ public class PceManager implements PceService {
         oldPaths = domainManager().getDomainSpecificPaths(tunnel.path());
         newPaths = domainManager().getDomainSpecificPaths(computedPathSet.iterator().next());
         Map<DomainManager.Oper, Set<Path>> setPath = domainManager().compareDomainSpecificPaths(oldPaths, newPaths);
-
-        // TODO: After shashi rework
-        /*for (Map.Entry<TunnelId, Set<TunnelId>> map : pceStore.parentChildTunnelMap().entrySet()) {
-            TunnelId parentTunnel = map.getKey();
-            if (parentTunnel.equals(tunnelId)) {
-                childTunnelIds = map.getValue();
-            }
-        }*/
-
+        Set<TunnelId> childTunnelIds = pceStore.childTunnel(tunnelId).keySet();
         for (Map.Entry<DomainManager.Oper, Set<Path>> entry : setPath.entrySet()) {
             Set<Path> path = entry.getValue();
             Iterator iterator = path.iterator();
@@ -911,7 +904,7 @@ public class PceManager implements PceService {
                     Path setupPath = (Path) iterator.next();
                     String vnName = tunnel.annotations().value("vnName");
                     setupPath(vnName, setupPath.src().deviceId(),
-                              setupPath.dst().deviceId(), vnName.concat(Long.toString(setupPathIdIdGen.getNewId())),
+                              setupPath.dst().deviceId(), vnName.concat(Long.toString(generatePathId())),
                                       constraints, defaultLspType());
                 }
             } else if (entry.getKey().equals(DomainManager.Oper.UPDATE)) {
@@ -927,13 +920,8 @@ public class PceManager implements PceService {
                     Path deletePath = (Path) iterator.next();
                     TunnelId deleteTunnel = getTunnel(deletePath, childTunnelIds);
                     if (deleteTunnel != null && releasePath(deleteTunnel)) {
-                        // delete from status and parent child map
-                        // TODO: After shashi rework
-                        /*Set<TunnelId> childTunnelIdSet = pceStore.parentChildTunnelMap().get(tunnelId);
-                        childTunnelIdSet.remove(deleteTunnel);
-                        Map<TunnelId, Boolean> childTunnelIdStatus = pceStore
-                                                                        .parentChildTunnelStatusMap().get(tunnelId);
-                        childTunnelIdStatus.remove(deleteTunnel); */
+                        // delete from parent child map
+                        pceStore.removeChildTunnel(pceStore.parentTunnel(deleteTunnel), deleteTunnel);
                     }
                 }
             }
