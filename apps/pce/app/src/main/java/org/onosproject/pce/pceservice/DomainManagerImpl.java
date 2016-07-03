@@ -17,7 +17,6 @@ package org.onosproject.pce.pceservice;
 
 import org.onosproject.net.DefaultPath;
 import org.onosproject.net.Device;
-import org.onosproject.net.DeviceId;
 import org.onosproject.net.Link;
 import org.onosproject.net.Path;
 import org.onosproject.net.device.DeviceService;
@@ -77,13 +76,13 @@ public class DomainManagerImpl implements DomainManager {
     @Override
     public Map<Oper, Set<Path>> compareDomainSpecificPaths(Set<Path> oldPaths, Set<Path> newPaths) {
 
-        Map<Oper, Set<Path>> map = new HashMap<>();
+        Map<Oper, Set<Path>> pathMap = new HashMap<>();
         Set<Path> updatePaths = new HashSet<>();
 
         for (Path oldpath : oldPaths) {
             for (Path newPath : newPaths) {
-                if (getSrcDeviceId(oldpath).equals(getSrcDeviceId(newPath))
-                        && getDstDeviceId(oldpath).equals(getDstDeviceId(newPath))) {
+                if (oldpath.src().deviceId().equals(newPath.src().deviceId())
+                        && oldpath.dst().deviceId().equals(newPath.dst().deviceId())) {
                     updatePaths.add(newPath);
                     oldPaths.remove(oldpath);
                     newPaths.remove(newPath);
@@ -91,43 +90,10 @@ public class DomainManagerImpl implements DomainManager {
             }
         }
 
-        map.put(Oper.ADD, newPaths);
-        map.put(Oper.UPDATE, updatePaths);
-        map.put(Oper.DELETE, oldPaths);
+        pathMap.put(Oper.ADD, newPaths);
+        pathMap.put(Oper.UPDATE, updatePaths);
+        pathMap.put(Oper.DELETE, oldPaths);
 
-        return map;
+        return pathMap;
     }
-
-    private DeviceId getDstDeviceId(Path path) {
-        int size = path.links().size();
-        return path.links().get(size - 1).dst().deviceId();
-    }
-
-    private DeviceId getSrcDeviceId(Path path) {
-        return path.links().get(0).src().deviceId();
-    }
-
-    /*@Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj instanceof DomainManagerImpl) {
-            DomainManagerImpl that = (DomainManagerImpl) obj;
-            return Objects.equals(links, that.links);
-        }
-        return false;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(links);
-    }*/
-
-    /*@Override
-    public String toString() {
-        return toStringHelper(this)
-                .add("links", links)
-                .toString();
-    }*/
 }
