@@ -69,7 +69,7 @@ public class BgpLinkCfgProvider extends AbstractProvider {
     protected NetworkConfigService configService;
 
     private final ConfigFactory configFactory =
-            new ConfigFactory(SubjectFactories.APP_SUBJECT_FACTORY, BgpAppLinkConfig.class, "bgpapp") {
+            new ConfigFactory(SubjectFactories.APP_SUBJECT_FACTORY, BgpAppLinkConfig.class, "bgpLinkapp") {
                 @Override
                 public BgpAppLinkConfig createConfig() {
                     return new BgpAppLinkConfig();
