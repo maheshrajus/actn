@@ -808,7 +808,7 @@ public class PceManager implements PceService {
 
         if (tunnel.type() == MDMPLS) {
             pceStore.addParentTunnel(updatedTunnelId, INIT);
-            boolean ret = updateParentTunnelProcess(tunnel, computedPath, constraints);
+            boolean ret = updateParentTunnelProcess(tunnel, updatedTunnelId, computedPath, constraints);
 
         } else {
 
@@ -820,15 +820,15 @@ public class PceManager implements PceService {
 
 
 
-    private boolean updateParentTunnelProcess(Tunnel parentTunnel, Path computedPath,
+    private boolean updateParentTunnelProcess(Tunnel oldParentTunnel, TunnelId newParentTunnelId, Path computedPath,
                                               List<Constraint> constraints) {
 
         //Call domain manager with old path
-        Set<Path> oldPaths = domainManager().getDomainSpecificPaths(parentTunnel.path());
+        Set<Path> oldPaths = domainManager().getDomainSpecificPaths(oldParentTunnel.path());
         Set<Path> newPaths = domainManager().getDomainSpecificPaths(computedPath);
         Map<DomainManager.Oper, Set<Path>> setPath = domainManager().compareDomainSpecificPaths(oldPaths, newPaths);
 
-        Set<TunnelId> childTunnelIds = pceStore.childTunnel(parentTunnel.tunnelId()).keySet();
+        Set<TunnelId> childTunnelIds = pceStore.childTunnel(oldParentTunnel.tunnelId()).keySet();
 
         for (Map.Entry<DomainManager.Oper, Set<Path>> entry : setPath.entrySet()) {
             Set<Path> path = entry.getValue();
@@ -836,17 +836,31 @@ public class PceManager implements PceService {
             if (entry.getKey().equals(DomainManager.Oper.ADD)) {
                 while (iterator.hasNext()) {
                     Path setupPath = (Path) iterator.next();
-                    String vnName = parentTunnel.annotations().value("vnName");
+                    String vnName = oldParentTunnel.annotations().value("vnName");
+                    String childTunnelName = vnName.concat(Long.toString(generatePathId()));
                     setupPath(vnName, setupPath.src().deviceId(),
-                            setupPath.dst().deviceId(), vnName.concat(Long.toString(generatePathId())),
+                            setupPath.dst().deviceId(), childTunnelName,
                             constraints, LspType.WITH_SIGNALLING, SDMPLS, setupPath);
+                    //Store child mapping
+                    Collection<Tunnel> childTunnels = tunnelService.queryTunnel(TunnelName.tunnelName(childTunnelName));
+                    Tunnel childTunnel = childTunnels.iterator().next();
+                    pceStore.addChildTunnel(newParentTunnelId, childTunnel.tunnelId(), childTunnel.state());
                 }
             } else if (entry.getKey().equals(DomainManager.Oper.UPDATE)) {
                 while (iterator.hasNext()) {
-                    Path updatepPath = (Path) iterator.next();
-                    TunnelId updateTunnel = getTunnel(updatepPath, childTunnelIds);
+                    Path updatePath = (Path) iterator.next();
+                    TunnelId updateTunnel = getTunnel(updatePath, childTunnelIds);
                     if (updateTunnel != null) {
                         updatePath(updateTunnel, constraints);
+                        //pceStore.removeChildTunnel(oldParentTunnel.tunnelId(), updateTunnel);
+                        pceStore.updateTunnelStatus(updateTunnel, Tunnel.State.INACTIVE);
+                        Tunnel tempTunnel = tunnelService.queryTunnel(updateTunnel);
+                        Collection<Tunnel> childTunnels = tunnelService.queryTunnel(tempTunnel.tunnelName());
+                        childTunnels.forEach(t -> {
+                            if (updateTunnel != t.tunnelId()) {
+                                pceStore.addChildTunnel(newParentTunnelId, t.tunnelId(), t.state());
+                            }
+                        });
                     }
                 }
             } else if (entry.getKey().equals(DomainManager.Oper.DELETE)) {
@@ -855,6 +869,8 @@ public class PceManager implements PceService {
                     TunnelId deleteTunnel = getTunnel(deletePath, childTunnelIds);
                     if (deleteTunnel != null) {
                         releasePath(deleteTunnel);
+                        pceStore.updateTunnelStatus(deleteTunnel, Tunnel.State.INACTIVE);
+                        //pceStore.removeChildTunnel(oldParentTunnel.tunnelId(), deleteTunnel);
                     }
                 }
             }
@@ -891,6 +907,17 @@ public class PceManager implements PceService {
         if (tunnel == null) {
             return false;
         }
+
+        if (tunnel.type() == MDMPLS) {
+            tunnelService.downTunnel(appId, tunnel.tunnelId());
+            pceStore.updateTunnelStatus(tunnel.tunnelId(), Tunnel.State.INACTIVE);
+            Set<TunnelId> childTunnelIds = pceStore.childTunnel(tunnel.tunnelId()).keySet();
+            childTunnelIds.forEach(t -> {
+                tunnelService.downTunnel(appId, t);
+                pceStore.updateTunnelStatus(t, Tunnel.State.INACTIVE);
+            });
+            return true;
+        }
         // 2. Call tunnel service.
         return tunnelService.downTunnel(appId, tunnel.tunnelId());
     }
@@ -911,16 +938,10 @@ public class PceManager implements PceService {
                 .findFirst();
 
         if (tunnel.isPresent()) {
-            result =  tunnelService.downTunnel(appId, tunnel.get().tunnelId());
+            result = releasePath(tunnel.get().tunnelId());
         }
 
        if (!result) {
-            /* PcePathReport report = DefaultPcePathReport.builder()
-                    .state(PcePathReport.State.DOWN)
-                    .plspId(plspId)
-                    .build();
-
-            pcePathUpdateListener.forEach(item -> item.updatePath(report)); */
            return PathErr.ERROR;
         }
         return PathErr.SUCCESS;
