@@ -15,8 +15,6 @@
  */
 package org.onosproject.bgp.controller.impl;
 
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -63,9 +61,6 @@ public class BgpConfig implements BgpCfg {
 
     protected static final Logger log = LoggerFactory.getLogger(BgpConfig.class);
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
-    protected DeviceService deviceService;
-
     private static final short DEFAULT_HOLD_TIMER = 120;
     private static final short DEFAULT_CONN_RETRY_TIME = 120;
     private static final short DEFAULT_CONN_RETRY_COUNT = 5;
@@ -86,12 +81,14 @@ public class BgpConfig implements BgpCfg {
     private BgpPeerManagerImpl peerManager;
     private BgpController bgpController;
     private boolean rpdCapability;
+    private DeviceService deviceService;
 
     /*
      * Constructor to initialize the values.
      */
-    public BgpConfig(BgpController bgpController) {
+    public BgpConfig(BgpController bgpController, DeviceService deviceService) {
         this.bgpController = bgpController;
+        this.deviceService = deviceService;
         this.peerManager = (BgpPeerManagerImpl) bgpController.peerManager();
         this.holdTime = DEFAULT_HOLD_TIMER;
         this.maxConnRetryTime = DEFAULT_CONN_RETRY_TIME;
