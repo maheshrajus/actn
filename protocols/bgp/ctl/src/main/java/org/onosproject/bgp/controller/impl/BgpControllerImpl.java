@@ -19,6 +19,8 @@ package org.onosproject.bgp.controller.impl;
 import org.apache.felix.scr.annotations.Activate;
 import org.apache.felix.scr.annotations.Component;
 import org.apache.felix.scr.annotations.Deactivate;
+import org.apache.felix.scr.annotations.Reference;
+import org.apache.felix.scr.annotations.ReferenceCardinality;
 import org.apache.felix.scr.annotations.Service;
 import org.onosproject.bgp.controller.BgpCfg;
 import org.onosproject.bgp.controller.BgpController;
@@ -34,6 +36,7 @@ import org.onosproject.bgpio.protocol.BgpUpdateMsg;
 import org.onosproject.bgpio.types.BgpValueType;
 import org.onosproject.bgpio.types.MpReachNlri;
 import org.onosproject.bgpio.types.MpUnReachNlri;
+import org.onosproject.net.device.DeviceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,6 +54,9 @@ public class BgpControllerImpl implements BgpController {
 
     private static final Logger log = LoggerFactory.getLogger(BgpControllerImpl.class);
 
+    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    protected DeviceService deviceService;
+
     protected ConcurrentHashMap<BgpId, BgpPeer> connectedPeers = new ConcurrentHashMap<BgpId, BgpPeer>();
 
     protected BgpPeerManagerImpl peerManager = new BgpPeerManagerImpl();
@@ -63,10 +69,11 @@ public class BgpControllerImpl implements BgpController {
 
     final Controller ctrl = new Controller(this);
 
-    private BgpConfig bgpconfig = new BgpConfig(this);
+    private BgpConfig bgpconfig;
 
     @Activate
     public void activate() {
+        this.bgpconfig = new BgpConfig(this, deviceService);
         this.ctrl.start();
         log.info("Started");
     }
