@@ -45,6 +45,13 @@ public interface PcePathReport {
     String pathName();
 
     /**
+     * Returns the SRP id.
+     *
+     * @return SRP id
+     */
+    String srpId();
+
+    /**
      * Returns the plsp id.
      *
      * @return path plsp id
@@ -154,6 +161,14 @@ public interface PcePathReport {
          * @return builder object of path name
          */
         Builder pathName(String name);
+
+        /**
+         * Returns the builder object of report SRP id.
+         *
+         * @param srpId SRP id
+         * @return builder object
+         */
+        Builder srpId(String srpId);
 
         /**
          * Returns the builder object of path plsp id.

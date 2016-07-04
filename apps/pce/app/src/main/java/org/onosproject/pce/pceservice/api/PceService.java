@@ -15,6 +15,7 @@
  */
 package org.onosproject.pce.pceservice.api;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -25,6 +26,7 @@ import org.onosproject.net.Path;
 import org.onosproject.net.intent.Constraint;
 import org.onosproject.pce.pceservice.LspType;
 import org.onosproject.incubator.net.tunnel.Tunnel;
+import org.onosproject.incubator.net.tunnel.TunnelEndPoint;
 import org.onosproject.incubator.net.tunnel.TunnelId;
 
 /**
@@ -164,6 +166,15 @@ public interface PceService {
      * @return tunnel if path exists, otherwise null
      */
     Tunnel queryPath(TunnelId tunnelId);
+
+    /**
+     * Queries paths based on tunnel source and destination.
+     *
+     * @param src a source point of tunnel.
+     * @param dst a destination point of tunnel.
+     * @return Collection of tunnels
+     */
+    Collection<Tunnel> queryPath(TunnelEndPoint src, TunnelEndPoint dst);
 
     /**
      * Queries particular path based on virtual network.

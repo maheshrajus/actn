@@ -24,7 +24,9 @@ import org.apache.felix.scr.annotations.ReferenceCardinality;
 import org.apache.felix.scr.annotations.Service;
 import org.onlab.packet.IpAddress;
 import org.onlab.util.DataRateUnit;
+import org.onosproject.incubator.net.tunnel.IpTunnelEndPoint;
 import org.onosproject.incubator.net.tunnel.Tunnel;
+import org.onosproject.incubator.net.tunnel.TunnelEndPoint;
 import org.onosproject.net.intent.Constraint;
 import org.onosproject.pcc.pccmgr.api.PceId;
 import org.onosproject.pcc.pccmgr.api.PcepAgent;
@@ -39,6 +41,8 @@ import org.onosproject.pce.pceservice.LspType;
 import org.onosproject.pce.pceservice.api.PcePathUpdateListener;
 import org.onosproject.pce.pceservice.api.PceService;
 import org.onosproject.pce.pceservice.constraint.CostConstraint;
+import org.onosproject.pcep.api.PcepSrpStore;
+import org.onosproject.pcep.api.SrpIdMapping;
 import org.onosproject.pce.pceservice.constraint.PceBandwidthConstraint;
 import org.onosproject.pcep.pcepio.exceptions.PcepParseException;
 import org.onosproject.pcep.pcepio.protocol.PcInitiatedLspRequest;
@@ -117,6 +121,9 @@ public class PcepClientControllerImpl implements PcepClientController {
 
     @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
     protected PceService pceService;
+
+    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    protected PcepSrpStore pceSrpStore;
 
     private PcePathUpdateListener pcePathListener = new InnerPcePathUpdateListener();
 
@@ -260,9 +267,11 @@ public class PcepClientControllerImpl implements PcepClientController {
                 }
 
                 if (pathNameTlv != null) {
-                    PcepSrpIdMap.INSTANCE.add(pathNameTlv.getValue(), srpObj.getSrpID());
-                    log.info("Adding into SrpID map, symName: " + new String(pathNameTlv.getValue()) +
-                                     ", SrpId: " + srpObj.getSrpID());
+                    // PcepSrpIdMap.INSTANCE.add(pathNameTlv.getValue(), srpObj.getSrpID());
+                    String pathName = new String(pathNameTlv.getValue());
+                    SrpIdMapping srpIdMapping = new SrpIdMapping(srpObj.getSrpID(), 0, 0);
+                    pceSrpStore.addSrpIdMapping(pathName, srpIdMapping);
+                    log.info("Adding into SrpID map, symName: " + pathName + ", SrpId: " + srpObj.getSrpID());
                 } else {
                     pc.sendMessage(Collections.singletonList(getErrMsg(pc.factory(), ERROR_TYPE_10,
                                                                        ERROR_VALUE_8, srpObj.getSrpID())));
@@ -404,13 +413,37 @@ public class PcepClientControllerImpl implements PcepClientController {
                 }
 
                 if (pathNameTlv != null) {
-                    PcepSrpIdMap.INSTANCE.add(pathNameTlv.getValue(), srpObj.getSrpID());
-                    log.info("Adding symName: " + new String(pathNameTlv.getValue()) +
-                                     ", SrpId: " + srpObj.getSrpID());
+                    //PcepSrpIdMap.INSTANCE.add(pathNameTlv.getValue(), srpObj.getSrpID());
+                    String pathName = new String(pathNameTlv.getValue());
+                    SrpIdMapping srpIdMapping = new SrpIdMapping(srpObj.getSrpID(), 0, 0);
+                    pceSrpStore.addSrpIdMapping(pathName, srpIdMapping);
+                    log.info("Adding symName: " + pathName + ", SrpId: " + srpObj.getSrpID());
                 } else {
-                    pc.sendMessage(Collections.singletonList(getErrMsg(pc.factory(), ERROR_TYPE_10,
-                                                                       ERROR_VALUE_8, srpObj.getSrpID())));
-                    continue;
+                    TunnelEndPoint src = IpTunnelEndPoint
+                            .ipTunnelPoint(IpAddress.valueOf(lspIdentifier.getIpv4EgressAddress()));
+                    TunnelEndPoint dst = IpTunnelEndPoint
+                            .ipTunnelPoint(IpAddress.valueOf(lspIdentifier.getIpv4EgressAddress()));
+
+                    Collection<Tunnel> existingTunnels = pceService.queryPath(src, dst);
+                    String rptPlspId = String.valueOf(lspObj.getPlspId());
+                    String pathName = null;
+
+                    for (Tunnel tunnel : existingTunnels) {
+                        if (rptPlspId.equals(tunnel.annotations().value(PLSP_ID))) {
+                            pathName = tunnel.tunnelName().value();
+                            break;
+                        }
+                    }
+
+                    if (pathName == null) {
+                        pc.sendMessage(Collections
+                                .singletonList(getErrMsg(pc.factory(), ERROR_TYPE_10, ERROR_VALUE_8, srpObj.getSrpID())));
+                        continue;
+                    }
+
+                    SrpIdMapping srpIdMapping = new SrpIdMapping(srpObj.getSrpID(), 0, 0);
+                    pceSrpStore.addSrpIdMapping(pathName, srpIdMapping);
+                    log.info("Adding symName: " + pathName + ", SrpId: " + srpObj.getSrpID());
                 }
 
                 constrntList = new LinkedList<>();
@@ -690,6 +723,11 @@ public class PcepClientControllerImpl implements PcepClientController {
                     }
                 }
             }
+        }
+
+        @Override
+        public PcepErrorMsg prepareErrMsg(PcepClientDriver pc, byte errorType, byte errorValue) {
+            return getErrMsg(pc.factory(), errorType, errorValue);
         }
     }
 }

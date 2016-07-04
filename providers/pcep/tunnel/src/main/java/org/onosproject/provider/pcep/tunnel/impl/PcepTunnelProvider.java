@@ -71,12 +71,14 @@ import org.onosproject.net.provider.ProviderId;
 import org.onosproject.pcep.api.PcepController;
 import org.onosproject.pcep.api.PcepDpid;
 import org.onosproject.pcep.api.PcepHopNodeDescription;
+import org.onosproject.pcep.api.PcepSrpStore;
 import org.onosproject.pcep.api.PcepOperator.OperationType;
 import org.onosproject.pcep.api.PcepTunnel;
 import org.onosproject.pcep.api.PcepTunnel.PathState;
 import org.onosproject.pcep.api.PcepTunnel.PathType;
 import org.onosproject.pcep.api.PcepTunnelListener;
 import org.onosproject.pcep.api.PcepTunnelStatistics;
+import org.onosproject.pcep.api.SrpIdMapping;
 import org.onosproject.pcep.controller.LspKey;
 import org.onosproject.pcep.controller.LspType;
 import org.onosproject.pcep.controller.PccId;
@@ -164,6 +166,7 @@ import static org.onosproject.provider.pcep.tunnel.impl.RequestType.DELETE;
 import static org.onosproject.provider.pcep.tunnel.impl.RequestType.LSP_STATE_RPT;
 import static org.onosproject.provider.pcep.tunnel.impl.RequestType.UPDATE;
 import static org.onosproject.incubator.net.tunnel.Tunnel.State.UNSTABLE;
+import static org.onosproject.incubator.net.tunnel.Tunnel.State.INVALID;
 import static org.onosproject.pcep.controller.PcepLspSyncAction.REMOVE;
 import static org.onosproject.pcep.controller.PcepLspSyncAction.SEND_UPDATE;
 import static org.onosproject.pcep.pcepio.protocol.ver1.PcepMetricObjectVer1.IGP_METRIC;
@@ -224,6 +227,9 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
 
     @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
     protected LinkService linkService;
+	
+    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    protected PcepSrpStore pceSrpStore;
 
     TunnelProviderService service;
     HashMap<String, TunnelId> tunnelMap = new HashMap<String, TunnelId>();
@@ -1042,11 +1048,35 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
     private void pcepSetupTunnel(Tunnel tunnel, Path path, PcepClient pc) {
         try {
             if (!(pc.lspDbSyncStatus().equals(PcepSyncStatus.SYNCED))) {
+                if (null != tunnel.annotations().value(VN_NAME)) {
+                    TunnelDescription td = new DefaultTunnelDescription(tunnel.tunnelId(),
+                                                                        tunnel.src(), tunnel.dst(),
+                                                                        tunnel.type(),
+                                                                        tunnel.groupId(),
+                                                                        tunnel.providerId(),
+                                                                        tunnel.tunnelName(),
+                                                                        tunnel.path(),
+                                                                        tunnel.resource(),
+                                                                        (SparseAnnotations) tunnel.annotations());
+
+                    tunnelUpdated(td, INVALID);
+                }
                 log.error("Setup tunnel has failed as LSP DB sync is not finished");
                 return;
             }
 
             int srpId = SrpIdGenerators.create();
+            // Update MDSC-PNC SRP id mapping
+            if (tunnel.annotations().value(VN_NAME) != null) {
+                String pathName = tunnel.tunnelName().value();
+                SrpIdMapping srpIdMapping = pceSrpStore.getSrpIdMapping(pathName);
+                // If MDSC has not triggered this update, then srpIdMapping will be null!
+                if (srpIdMapping != null) {
+                    srpIdMapping.setPncSrpId(srpId);
+                    pceSrpStore.updateSrpIdMapping(pathName, srpIdMapping);
+                }
+            }
+
             Collection<Tunnel> tunnels = tunnelService.queryTunnel(tunnel.src(), tunnel.dst());
             for (Tunnel t : tunnels) {
                 if (t.tunnelName().equals(tunnel.tunnelName())) {
@@ -1104,9 +1134,25 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
                 return;
             }
 
+            if (tunnel.state() == INVALID) {
+                log.debug("Removed tunnel for which DB sync is not yet completed.");
+                return;
+            }
+
             PcepTunnelData pcepTunnelData = new PcepTunnelData(tunnel, DELETE);
             pcepTunnelApiMapper.addToCoreTunnelRequestQueue(pcepTunnelData);
             int srpId = SrpIdGenerators.create();
+            // Update MDSC-PNC SRP id mapping
+            if (tunnel.annotations().value(VN_NAME) != null) {
+                String pathName = tunnel.tunnelName().value();
+                SrpIdMapping srpIdMapping = pceSrpStore.getSrpIdMapping(pathName);
+                // If MDSC has not triggered this update, then srpIdMapping will be null!
+                if (srpIdMapping != null) {
+                    srpIdMapping.setPncSrpId(srpId);
+                    pceSrpStore.updateSrpIdMapping(pathName, srpIdMapping);
+                }
+            }
+
             TunnelId tunnelId = tunnel.tunnelId();
 
             PcepValueType tlv;
@@ -1185,6 +1231,18 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
             PcepTunnelData pcepTunnelData = new PcepTunnelData(tunnel, path, UPDATE);
             pcepTunnelApiMapper.addToCoreTunnelRequestQueue(pcepTunnelData);
             int srpId = SrpIdGenerators.create();
+
+            // Update MDSC-PNC SRP id mapping
+            if (tunnel.annotations().value(VN_NAME) != null) {
+                String pathName = tunnel.tunnelName().value();
+                SrpIdMapping srpIdMapping = pceSrpStore.getSrpIdMapping(pathName);
+                // If MDSC has not triggered this update, then srpIdMapping will be null!
+                if (srpIdMapping != null) {
+                    srpIdMapping.setPncSrpId(srpId);
+                    pceSrpStore.updateSrpIdMapping(pathName, srpIdMapping);
+                }
+            }
+
             TunnelId tunnelId = tunnel.tunnelId();
             PcepValueType tlv;
             int plspId = 0;
@@ -1455,6 +1513,17 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
             Tunnel tunnel = pcepTunnelData.tunnel();
             Builder annotationBuilder = DefaultAnnotations.builder();
             annotationBuilder.putAll(pcepTunnelData.tunnel().annotations());
+
+            // Update MDSC-PNC SRP id mapping
+            if (tunnel.annotations().value(VN_NAME) != null) {
+                String pathName = tunnel.tunnelName().value();
+                SrpIdMapping srpIdMapping = pceSrpStore.getSrpIdMapping(pathName);
+                // If MDSC has not triggered this update, then srpIdMapping will be null!
+                if (srpIdMapping != null) {
+                    srpIdMapping.setRptSrpId(srpId);
+                    pceSrpStore.updateSrpIdMapping(pathName, srpIdMapping);
+                }
+            }
 
             // PCRpt in response to PCInitate msg will carry PLSP id allocated by PCC.
             if (tunnel.annotations().value(PLSP_ID) == null) {

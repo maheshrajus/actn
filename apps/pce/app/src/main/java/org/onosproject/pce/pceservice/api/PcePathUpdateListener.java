@@ -28,4 +28,11 @@ public interface PcePathUpdateListener {
      */
     void updatePath(PcePathReport reportInfo);
 
+    /**
+     * Reports any error in instantiating a path.
+     *
+     * @param reportInfo path report information's
+     */
+    void reportError();
+
 }

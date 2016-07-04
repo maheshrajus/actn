@@ -104,6 +104,8 @@ import org.onosproject.pce.pceservice.constraint.SharedBandwidthConstraint;
 import org.onosproject.pce.pcestore.PcePathInfo;
 import org.onosproject.pce.pcestore.api.PceStore;
 import org.onosproject.pcep.api.DeviceCapability;
+import org.onosproject.pcep.api.PcepSrpStore;
+import org.onosproject.pcep.api.SrpIdMapping;
 import org.onosproject.pcep.api.TeLinkConfig;
 import org.onosproject.store.serializers.KryoNamespaces;
 import org.onosproject.store.service.DistributedSet;
@@ -124,6 +126,8 @@ import static org.onosproject.incubator.net.tunnel.Tunnel.State.INIT;
 import static org.onosproject.incubator.net.tunnel.Tunnel.State.ESTABLISHED;
 import static org.onosproject.incubator.net.tunnel.Tunnel.State.ACTIVE;
 import static org.onosproject.incubator.net.tunnel.Tunnel.State.UNSTABLE;
+import static org.onosproject.incubator.net.tunnel.Tunnel.State.INVALID;
+import static org.onosproject.incubator.net.tunnel.Tunnel.State.FAILED;
 import static org.onosproject.pce.pceservice.LspType.WITH_SIGNALLING;
 import static org.onosproject.pce.pceservice.LspType.SR_WITHOUT_SIGNALLING;
 import static org.onosproject.pce.pceservice.LspType.WITHOUT_SIGNALLING_AND_WITHOUT_SR;
@@ -190,6 +194,9 @@ public class PceManager implements PceService {
 
     @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
     protected PceStore pceStore;
+
+    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    protected PcepSrpStore pceSrpStore;
 
     @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
     protected TunnelService tunnelService;
@@ -951,6 +958,11 @@ public class PceManager implements PceService {
     }
 
     @Override
+    public Collection<Tunnel> queryPath(TunnelEndPoint src, TunnelEndPoint dst) {
+        return tunnelService.queryTunnel(src, dst);
+    }
+
+    @Override
     public Iterable<Tunnel> queryPath(String vnName) {
         // TODO: query tunnels by vn name
         return tunnelService.queryTunnel(MDMPLS);
@@ -1026,7 +1038,7 @@ public class PceManager implements PceService {
      * @param remove whether to send remove tunnel or not
      * @return none
      */
-    private void reportTunnelToListeners(Tunnel tunnel, boolean success, boolean remove) {
+    private void reportTunnelToListeners(Tunnel tunnel, boolean success, boolean remove, int srpId) {
         PcePathReport.State state;
 
         if (tunnel.annotations().value(VN_NAME) != null) {
@@ -1038,6 +1050,7 @@ public class PceManager implements PceService {
 
             PcePathReport report = DefaultPcePathReport.builder()
                     .pathName(tunnel.tunnelName().toString())
+                    .srpId(String.valueOf(srpId))
                     .plspId(tunnel.annotations().value(PcepAnnotationKeys.PLSP_ID))
                     .localLspId(tunnel.annotations().value(PcepAnnotationKeys.LOCAL_LSP_ID))
                     .pceTunnelId(tunnel.annotations().value(PcepAnnotationKeys.PCC_TUNNEL_ID))
@@ -1052,6 +1065,21 @@ public class PceManager implements PceService {
 
             pcePathUpdateListener.forEach(item -> item.updatePath(report));
         }
+    }
+
+    private int getMdscSrpId(String pathName) {
+        SrpIdMapping srpIdMapping = pceSrpStore.getSrpIdMapping(pathName);
+        if (srpIdMapping == null) {
+            return 0;
+        }
+
+        if (srpIdMapping.pncSrpId() == srpIdMapping.rptSrpId()) {
+            int mdscSrpId = srpIdMapping.mdscSrpId();
+            pceSrpStore.removeSrpIdMapping(pathName);
+            return mdscSrpId;
+        }
+
+        return 0;
     }
 
     /**
@@ -1171,7 +1199,7 @@ public class PceManager implements PceService {
                     && !tunnel.state().equals(Tunnel.State.FAILED)) {
 
                 if (tunnel.annotations().value(VN_NAME) != null && tunnel.type() == MPLS) {
-                    reportTunnelToListeners(tunnel, false, false);
+                    reportTunnelToListeners(tunnel, false, false, 0);
                 } else {
                     // If updation fails store in PCE store as failed path
                     // then PCInitiate (Remove)
@@ -1590,7 +1618,8 @@ public class PceManager implements PceService {
                     reserveBandwidth(tunnel.path(), bwConstraintValue, null);
                 }
                 if (tunnel.state() == ACTIVE) {
-                    reportTunnelToListeners(tunnel, true, false);
+                    int srpId = getMdscSrpId(tunnel.tunnelName().value());
+                    reportTunnelToListeners(tunnel, true, false, srpId);
                     updatePceStoreTunnelStatus(tunnel.tunnelId(), tunnel.state());
                 }
                 break;
@@ -1630,11 +1659,19 @@ public class PceManager implements PceService {
                     pceStore.addFailedPathInfo(new PcePathInfo(links.get(0).src().deviceId(),
                                                                   links.get(links.size() - 1).dst().deviceId(),
                                                                   tunnel.tunnelName().value(), constraints, lspType));
-                }
-
-                if (tunnel.state() == ACTIVE) {
-                    reportTunnelToListeners(tunnel, true, false);
+                } else if (tunnel.state() == ACTIVE) {
+                    int srpId = getMdscSrpId(tunnel.tunnelName().value());
+                    reportTunnelToListeners(tunnel, true, false, srpId);
                     updatePceStoreTunnelStatus(tunnel.tunnelId(), tunnel.state());
+                } else if (tunnel.state() == INVALID) {
+                    // Send protocol error message to the caller.
+                    pcePathUpdateListener.forEach(item -> item.reportError());
+                    tunnelService.downTunnel(appId, tunnel.tunnelId());
+                } else if (tunnel.state() == FAILED && tunnel.type() == SDMPLS) {
+                    // Trigger MBB at MDLS - Find parent tunnel.
+                    TunnelId parentTunnelId = getPceStoreParentTunnel(tunnel.tunnelId());
+                    // For parent tunnel, MDSC will not be the master for source device.
+                    //updateFailedPath(queryPath(parentTunnelId));
                 }
 
                 break;
@@ -1660,7 +1697,8 @@ public class PceManager implements PceService {
                     pceStore.removeTunnelInfo(tunnel.tunnelId());
                 }
 
-                reportTunnelToListeners(tunnel, true, true);
+                int srpId = getMdscSrpId(tunnel.tunnelName().value());
+                reportTunnelToListeners(tunnel, true, true, srpId);
                 deletePceStoreTunnel(tunnel.tunnelId());
 
                 break;

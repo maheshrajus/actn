@@ -15,6 +15,7 @@
  */
 package org.onosproject.pcc.pccmgr.api;
 
+import org.onosproject.pcep.pcepio.protocol.PcepErrorMsg;
 import org.onosproject.pcep.pcepio.protocol.PcepMessage;
 
 /**
@@ -73,5 +74,15 @@ public interface PcepAgent {
      * @param pceId PCEP client ID
      */
     void deleteNode(PceId pceId);
+
+    /**
+     * Returns pcep error message with specific error type and value.
+     *
+     * @param pc PCEP client
+     * @param errorType pcep error type
+     * @param errorValue pcep error value
+     * @return pcep error message
+     */
+    PcepErrorMsg prepareErrMsg(PcepClientDriver pc, byte errorType, byte errorValue);
 
 }

@@ -28,6 +28,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 public final class DefaultPcePathReport implements PcePathReport {
 
     private String pathName;
+    private String srpId;
     private String plspId;
     private String localLspId;
     private String pceTunnelId;
@@ -86,6 +87,11 @@ public final class DefaultPcePathReport implements PcePathReport {
     @Override
     public String pathName() {
         return pathName;
+    }
+
+    @Override
+    public String srpId() {
+        return srpId;
     }
 
     @Override
@@ -225,6 +231,7 @@ public final class DefaultPcePathReport implements PcePathReport {
      */
     public static final class Builder implements PcePathReport.Builder {
         private String pathName;
+        private String srpId;
         private String plspId;
         private String localLspId;
         private String pceTunnelId;
@@ -243,6 +250,12 @@ public final class DefaultPcePathReport implements PcePathReport {
         @Override
         public Builder pathName(String name) {
             this.pathName = name;
+            return this;
+        }
+
+        @Override
+        public Builder srpId(String srpId) {
+            this.srpId = srpId;
             return this;
         }
 
