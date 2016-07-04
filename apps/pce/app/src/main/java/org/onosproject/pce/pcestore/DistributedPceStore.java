@@ -581,7 +581,7 @@ public class DistributedPceStore implements PceStore {
         if (parentChildTunnelStatusMap.get(parentId) != null) {
             Map<TunnelId, State> childTunnels = parentChildTunnelStatusMap.get(parentId).value();
             for (Map.Entry<TunnelId, State> childTunnel : childTunnels.entrySet()) {
-                if (!childTunnel.getValue().equals(State.ESTABLISHED)) {
+                if (!childTunnel.getValue().equals(State.ACTIVE)) {
                     return false;
                 }
             }
