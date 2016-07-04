@@ -89,11 +89,14 @@ import org.onosproject.pcep.pcepio.types.PcepValueType;
 import org.onosproject.pcep.pcepio.types.StatefulIPv4LspIdentifiersTlv;
 import org.onosproject.pcep.pcepio.types.SymbolicPathNameTlv;
 import org.onosproject.pcep.controller.LspType;
+import org.onosproject.pcep.pcepio.protocol.PcepAttribute;
+import org.onosproject.pcep.pcepio.protocol.PcepBandwidthObject;
 import org.onosproject.pcep.controller.SrpIdGenerators;
 import org.onosproject.pcep.controller.PcepAnnotationKeys;
 import org.osgi.service.component.ComponentContext;
 import org.slf4j.Logger;
 
+import static org.onosproject.pcep.controller.PcepAnnotationKeys.BANDWIDTH;
 import static org.onosproject.pcep.controller.PcepAnnotationKeys.DELEGATE;
 import static org.onosproject.pcep.controller.PcepAnnotationKeys.LSP_SIG_TYPE;
 import static org.onosproject.pcep.controller.PcepAnnotationKeys.PCE_INIT;
@@ -539,8 +542,23 @@ public class BgpcepFlowRuleProvider extends AbstractProvider
                               .setSubObjects(subObjects)
                               .build();
 
+        float  iBandwidth = 0;
+        if (tunnel.annotations().value(BANDWIDTH) != null) {
+            //iBandwidth = Float.floatToIntBits(Float.parseFloat(tunnel.annotations().value(BANDWIDTH)));
+            iBandwidth = Float.parseFloat(tunnel.annotations().value(BANDWIDTH));
+        }
+        // build bandwidth object
+        PcepBandwidthObject bandwidthObject = pc.factory().buildBandwidthObject()
+                                              .setBandwidth(iBandwidth)
+                                              .build();
+        // build pcep attribute
+        PcepAttribute pcepAttribute = pc.factory().buildPcepAttribute()
+                                      .setBandwidthObject(bandwidthObject)
+                                      .build();
+
         PcepMsgPath msgPath = pc.factory().buildPcepMsgPath()
                               .setEroObject(eroObj)
+                              .setPcepAttribute(pcepAttribute)
                               .build();
 
         PcepUpdateRequest updateReq = pc.factory().buildPcepUpdateRequest()

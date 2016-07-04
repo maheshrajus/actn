@@ -498,6 +498,8 @@ public class BgpTopologyProvider extends AbstractProvider implements DeviceProvi
             switch (tlv.getType()) {
             case LinkStateAttributes.ATTR_LINK_MAX_RES_BANDWIDTH:
                 maxReservableBw = ((BgpLinkAttrMaxLinkBandwidth) tlv).linkAttrMaxLinkBandwidth();
+                //will get in bits/second , convert to MBPS to store in network config service
+                maxReservableBw = maxReservableBw / 1000000;
                 break;
             case LinkStateAttributes.ATTR_LINK_UNRES_BANDWIDTH:
                 unreservedBw = ((BgpLinkAttrUnRsrvdLinkBandwidth) tlv).getLinkAttrUnRsrvdLinkBandwidth();

@@ -65,6 +65,7 @@ import org.onosproject.net.Path;
 import org.onosproject.net.PortNumber;
 import org.onosproject.net.SparseAnnotations;
 import org.onosproject.net.device.DeviceService;
+import org.onosproject.net.link.LinkService;
 import org.onosproject.net.provider.AbstractProvider;
 import org.onosproject.net.provider.ProviderId;
 import org.onosproject.pcep.api.PcepController;
@@ -220,6 +221,9 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
 
     @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
     protected DeviceService deviceService;
+
+    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    protected LinkService linkService;
 
     TunnelProviderService service;
     HashMap<String, TunnelId> tunnelMap = new HashMap<String, TunnelId>();
@@ -994,9 +998,9 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
         //build ERO object
         PcepEroObject eroobj = pc.factory().buildEroObject().setSubObjects(llSubObjects).build();
 
-        int  iBandwidth = DEFAULT_BANDWIDTH_VALUE;
+        float  iBandwidth = DEFAULT_BANDWIDTH_VALUE;
         if (tunnel.annotations().value(BANDWIDTH) != null) {
-            iBandwidth = Float.floatToIntBits(Float.parseFloat(tunnel.annotations().value(BANDWIDTH)));
+            iBandwidth = Float.valueOf(tunnel.annotations().value(BANDWIDTH));
         }
         // build bandwidth object
         PcepBandwidthObject bandwidthObject = pc.factory().buildBandwidthObject().setBandwidth(iBandwidth).build();
@@ -1796,12 +1800,29 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
 
                     IPv4SubObject ipv4SubObj = (IPv4SubObject) subObj;
                     if (!isSrcSet) {
-                        IpAddress srcIp = IpAddress.valueOf(ipv4SubObj.getIpAddress());
-                        src = new ConnectPoint(IpElementId.ipElement(srcIp), PortNumber.portNumber(0));
-                        isSrcSet = true;
-                    } else {
-                        IpAddress dstIp = IpAddress.valueOf(ipv4SubObj.getIpAddress());
-                        dst = new ConnectPoint(IpElementId.ipElement(dstIp), PortNumber.portNumber(0));
+                            Iterable<Link> links = linkService.getActiveLinks();
+                            for (Link l : links) {
+                                if (l.src().port().equals(PortNumber.portNumber(ipv4SubObj.getIpAddress()))) {
+                                    src = l.src();
+                                    isSrcSet = true;
+                                    break;
+                                } else if (l.dst().port().equals(PortNumber.portNumber(ipv4SubObj.getIpAddress()))) {
+                                    src = l.dst();
+                                    isSrcSet = true;
+                                    break;
+                                }
+                            }
+                        } else {
+                            Iterable<Link> links = linkService.getActiveLinks();
+                            for (Link l : links) {
+                                if (l.src().port().equals(PortNumber.portNumber(ipv4SubObj.getIpAddress()))) {
+                                    dst = l.src();
+                                    break;
+                                } else if (l.dst().port().equals(PortNumber.portNumber(ipv4SubObj.getIpAddress()))) {
+                                    dst = l.dst();
+                                    break;
+                                }
+                            }
                         Link link = DefaultLink.builder()
                                 .providerId(providerId)
                                 .src(src)
