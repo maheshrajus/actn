@@ -1555,7 +1555,6 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
                 log.error("ERO object is null in report message.");
                 return;
             }
-
             PcepAttribute attributes = msgPath.getPcepAttribute();
             float bandwidth = 0;
             int cost = 0;
@@ -1582,7 +1581,6 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
                     bandwidth = attributes.getBandwidthObject().getBandwidth();
                 }
             }
-
             List<Object> eroSubObjList = buildPathFromEroObj(eroObj, providerId);
             List<Link> links = new ArrayList<>();
             List<LabelResourceId> labels = new ArrayList<>();
@@ -1593,20 +1591,16 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
                     labels.add(LabelResourceId.labelResourceId(((Integer) linkOrLabel).longValue()));
                 }
             }
-
             Path path = new DefaultPath(providerId, links, cost, EMPTY);
             NetworkResource labelStack = new DefaultLabelStack(labels);
-
             // To carry PST TLV, SRP object can be present with value 0 even when PCRpt is not in response to any action
             // from PCE.
             PcepSrpObject srpObj = stateRpt.getSrpObject();
             LspType lspType = getLspType(srpObj);
-
             PcepLspObject lspObj = stateRpt.getLspObject();
             ListIterator<PcepValueType> listTlvIterator = lspObj.getOptionalTlv().listIterator();
             StatefulIPv4LspIdentifiersTlv ipv4LspIdenTlv = null;
             SymbolicPathNameTlv pathNameTlv = null;
-
             while (listTlvIterator.hasNext()) {
                 PcepValueType tlv = listTlvIterator.next();
                 switch (tlv.getType()) {
@@ -1628,13 +1622,11 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
                 log.error("Stateful IPv4 identifier TLV is null in PCRpt msg.");
                 return;
             }
-
             IpTunnelEndPoint tunnelEndPointSrc = IpTunnelEndPoint
                     .ipTunnelPoint(IpAddress.valueOf(ipv4LspIdenTlv.getIpv4IngressAddress()));
             IpTunnelEndPoint tunnelEndPointDst = IpTunnelEndPoint
                     .ipTunnelPoint(IpAddress.valueOf(ipv4LspIdenTlv.getIpv4EgressAddress()));
             Collection<Tunnel> tunnelQueryResult = tunnelService.queryTunnel(tunnelEndPointSrc, tunnelEndPointDst);
-
             // Store delegation flag info and that LSP info because only delegated PCE sends update message
             // Storing if D flag is set, if not dont store. while checking whether delegation if annotation for D flag
             // not present then non-delegated , if present it is delegated.
@@ -1642,7 +1634,6 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
                 pcepClientController.getClient(pccId).setLspAndDelegationInfo(
                         new LspKey(lspObj.getPlspId(), ipv4LspIdenTlv.getLspId()), lspObj.getDFlag());
             }
-
             Tunnel tunnel = null;
             // Asynchronous status change message from PCC for LSP reported earlier.
             for (Tunnel tunnelObj : tunnelQueryResult) {
@@ -1667,7 +1658,6 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
                     break;
                 }
             }
-
             DefaultTunnelDescription td;
             SparseAnnotations annotations = null;
             State tunnelState = PcepLspStatus.getTunnelStatusFromLspStatus(PcepLspStatus.values()[lspObj.getOFlag()]);
@@ -1735,10 +1725,16 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
 
             //delegated owner will update can be a master or non-master
             if (lspObj.getDFlag()) {
-                annotations = getAnnotations(lspObj, ipv4LspIdenTlv, bandwidth, lspType, costType);
-                td = new DefaultTunnelDescription(null, tunnelEndPointSrc, tunnelEndPointDst, tunnel.type(),
-                        new DefaultGroupId(0), providerId, TunnelName.tunnelName(new String(pathNameTlv.getValue())),
-                        path, labelStack, annotations);
+
+                if (tunnel.annotations().value(BANDWIDTH) != null) {
+                    bandwidth = Float.parseFloat(tunnel.annotations().value(BANDWIDTH));
+                }
+                annotations = getAnnotations(lspObj, ipv4LspIdenTlv,
+                        bandwidth, lspType,
+                        tunnel.annotations().value(COST_TYPE));
+                td = new DefaultTunnelDescription(null, tunnelEndPointSrc, tunnelEndPointDst, MPLS, new DefaultGroupId(
+                        0), providerId, TunnelName.tunnelName(new String(pathNameTlv.getValue())),
+                        tunnel.path(), labelStack, annotations);
                 tunnelUpdateInDelegatedCase(pccId, annotations, td, providerId);
             }
             removeOrUpdatetunnel(tunnel, pccId, lspObj, providerId, tunnelState);
