@@ -1559,7 +1559,6 @@ public class PceManager implements PceService {
         }
         // TODO: After shashi rework
         pceStore.updateTunnelStatus(tunnel, status);
-        return;
     }
 
     public void deletePceStoreTunnel(TunnelId tunnel) {
@@ -1571,7 +1570,6 @@ public class PceManager implements PceService {
         }
 
         pceStore.removeChildTunnel(tunnelId, tunnel);
-        return;
     }
 
     // Listens on tunnel events.
@@ -1677,7 +1675,6 @@ public class PceManager implements PceService {
             default:
                 break;
             }
-            return;
         }
     }
 

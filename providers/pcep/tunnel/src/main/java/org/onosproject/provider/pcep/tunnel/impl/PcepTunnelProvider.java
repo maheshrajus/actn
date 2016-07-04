@@ -177,7 +177,6 @@ import static org.slf4j.LoggerFactory.getLogger;
 @Component(immediate = true)
 @Service
 public class PcepTunnelProvider extends AbstractProvider implements TunnelProvider {
-
     private static final Logger log = getLogger(PcepTunnelProvider.class);
     private static final long MAX_BANDWIDTH = 99999744;
     private static final long MIN_BANDWIDTH = 64;
@@ -221,13 +220,10 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
     protected DeviceService deviceService;
 
     TunnelProviderService service;
-
     HashMap<String, TunnelId> tunnelMap = new HashMap<String, TunnelId>();
     HashMap<TunnelId, TunnelStatistics> tunnelStatisticsMap = new HashMap<>();
     private HashMap<String, TunnelStatsCollector> collectors = Maps.newHashMap();
-
     private InnerTunnelProvider listener = new InnerTunnelProvider();
-
     protected PcepTunnelApiMapper pcepTunnelApiMapper = new PcepTunnelApiMapper();
     private static final int DEFAULT_BANDWIDTH_VALUE = 10;
 
@@ -250,9 +246,7 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
             TunnelStatsCollector tsc = new TunnelStatsCollector(pcepTunnelId, tunnelStatsPollFrequency);
             tsc.start();
             collectors.put(tunnel.tunnelId().id(), tsc);
-
         });
-
         log.info("Started");
     }
 
@@ -272,17 +266,14 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
         try {
             String s = get(properties, "tunnelStatsPollFrequency");
             newTunnelStatsPollFrequency = isNullOrEmpty(s) ? tunnelStatsPollFrequency : Integer.parseInt(s.trim());
-
         } catch (NumberFormatException | ClassCastException e) {
             newTunnelStatsPollFrequency = tunnelStatsPollFrequency;
         }
-
         if (newTunnelStatsPollFrequency != tunnelStatsPollFrequency) {
             tunnelStatsPollFrequency = newTunnelStatsPollFrequency;
             collectors.values().forEach(tsc -> tsc.adjustPollInterval(tunnelStatsPollFrequency));
             log.info("New setting: tunnelStatsPollFrequency={}", tunnelStatsPollFrequency);
         }
-
     }
 
     @Override
@@ -290,7 +281,6 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
         //for parent MPLS nothing to process and finally this status will be set to UP after all
         // child tunnels are UP. This will be done by PCE app.
         if ((tunnel.type() != MPLS) && (tunnel.type() != SDMPLS)) {
-            log.error("Tunnel Type MPLS/SDMPLS are only supported");
             return;
         }
 
@@ -302,7 +292,6 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
 
         // Get the pcc client
         PcepClient pc = pcepClientController.getClient(PccId.pccId(((IpTunnelEndPoint) tunnel.src()).ip()));
-
         if (!(pc instanceof PcepClient)) {
             log.error("There is no PCC connected with ip addresss {}"
                               + ((IpTunnelEndPoint) tunnel.src()).ip().toString());
@@ -319,7 +308,6 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
     @Override
     public void setupTunnel(ElementId srcElement, Tunnel tunnel, Path path) {
 
-        //TODO: tunnel which is passed doesn't have tunnelID
         if (tunnel.annotations().value(PLSP_ID) != null) {
             updateTunnel(tunnel, path);
             return;
@@ -327,7 +315,6 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
         //for parent MPLS nothing to process and finally this status will be set to UP after all
         // child tunnels are UP. This will be done by PCE app.
         if ((tunnel.type() != MPLS)  && (tunnel.type() != SDMPLS)) {
-            log.error("Tunnel Type MPLS/SDMPLS are only supported");
             return;
         }
 
@@ -338,7 +325,6 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
         }
 
         PcepClient pc = pcepClientController.getClient(PccId.pccId(((IpTunnelEndPoint) tunnel.src()).ip()));
-
         if (!(pc instanceof PcepClient)) {
             log.error("There is no PCC connected with this device {}"
                     + srcElement.toString());
@@ -355,19 +341,13 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
 
     @Override
     public void releaseTunnel(Tunnel tunnel) {
-
         if ((tunnel.type() != MPLS)  && (tunnel.type() != SDMPLS)) {
             if (tunnel.type() == MDMPLS) {
                 log.error("Tunnel Type should not be MDMPLS");
                 TunnelDescription td = new DefaultTunnelDescription(tunnel.tunnelId(),
-                        tunnel.src(), tunnel.dst(),
-                        tunnel.type(),
-                        tunnel.groupId(),
-                        tunnel.providerId(),
-                        tunnel.tunnelName(),
-                        tunnel.path(),
+                        tunnel.src(), tunnel.dst(), tunnel.type(), tunnel.groupId(),
+                        tunnel.providerId(), tunnel.tunnelName(), tunnel.path(),
                         (SparseAnnotations) tunnel.annotations());
-
                 tunnelRemoved(td);
                 return;
             }
@@ -382,7 +362,6 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
         }
 
         PcepClient pc = pcepClientController.getClient(PccId.pccId(((IpTunnelEndPoint) tunnel.src()).ip()));
-
         if (!(pc instanceof PcepClient)) {
             log.error("There is no PCC connected with ip addresss {}"
                     + ((IpTunnelEndPoint) tunnel.src()).ip().toString());
@@ -390,8 +369,7 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
         }
 
         //Only master will release tunnel
-        if (pc.capability().pcInstantiationCapability()
-                && mastershipService.isLocalMaster(getDevice(pc.getPccId()))) {
+        if (pc.capability().pcInstantiationCapability() && mastershipService.isLocalMaster(getDevice(pc.getPccId()))) {
             pcepReleaseTunnel(tunnel, pc);
         }
     }
@@ -402,14 +380,9 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
             if (tunnel.type() == MDMPLS) {
                 log.error("Tunnel Type should not be MDMPLS");
                 TunnelDescription td = new DefaultTunnelDescription(tunnel.tunnelId(),
-                        tunnel.src(), tunnel.dst(),
-                        tunnel.type(),
-                        tunnel.groupId(),
-                        tunnel.providerId(),
-                        tunnel.tunnelName(),
-                        tunnel.path(),
-                        (SparseAnnotations) tunnel.annotations());
-
+                        tunnel.src(), tunnel.dst(), tunnel.type(),
+                        tunnel.groupId(), tunnel.providerId(), tunnel.tunnelName(),
+                        tunnel.path(), (SparseAnnotations) tunnel.annotations());
                 tunnelRemoved(td);
                 return;
             }
@@ -429,7 +402,6 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
         }
 
         PcepClient pc = pcepClientController.getClient(PccId.pccId(((IpElementId) srcElement).ipAddress()));
-
         if (!(pc instanceof PcepClient)) {
             log.error("There is no PCC connected with ip addresss {}"
                     + ((IpElementId) srcElement).ipAddress().toString());
@@ -437,8 +409,7 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
         }
 
         //Only master will release tunnel
-        if (pc.capability().pcInstantiationCapability()
-                && mastershipService.isLocalMaster(getDevice(pc.getPccId()))) {
+        if (pc.capability().pcInstantiationCapability() && mastershipService.isLocalMaster(getDevice(pc.getPccId()))) {
             pcepReleaseTunnel(tunnel, pc);
         }
     }
@@ -448,7 +419,6 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
         //for parent MPLS nothing to process and finally this status will be set to UP after all
         // child tunnels are UP. This will be done by PCE app.
         if ((tunnel.type() != MPLS)  && (tunnel.type() != SDMPLS)) {
-            log.error("Tunnel Type MPLS/SDMPLS are only supported");
             return;
         }
 
@@ -463,19 +433,13 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
         for (Tunnel t : tunnels) {
             if (t.state().equals(INIT) && t.tunnelName().equals(tunnel.tunnelName())) {
                 tunnel = new DefaultTunnel(tunnel.providerId(), tunnel.src(),
-                        tunnel.dst(), tunnel.type(),
-                        t.state(), tunnel.groupId(),
-                        t.tunnelId(),
-                        tunnel.tunnelName(),
-                        tunnel.path(),
-                        tunnel.resource(),
-                        tunnel.annotations());
+                        tunnel.dst(), tunnel.type(), t.state(), tunnel.groupId(),
+                        t.tunnelId(), tunnel.tunnelName(), tunnel.path(), tunnel.resource(), tunnel.annotations());
                         break;
             }
         }
 
         PcepClient pc = pcepClientController.getClient(PccId.pccId(((IpTunnelEndPoint) tunnel.src()).ip()));
-
         if (!(pc instanceof PcepClient)) {
             log.error("There is no PCC connected with ip addresss {}"
                     + ((IpTunnelEndPoint) tunnel.src()).ip().toString());
@@ -513,7 +477,6 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
         //for parent MPLS nothing to process and finally this status will be set to UP after all
         // child tunnels are UP. This will be done by PCE app.
         if ((tunnel.type() != MPLS)  && (tunnel.type() != SDMPLS)) {
-            log.error("Tunnel Type MPLS/SDMPLS are only supported");
             return;
         }
 
@@ -529,7 +492,6 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
         }
 
         PcepClient pc = pcepClientController.getClient(PccId.pccId(((IpElementId) srcElement).ipAddress()));
-
         if (!(pc instanceof PcepClient)) {
             log.error("There is no PCC connected with ip addresss {}"
                     + ((IpElementId) srcElement).ipAddress().toString());
@@ -556,14 +518,12 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
     }
 
     private TunnelId handleTunnelAdded(TunnelDescription tunnel, State tunnelState) {
-
         if (tunnel.type() == MDMPLS) {
              return null;
         }
 
         if ((tunnel.type() == MPLS)  || (tunnel.type() == SDMPLS)) {
             pcepTunnelApiMapper.removeFromCoreTunnelRequestQueue(tunnel.id());
-
             if (tunnelState == null) {
                 return service.tunnelAdded(tunnel);
             } else {
@@ -572,15 +532,13 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
         }
 
         long bandwidth = Long.parseLong(tunnel.annotations().value(BANDWIDTH));
-
         if (bandwidth < MIN_BANDWIDTH || bandwidth > MAX_BANDWIDTH) {
             error("Update failed, invalid bandwidth.");
             return null;
         }
 
         // endpoints
-        OpticalTunnelEndPoint src = (org.onosproject.incubator.net.tunnel.OpticalTunnelEndPoint) tunnel
-                .src();
+        OpticalTunnelEndPoint src = (org.onosproject.incubator.net.tunnel.OpticalTunnelEndPoint) tunnel.src();
         OpticalTunnelEndPoint dst = (OpticalTunnelEndPoint) tunnel.dst();
         // devices
         DeviceId srcId = (DeviceId) src.elementId().get();
@@ -597,14 +555,10 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
         }
 
         PcepTunnel pcepTunnel = controller.applyTunnel(srcId, dstId, srcPort,
-                                                       dstPort, bandwidth,
-                                                       tunnel.tunnelName()
-                                                       .value());
-
+                                                       dstPort, bandwidth, tunnel.tunnelName().value());
         checkNotNull(pcepTunnel, TUNNLE_NOT_NULL);
         TunnelDescription tunnelAdded = buildOpticalTunnel(pcepTunnel, null);
         TunnelId tunnelId = service.tunnelAdded(tunnelAdded);
-
         tunnelMap.put(String.valueOf(pcepTunnel.id()), tunnelId);
         return tunnelId;
     }
@@ -620,9 +574,7 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
         }
         if ((tunnel.type() == MPLS)  || (tunnel.type() == SDMPLS)) {
             pcepTunnelApiMapper.removeFromCoreTunnelRequestQueue(tunnel.tunnelId());
-
             tunnelAdminService.updateTunnel(tunnel, path);
-
             return;
         }
 
@@ -632,14 +584,12 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
             return;
         }
 
-        long bandwidth = Long
-                .parseLong(tunnel.annotations().value("bandwidth"));
+        long bandwidth = Long.parseLong(tunnel.annotations().value("bandwidth"));
         if (bandwidth < MIN_BANDWIDTH || bandwidth > MAX_BANDWIDTH) {
             error("Update failed, invalid bandwidth.");
             return;
         }
         String pcepTunnelId = getPcepTunnelKey(tunnel.tunnelId());
-
         checkNotNull(pcepTunnelId, "Invalid tunnel id");
         if (!controller.updateTunnelBandwidth(pcepTunnelId, bandwidth)) {
             error("Update failed,maybe invalid bandwidth.");
@@ -650,7 +600,6 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
 
     @Override
     public void tunnelRemoved(TunnelDescription tunnel) {
-
         if ((tunnel.type() == MPLS)  || (tunnel.type() == SDMPLS) || (tunnel.type() == MDMPLS)) {
             pcepTunnelApiMapper.removeFromCoreTunnelRequestQueue(tunnel.id());
             service.tunnelRemoved(tunnel);
@@ -686,10 +635,8 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
         if (tunnel.type() == MDMPLS) {
             return;
         }
-
         if ((tunnel.type() == MPLS)  || (tunnel.type() == SDMPLS)) {
             pcepTunnelApiMapper.removeFromCoreTunnelRequestQueue(tunnel.id());
-
             if (tunnelState == null) {
                 service.tunnelUpdated(tunnel);
             } else {
@@ -703,8 +650,7 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
             error("Illegal tunnel type. Only support VLAN tunnel update.");
             return;
         }
-        long bandwidth = Long
-                .parseLong(tunnel.annotations().value("bandwidth"));
+        long bandwidth = Long.parseLong(tunnel.annotations().value("bandwidth"));
         if (bandwidth < MIN_BANDWIDTH || bandwidth > MAX_BANDWIDTH) {
             error("Update failed, invalid bandwidth.");
             return;
@@ -713,10 +659,8 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
 
         checkNotNull(pcepTunnelId, "Invalid tunnel id");
         if (!controller.updateTunnelBandwidth(pcepTunnelId, bandwidth)) {
-
             error("Update failed,maybe invalid bandwidth.");
             return;
-
         }
         service.tunnelUpdated(tunnel);
     }
@@ -733,11 +677,8 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
     // Short-hand for creating a link.
     private Link link(PcepDpid src, long sp, PcepDpid dst, long dp) {
         return DefaultLink.builder()
-                .providerId(id())
-                .src(connectPoint(src, sp))
-                .dst(connectPoint(dst, dp))
-                .type(Link.Type.TUNNEL)
-                .build();
+                .providerId(id()).src(connectPoint(src, sp)).dst(connectPoint(dst, dp))
+                .type(Link.Type.TUNNEL).build();
     }
 
     // Creates a path that leads through the given devices.
@@ -840,20 +781,10 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
                     .builder()
                     .set("underLayTunnelIndex",
                          String.valueOf(pcepTunnel.underlayTunnelId())).build();
-            annotations = DefaultAnnotations.merge(annotations,
-                                                   extendAnnotations);
-
+            annotations = DefaultAnnotations.merge(annotations, extendAnnotations);
         }
-        TunnelDescription tunnel = new DefaultTunnelDescription(
-                                                                tunnelId,
-                                                                srcPoint,
-                                                                dstPoint,
-                                                                tunnelType,
-                                                                new DefaultGroupId(
-                                                                                   0),
-                                                                id(), name,
-                                                                path,
-                                                                annotations);
+        TunnelDescription tunnel = new DefaultTunnelDescription(tunnelId, srcPoint, dstPoint, tunnelType,
+                                                                new DefaultGroupId(0), id(), name, path, annotations);
         return tunnel;
     }
 
@@ -937,7 +868,6 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
             subObj = new IPv4SubObject(ipDstAddress.getIp4Address().toInt());
             llSubObjects.add(subObj);
         }
-
         return llSubObjects;
     }
 
@@ -950,7 +880,6 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
      */
     private LinkedList<PcepValueType> createPcepLabelStack(DefaultLabelStack labelStack, Path path) {
         checkNotNull(labelStack);
-
         LinkedList<PcepValueType> llSubObjects = new LinkedList<PcepValueType>();
         Iterator<Link> links = path.links().iterator();
         LabelResourceId label = null;
@@ -967,7 +896,6 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
 
             srcPortNo = link.src().port().toLong();
             srcPortNo = ((srcPortNo & IDENTIFIER_SET) == IDENTIFIER_SET) ? srcPortNo & SET : srcPortNo;
-
             dstPortNo = link.dst().port().toLong();
             dstPortNo = ((dstPortNo & IDENTIFIER_SET) == IDENTIFIER_SET) ? dstPortNo & SET : dstPortNo;
 
@@ -975,7 +903,6 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
             subObj = new SrEroSubObject(PcepNaiIpv4Adjacency.ST_TYPE, false, false, false, true, (int) label.labelId(),
                                         nai);
             llSubObjects.add(subObj);
-
             dstNode = deviceService.getDevice(link.dst().deviceId());
             nai = new PcepNaiIpv4NodeId(Ip4Address.valueOf(dstNode.annotations().value(LSRID)).toInt());
 
@@ -1083,15 +1010,12 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
 
             String vn = tunnel.annotations().value(VN_NAME);
             VirtualNetworkTlv vnTlv = new VirtualNetworkTlv(vn.getBytes());
-
             llOptionalTlv.add(vnTlv);
-
             // TODO : need to set vn Association Type, ID, Source may need to get from tunnel
             PcepAssociationObject associationObj = pc.factory().buildAssociationObject().setAssociationID((short) 1)
                     .setAssociationSource(0x01010101).setAssociationType((short) 224)
                     .setOptionalTlv(llOptionalTlv).build();
             llAssociationObj.add(associationObj);
-
             initiateLspReqBldr.setAssociationObjectList(llAssociationObj);
         }
 
@@ -1797,9 +1721,9 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
             //delegated owner will update can be a master or non-master
             if (lspObj.getDFlag()) {
                 annotations = getAnnotations(lspObj, ipv4LspIdenTlv, bandwidth, lspType, costType);
-                td = new DefaultTunnelDescription(null, tunnelEndPointSrc, tunnelEndPointDst, MPLS, new DefaultGroupId(
-                        0), providerId, TunnelName.tunnelName(new String(pathNameTlv.getValue())), path, labelStack,
-                        annotations);
+                td = new DefaultTunnelDescription(null, tunnelEndPointSrc, tunnelEndPointDst, tunnel.type(),
+                        new DefaultGroupId(0), providerId, TunnelName.tunnelName(new String(pathNameTlv.getValue())),
+                        path, labelStack, annotations);
                 tunnelUpdateInDelegatedCase(pccId, annotations, td, providerId);
             }
             removeOrUpdatetunnel(tunnel, pccId, lspObj, providerId, tunnelState);
@@ -2038,6 +1962,7 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
         public void run() {
             Collection<Tunnel> tunnelQueryResult = tunnelService.queryTunnel(td.src(), td.dst());
             TunnelId tempTunnelId = null;
+            Tunnel tempTunnel = null;
             for (Tunnel t : tunnelQueryResult) {
                 if (t.annotations().value(LOCAL_LSP_ID) == null ||  t.annotations().value(PLSP_ID) == null) {
                     continue;
@@ -2047,6 +1972,7 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
                         && t.annotations().value(PLSP_ID).equals(td.annotations().value(PLSP_ID))
                         && ((IpTunnelEndPoint) t.src()).ip().equals(pccId.id())) {
                     tempTunnelId = t.tunnelId();
+                    tempTunnel = t;
                     break;
                 }
             }
@@ -2054,8 +1980,8 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
             //If tunnel is found update the tunnel and shutdown the thread otherwise thread will be executing
             //periodically
             if (tempTunnelId != null) {
-                Tunnel tunnel = new DefaultTunnel(providerId, td.src(), td.dst(), MPLS, new DefaultGroupId(0),
-                        tempTunnelId, td.tunnelName(), td.path(), annotations);
+                Tunnel tunnel = new DefaultTunnel(providerId, td.src(), td.dst(), tempTunnel.type(),
+                        new DefaultGroupId(0), tempTunnelId, td.tunnelName(), td.path(), annotations);
                 tunnelUpdated(tunnel, td.path());
                 executor.shutdown();
                 try {
