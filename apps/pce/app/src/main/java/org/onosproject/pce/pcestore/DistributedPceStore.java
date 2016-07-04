@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.HashSet;
 import org.apache.felix.scr.annotations.Activate;
 import org.apache.felix.scr.annotations.Component;
 import org.apache.felix.scr.annotations.Deactivate;
@@ -102,9 +103,11 @@ public class DistributedPceStore implements PceStore {
     // Locally maintain LSRID to device id mapping for better performance.
     private Map<String, DeviceId> lsrIdDeviceIdMap = new HashMap<>();
 
+    // List of PCC LSR ids whose BGP device information was not available to perform
+    // label db sync.
+    private HashSet<DeviceId> pendinglabelDbSyncPccMap = new HashSet();
     // Locally maintain unreserved bandwidth of each link.
     private Map<LinkKey, Set<Double>> unResvBw = new HashMap<>();
-
     @Activate
     protected void activate() {
         globalNodeLabelMap = storageService.<DeviceId, LabelResourceId>consistentMapBuilder()
@@ -591,4 +594,23 @@ public class DistributedPceStore implements PceStore {
         }
         return false;
     }
+    @Override
+    public boolean addPccLsr(DeviceId lsrId) {
+        checkNotNull(lsrId);
+        pendinglabelDbSyncPccMap.add(lsrId);
+        return true;
+    }
+    @Override
+    public boolean removePccLsr(DeviceId lsrId) {
+        checkNotNull(lsrId);
+        pendinglabelDbSyncPccMap.remove(lsrId);
+        return true;
+    }
+    @Override
+    public boolean hasPccLsr(DeviceId lsrId) {
+        checkNotNull(lsrId);
+        return pendinglabelDbSyncPccMap.contains(lsrId);
+
+    }
+
 }

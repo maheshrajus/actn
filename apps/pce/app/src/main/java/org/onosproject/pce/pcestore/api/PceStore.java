@@ -312,4 +312,29 @@ public interface PceStore {
     State tunnelStatus(TunnelId tunnelId);
 
     boolean isAllChildUp(TunnelId parentId);
+    /**
+     * Adds lsrId of the PCC in form of device id for the PCC for which sync is pending due to non-availability of BGP.
+     * device.
+     *
+     * @param lsrId LSR id of the PCC in form of device id
+     * @return success or failure
+     */
+    public boolean addPccLsr(DeviceId lsrId);
+
+     /**
+     * Removes lsrId of the PCC in form of device id for the PCC for which pending sync is done.
+     *
+     * @param lsrId LSR id of the PCC in form of device id
+     * @return success or failure
+     */
+    public boolean removePccLsr(DeviceId lsrId);
+
+    /**
+     * Gets lsrId of the PCC in form of device id.
+     *
+     * @param lsrId LSR id of the PCC in form of device id
+     * @return success or failure
+     */
+    public boolean hasPccLsr(DeviceId lsrId);
+
 }
