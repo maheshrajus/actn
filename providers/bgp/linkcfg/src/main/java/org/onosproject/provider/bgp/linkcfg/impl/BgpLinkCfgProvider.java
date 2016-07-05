@@ -127,7 +127,9 @@ public class BgpLinkCfgProvider extends AbstractProvider {
                               nodes.get(i).srcInterface(), nodes.get(i).srcPort(),
                               DeviceId.deviceId(nodes.get(i).dstDeviceId()),
                               nodes.get(i).dstInterface(), nodes.get(i).dstPort(),
-                              nodes.get(i).maxReservedBandwidth());
+                              nodes.get(i).maxReservedBandwidth(),
+                              nodes.get(i).maxBandwidth(),
+                              nodes.get(i).unReservedBandwidth());
         }
     }
 
@@ -197,7 +199,9 @@ public class BgpLinkCfgProvider extends AbstractProvider {
                               nodes.get(i).srcInterface(), nodes.get(i).srcPort(),
                               DeviceId.deviceId(nodes.get(i).dstDeviceId()),
                               nodes.get(i).dstInterface(), nodes.get(i).dstPort(),
-                              nodes.get(i).maxReservedBandwidth());
+                              nodes.get(i).maxReservedBandwidth(),
+                              nodes.get(i).maxBandwidth(),
+                              nodes.get(i).unReservedBandwidth());
 
         }
     }

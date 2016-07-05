@@ -45,7 +45,9 @@ public class BgpAppLinkConfig extends Config<ApplicationId> {
     public static final String DST_DEVICEID = "destinationDeviceId";
     public static final String DST_INTERFACE = "destinationInterface";
     public static final String DST_PORT = "destinationPort";
-    public static final String MAX_RESERVED_BANDWIDTH = "maxReservedbandwidth";
+    public static final String MAX_RESERVED_BANDWIDTH = "maxReservableBandwidth";
+    public static final String MAX_BANDWIDTH = "maxBandwidth";
+    public static final String UN_RESERVED_BANDWIDTH = "unReservedBandwidth";
 
     public static final String BGP_LINK = "bgpLink";
 
@@ -124,10 +126,28 @@ public class BgpAppLinkConfig extends Config<ApplicationId> {
      *
      * @return amxx reserved bandwidth
      */
-    public Double maxReservetbandWidth() {
+    public Double maxReservedBandWidth() {
         return Double.parseDouble(get(MAX_RESERVED_BANDWIDTH, null));
     }
 
+    /**
+     * Returns reserved bandwidth.
+     *
+     * @return max reserved bandwidth
+     */
+    public Double maxBandWidth() {
+        return Double.parseDouble(get(MAX_BANDWIDTH, null));
+    }
+
+
+    /**
+     * Returns unreserved bandwidth.
+     *
+     * @return unreserved bandwidth
+     */
+    public Double unReservedBandWidth() {
+        return Double.parseDouble(get(UN_RESERVED_BANDWIDTH, null));
+    }
 
     /**
      * Validates the Bgp local and peer configuration.
@@ -185,7 +205,9 @@ public class BgpAppLinkConfig extends Config<ApplicationId> {
                 jsonNode.path(DST_DEVICEID).asText(),
                 IpAddress.valueOf(jsonNode.path(DST_INTERFACE).asText()),
                 jsonNode.path(DST_PORT).asInt(),
-                jsonNode.path(MAX_RESERVED_BANDWIDTH).asDouble())));
+                jsonNode.path(MAX_RESERVED_BANDWIDTH).asDouble(),
+                jsonNode.path(MAX_BANDWIDTH).asDouble(),
+                jsonNode.path(UN_RESERVED_BANDWIDTH).asDouble())));
 
         return nodes;
     }
@@ -202,9 +224,14 @@ public class BgpAppLinkConfig extends Config<ApplicationId> {
         private final IpAddress dstInterface;
         private final Integer dstPort;
         private final Double maxReservedBandwidth;
+        private final Double maxBandwidth;
+        private final Double unReservedBandwidth;
 
         public BgpLinkConfig(String srcDeviceId, IpAddress srcInterface, Integer srcPort, String dstDeviceId,
-                             IpAddress dstInterface, Integer dstPort, Double maxReservedBandwidth) {
+                             IpAddress dstInterface, Integer dstPort,
+                             Double maxReservedBandwidth,
+                             Double maxBandwidth,
+                             Double unReservedBandwidth) {
             this.srcDeviceId = checkNotNull(srcDeviceId);
             this.srcInterface = srcInterface;
             this.srcPort = srcPort;
@@ -212,6 +239,8 @@ public class BgpAppLinkConfig extends Config<ApplicationId> {
             this.dstInterface = dstInterface;
             this.dstPort = dstPort;
             this.maxReservedBandwidth = maxReservedBandwidth;
+            this.maxBandwidth = maxBandwidth;
+            this.unReservedBandwidth = unReservedBandwidth;
         }
 
         public String srcDeviceId() {
@@ -240,6 +269,14 @@ public class BgpAppLinkConfig extends Config<ApplicationId> {
 
         public Double maxReservedBandwidth() {
             return maxReservedBandwidth;
+        }
+
+        public Double maxBandwidth() {
+            return maxBandwidth;
+        }
+
+        public Double unReservedBandwidth() {
+            return unReservedBandwidth;
         }
     }
 }
