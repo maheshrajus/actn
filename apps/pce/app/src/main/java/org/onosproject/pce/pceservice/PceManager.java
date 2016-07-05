@@ -1178,41 +1178,48 @@ public class PceManager implements PceService {
          */
         if (mastershipService.isLocalMaster(src)
                 && Boolean.valueOf(tunnel.annotations().value(DELEGATE)) != null) {
-            LinkedList<Constraint> constraintList = new LinkedList<>();
 
-            if (tunnel.annotations().value(BANDWIDTH) != null) {
-                //Requested bandwidth will be same as previous allocated bandwidth for the tunnel
-                PceBandwidthConstraint localConst = new PceBandwidthConstraint(Bandwidth.bps(Double.parseDouble(tunnel
-                        .annotations().value(BANDWIDTH))));
-                constraintList.add(localConst);
-            }
-            if (tunnel.annotations().value(COST_TYPE) != null) {
-                constraintList.add(CostConstraint.of(CostConstraint.Type.valueOf(tunnel.annotations().value(
-                        COST_TYPE))));
-            }
-
-            /*
-             * If tunnel was UP after recomputation failed then store failed path in PCE store send PCIntiate(remove)
-             * and If tunnel is failed and computation fails nothing to do because tunnel status will be same[Failed]
-             */
-            if (PathErr.SUCCESS != updatePath(tunnel.tunnelId(), constraintList)
-                    && !tunnel.state().equals(Tunnel.State.FAILED)) {
-
-                if (tunnel.annotations().value(VN_NAME) != null && tunnel.type() == MPLS) {
-                    reportTunnelToListeners(tunnel, false, false, 0);
-                } else {
-                    // If updation fails store in PCE store as failed path
-                    // then PCInitiate (Remove)
-                    pceStore.addFailedPathInfo(new PcePathInfo(tunnel.path().src().deviceId(), tunnel
-                            .path().dst().deviceId(), tunnel.tunnelName().value(), constraintList,
-                            LspType.valueOf(tunnel.annotations().value(LSP_SIG_TYPE))));
-                }
-                //Release that tunnel calling PCInitiate
-                releasePath(tunnel.tunnelId());
-            }
+            updateFailedPath(tunnel);
+            return true;
         }
 
         return false;
+    }
+
+    private void updateFailedPath(Tunnel tunnel) {
+        LinkedList<Constraint> constraintList = new LinkedList<>();
+
+        if (tunnel.annotations().value(BANDWIDTH) != null) {
+            //Requested bandwidth will be same as previous allocated bandwidth for the tunnel
+            PceBandwidthConstraint localConst = new PceBandwidthConstraint(Bandwidth.bps(Double.parseDouble(tunnel
+                    .annotations().value(BANDWIDTH))));
+            constraintList.add(localConst);
+        }
+        if (tunnel.annotations().value(COST_TYPE) != null) {
+            constraintList.add(CostConstraint.of(CostConstraint.Type.valueOf(tunnel.annotations().value(
+                    COST_TYPE))));
+        }
+
+        /*
+         * If tunnel was UP after recomputation failed then store failed path in PCE store send PCIntiate(remove)
+         * and If tunnel is failed and computation fails nothing to do because tunnel status will be same[Failed]
+         */
+        if (PathErr.SUCCESS != updatePath(tunnel.tunnelId(), constraintList)
+                && !tunnel.state().equals(Tunnel.State.FAILED)) {
+
+            if (tunnel.annotations().value(VN_NAME) != null && tunnel.type() == MPLS) {
+                reportTunnelToListeners(tunnel, false, false, 0);
+                // send admin down over protocol.
+            } else {
+                // If updation fails store in PCE store as failed path
+                // then PCInitiate (Remove)
+                pceStore.addFailedPathInfo(new PcePathInfo(tunnel.path().src().deviceId(), tunnel
+                        .path().dst().deviceId(), tunnel.tunnelName().value(), constraintList,
+                        LspType.valueOf(tunnel.annotations().value(LSP_SIG_TYPE))));
+            }
+            //Release that tunnel calling PCInitiate
+            releasePath(tunnel.tunnelId());
+        }
     }
 
      // Allocates the bandwidth locally for PCECC tunnels.
@@ -1494,7 +1501,7 @@ public class PceManager implements PceService {
     private class InternalDeviceListener implements DeviceListener {
         @Override
         public void event(DeviceEvent event) {
-            Device specificDevice = (Device) event.subject();
+            Device specificDevice = event.subject();
             if (specificDevice == null) {
                 log.error("Unable to find device from device event.");
                 return;
@@ -1533,7 +1540,7 @@ public class PceManager implements PceService {
     private class InternalLinkListener implements LinkListener {
         @Override
         public void event(LinkEvent event) {
-            Link link = (Link) event.subject();
+            Link link = event.subject();
             switch (event.type()) {
 
             case LINK_ADDED:
@@ -1671,7 +1678,7 @@ public class PceManager implements PceService {
                     // Trigger MBB at MDLS - Find parent tunnel.
                     TunnelId parentTunnelId = getPceStoreParentTunnel(tunnel.tunnelId());
                     // For parent tunnel, MDSC will not be the master for source device.
-                    //updateFailedPath(queryPath(parentTunnelId));
+                    updateFailedPath(queryPath(parentTunnelId));
                 }
 
                 break;
