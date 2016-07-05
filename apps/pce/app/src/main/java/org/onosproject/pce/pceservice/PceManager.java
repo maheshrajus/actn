@@ -1585,7 +1585,15 @@ public class PceManager implements PceService {
                 if (tunnel.state() == ACTIVE) {
                     int srpId = getMdscSrpId(tunnel.tunnelName().value());
                     reportTunnelToListeners(tunnel, true, false, srpId);
-                    pceStore.updateTunnelStatus(tunnel.tunnelId(), tunnel.state());
+                    // This means that PNC gone through MBB and come up with new tunnel.
+                    if (tunnel.type() == SDMPLS) {
+                        Collection<Tunnel> tempTunnel = tunnelService.queryTunnel(tunnel.tunnelName());
+                        if (tempTunnel.isEmpty()) {
+                            return;
+                        }
+                        TunnelId cTunnelId = tempTunnel.iterator().next().tunnelId();
+                        pceStore.addChildTunnel(pceStore.parentTunnel(cTunnelId), cTunnelId, tunnel.state());
+                    }
                 }
                 break;
 
@@ -1644,17 +1652,17 @@ public class PceManager implements PceService {
 
                         if (tunnel.annotations().value(BANDWIDTH) != null) {
                             //Requested bandwidth will be same as previous allocated bandwidth for the tunnel
-                            PceBandwidthConstraint localConst = new PceBandwidthConstraint(Bandwidth.bps(Double.parseDouble(tunnel
-                                    .annotations().value(BANDWIDTH))));
+                            PceBandwidthConstraint localConst = new PceBandwidthConstraint(Bandwidth
+                                    .bps(Double.parseDouble(tunnel.annotations().value(BANDWIDTH))));
                             constraintList.add(localConst);
                         }
                         if (tunnel.annotations().value(COST_TYPE) != null) {
-                            constraintList.add(CostConstraint.of(CostConstraint.Type.valueOf(tunnel.annotations().value(
-                                    COST_TYPE))));
+                            constraintList.add(CostConstraint.of(CostConstraint.Type.valueOf(tunnel.annotations()
+                                    .value(COST_TYPE))));
                         }
 
                         List<Device> excludeDeviceList = new ArrayList<>();
-                        String srcBorderLsrId = ((IpTunnelEndPoint)parentTunnel.src()).ip().toString();
+                        String srcBorderLsrId = ((IpTunnelEndPoint) parentTunnel.src()).ip().toString();
                         DeviceId srcBorderDevId = pceStore.getLsrIdDevice(srcBorderLsrId);
                         if (srcBorderDevId == null) {
                             log.error("Ingress border device id not found! {}", srcBorderLsrId);
@@ -1666,13 +1674,13 @@ public class PceManager implements PceService {
                         }
                         excludeDeviceList.add(srcBorderDev);
 
-                        ExcludeDeviceConstraint srcBorderExcludeConstarint = ExcludeDeviceConstraint.of(excludeDeviceList);
-                        constraintList.add(srcBorderExcludeConstarint);
+                        ExcludeDeviceConstraint srcBdrExcludeConstraint = ExcludeDeviceConstraint.of(excludeDeviceList);
+                        constraintList.add(srcBdrExcludeConstraint);
 
                         if (updatePath(parentTunnelId, constraintList) == PathErr.COMPUTATION_FAIL) {
-                            constraintList.remove(srcBorderExcludeConstarint);
+                            constraintList.remove(srcBdrExcludeConstraint);
                             excludeDeviceList = new ArrayList<>();
-                            String dstBorderLsrId = ((IpTunnelEndPoint)parentTunnel.dst()).ip().toString();
+                            String dstBorderLsrId = ((IpTunnelEndPoint) parentTunnel.dst()).ip().toString();
                             DeviceId dstBorderDevId = pceStore.getLsrIdDevice(dstBorderLsrId);
                             if (dstBorderDevId == null) {
                                 log.error("Egress border device id not found! {}", dstBorderLsrId);
@@ -1684,8 +1692,8 @@ public class PceManager implements PceService {
                             }
                             excludeDeviceList.add(dstBorderDev);
 
-                            ExcludeDeviceConstraint dstBorderExcludeConstarint = ExcludeDeviceConstraint.of(excludeDeviceList);
-                            constraintList.add(dstBorderExcludeConstarint);
+                            ExcludeDeviceConstraint dstBdrExcConstraint = ExcludeDeviceConstraint.of(excludeDeviceList);
+                            constraintList.add(dstBdrExcConstraint);
 
                             updatePath(parentTunnelId, constraintList);
                         }
@@ -1720,7 +1728,14 @@ public class PceManager implements PceService {
 
                 int srpId = getMdscSrpId(tunnel.tunnelName().value());
                 reportTunnelToListeners(tunnel, true, true, srpId);
-                pceStore.removeChildTunnel(pceStore.parentTunnel(tunnel.tunnelId()), tunnel.tunnelId());
+                if (tunnel.type() == SDMPLS) {
+                    TunnelId pTunnelId = pceStore.parentTunnel(tunnel.tunnelId());
+                    pceStore.removeChildTunnel(pTunnelId, tunnel.tunnelId());
+                    if (pceStore.childTunnel(pTunnelId).size() == 1) {
+                        tunnelAdminService.removeTunnel(pTunnelId);
+                        pceStore.removeParentTunnel(pTunnelId);
+                    }
+                }
                 break;
 
             default:
