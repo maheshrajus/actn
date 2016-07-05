@@ -17,6 +17,7 @@ package org.onosproject.pce.pceservice;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -54,6 +55,7 @@ import org.onosproject.incubator.net.tunnel.DefaultTunnel;
 import org.onosproject.incubator.net.tunnel.IpTunnelEndPoint;
 import org.onosproject.incubator.net.tunnel.LabelStack;
 import org.onosproject.incubator.net.tunnel.Tunnel;
+import org.onosproject.incubator.net.tunnel.TunnelAdminService;
 import org.onosproject.incubator.net.tunnel.TunnelEndPoint;
 import org.onosproject.incubator.net.tunnel.TunnelEvent;
 import org.onosproject.incubator.net.tunnel.TunnelId;
@@ -141,6 +143,8 @@ import static org.onosproject.pce.pceservice.PcepAnnotationKeys.PCC_TUNNEL_ID;
 import static org.onosproject.pce.pceservice.PcepAnnotationKeys.DELEGATE;
 import static org.onosproject.pce.pceservice.PcepAnnotationKeys.COST_TYPE;
 import static org.onosproject.pce.pceservice.PcepAnnotationKeys.VN_NAME;
+import static org.onosproject.pce.pceservice.PcepAnnotationKeys.ERROR_TYPE;
+import static org.onosproject.pcep.pcepio.types.PcepErrorDetailInfo.ERROR_TYPE_24;
 
 import org.onosproject.net.packet.InboundPacket;
 import org.onosproject.net.packet.PacketContext;
@@ -200,6 +204,9 @@ public class PceManager implements PceService {
 
     @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
     protected TunnelService tunnelService;
+
+    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    protected TunnelAdminService tunnelAdminService;
 
     @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
     protected StorageService storageService;
@@ -805,7 +812,6 @@ public class PceManager implements PceService {
             }
         }
 
-
         if (tunnel.type() == MDMPLS) {
             pceStore.addParentTunnel(updatedTunnelId, INIT);
             boolean ret = updateParentTunnelProcess(tunnel, updatedTunnelId, computedPath, constraints);
@@ -817,8 +823,6 @@ public class PceManager implements PceService {
 
         return PathErr.SUCCESS;
     }
-
-
 
     private boolean updateParentTunnelProcess(Tunnel oldParentTunnel, TunnelId newParentTunnelId, Path computedPath,
                                               List<Constraint> constraints) {
@@ -1210,15 +1214,17 @@ public class PceManager implements PceService {
             if (tunnel.annotations().value(VN_NAME) != null && tunnel.type() == MPLS) {
                 reportTunnelToListeners(tunnel, false, false, 0);
                 // send admin down over protocol.
+                tunnelAdminService.updateTunnel(tunnel, tunnel.path(), FAILED);
             } else {
                 // If updation fails store in PCE store as failed path
                 // then PCInitiate (Remove)
                 pceStore.addFailedPathInfo(new PcePathInfo(tunnel.path().src().deviceId(), tunnel
                         .path().dst().deviceId(), tunnel.tunnelName().value(), constraintList,
                         LspType.valueOf(tunnel.annotations().value(LSP_SIG_TYPE))));
+
+                //Release that tunnel calling PCInitiate
+                releasePath(tunnel.tunnelId());
             }
-            //Release that tunnel calling PCInitiate
-            releasePath(tunnel.tunnelId());
         }
     }
 
@@ -1677,8 +1683,69 @@ public class PceManager implements PceService {
                 } else if (tunnel.state() == FAILED && tunnel.type() == SDMPLS) {
                     // Trigger MBB at MDLS - Find parent tunnel.
                     TunnelId parentTunnelId = getPceStoreParentTunnel(tunnel.tunnelId());
+                    Tunnel parentTunnel = queryPath(parentTunnelId);
+
+                    String errType = tunnel.annotations().value(ERROR_TYPE);
+                    if (errType != null && Integer.valueOf(errType) == ERROR_TYPE_24) {
+
+                        LinkedList<Constraint> constraintList = new LinkedList<>();
+
+                        if (tunnel.annotations().value(BANDWIDTH) != null) {
+                            //Requested bandwidth will be same as previous allocated bandwidth for the tunnel
+                            PceBandwidthConstraint localConst = new PceBandwidthConstraint(Bandwidth.bps(Double.parseDouble(tunnel
+                                    .annotations().value(BANDWIDTH))));
+                            constraintList.add(localConst);
+                        }
+                        if (tunnel.annotations().value(COST_TYPE) != null) {
+                            constraintList.add(CostConstraint.of(CostConstraint.Type.valueOf(tunnel.annotations().value(
+                                    COST_TYPE))));
+                        }
+
+                        List<Device> excludeDeviceList = new ArrayList<>();
+                        String srcBorderLsrId = ((IpTunnelEndPoint)parentTunnel.src()).ip().toString();
+                        DeviceId srcBorderDevId = pceStore.getLsrIdDevice(srcBorderLsrId);
+                        if (srcBorderDevId == null) {
+                            log.error("Ingress border device id not found! {}", srcBorderLsrId);
+                        }
+
+                        Device srcBorderDev = deviceService.getDevice(srcBorderDevId);
+                        if (srcBorderDev == null) {
+                            log.error("Ingress border device not found! {}", srcBorderLsrId);
+                        }
+                        excludeDeviceList.add(srcBorderDev);
+
+                        ExcludeDeviceConstraint srcBorderExcludeConstarint = ExcludeDeviceConstraint.of(excludeDeviceList);
+                        constraintList.add(srcBorderExcludeConstarint);
+
+                        if (updatePath(parentTunnelId, constraintList) == PathErr.COMPUTATION_FAIL) {
+                            constraintList.remove(srcBorderExcludeConstarint);
+                            excludeDeviceList = new ArrayList<>();
+                            String dstBorderLsrId = ((IpTunnelEndPoint)parentTunnel.dst()).ip().toString();
+                            DeviceId dstBorderDevId = pceStore.getLsrIdDevice(dstBorderLsrId);
+                            if (dstBorderDevId == null) {
+                                log.error("Egress border device id not found! {}", dstBorderLsrId);
+                            }
+
+                            Device dstBorderDev = deviceService.getDevice(dstBorderDevId);
+                            if (dstBorderDev == null) {
+                                log.error("Egress border device not found! {}", dstBorderLsrId);
+                            }
+                            excludeDeviceList.add(dstBorderDev);
+
+                            ExcludeDeviceConstraint dstBorderExcludeConstarint = ExcludeDeviceConstraint.of(excludeDeviceList);
+                            constraintList.add(dstBorderExcludeConstarint);
+
+                            if (updatePath(parentTunnelId, constraintList) == PathErr.SUCCESS) {
+                                /* reset MBB counter */
+                            }
+                        } else {
+                            /* reset MBB counter */
+                        }
+                        break;
+                    }
+
                     // For parent tunnel, MDSC will not be the master for source device.
-                    updateFailedPath(queryPath(parentTunnelId));
+                    updateFailedPath(parentTunnel);
                 }
 
                 break;

@@ -161,6 +161,8 @@ import static org.onosproject.pcep.controller.PcepAnnotationKeys.PLSP_ID;
 import static org.onosproject.pcep.controller.PcepAnnotationKeys.DELEGATE;
 import static org.onosproject.pcep.controller.PcepAnnotationKeys.COST_TYPE;
 import static org.onosproject.pcep.controller.PcepAnnotationKeys.VN_NAME;
+import static org.onosproject.pcep.controller.PcepAnnotationKeys.ERROR_TYPE;
+import static org.onosproject.pcep.controller.PcepAnnotationKeys.ERROR_VALUE;
 import static org.onosproject.provider.pcep.tunnel.impl.RequestType.CREATE;
 import static org.onosproject.provider.pcep.tunnel.impl.RequestType.DELETE;
 import static org.onosproject.provider.pcep.tunnel.impl.RequestType.LSP_STATE_RPT;
@@ -227,7 +229,7 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
 
     @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
     protected LinkService linkService;
-	
+
     @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
     protected PcepSrpStore pceSrpStore;
 
@@ -1304,7 +1306,11 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
                                                                                        .value(PCE_INIT));
 
             // build lsp object
-            PcepLspObject lspobj = pc.factory().buildLspObject().setAFlag(true)
+            boolean adminStateFlag = true;
+            if (tunnel.state() == Tunnel.State.FAILED) {
+                adminStateFlag = false;
+            }
+            PcepLspObject lspobj = pc.factory().buildLspObject().setAFlag(adminStateFlag)
                     .setPlspId(Integer.valueOf(tunnel.annotations().value(PLSP_ID)))
                     .setDFlag(delegated)
                     .setCFlag(initiated)
@@ -1394,7 +1400,7 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
                     }
 
                     ListIterator<PcepError> errlistIterator = errInfo.getPcepErrorList().listIterator();
-                    PcepErrorObject errObj;
+                    PcepErrorObject errObj = null;
                     int errorType = 0;
                     int errorValue = 0;
                     while (errlistIterator.hasNext()) {
@@ -1417,7 +1423,7 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
                                 srpObj = srpObjListIterator.next();
                                 srpId = srpObj.getSrpID();
 
-                                handlePcepErrWithSrpId(srpId);
+                                handlePcepErrWithSrpId(srpId, errObj);
                             }
                         }
                     }
@@ -1457,7 +1463,8 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
             }
         }
 
-        private void handlePcepErrWithSrpId(int srpId) {
+        private void handlePcepErrWithSrpId(int srpId, PcepErrorObject errObj) {
+            checkNotNull(errObj);
             ProviderId providerId = new ProviderId("pcep", PROVIDER_ID);
             PcepTunnelData pcepTunnelData = pcepTunnelApiMapper.getDataFromTunnelRequestQueue(srpId);
 
@@ -1465,18 +1472,18 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
             Tunnel tunnel = pcepTunnelData.tunnel();
             Builder annotationBuilder = DefaultAnnotations.builder();
             annotationBuilder.putAll(pcepTunnelData.tunnel().annotations());
+            annotationBuilder.set(ERROR_TYPE, String.valueOf(errObj.getErrorType())); // add error type
+            annotationBuilder.set(ERROR_VALUE, String.valueOf(errObj.getErrorValue())); // add error value
 
             SparseAnnotations annotations = annotationBuilder.build();
             DefaultTunnelDescription td = new DefaultTunnelDescription(tunnel.tunnelId(), tunnel.src(),
                                                                        tunnel.dst(), tunnel.type(), tunnel.groupId(),
-                                                                       providerId, tunnel.tunnelName(), path,
+                                                                       providerId, tunnel.tunnelName(), path, tunnel.resource(),
                                                                        annotations);
 
             pcepTunnelApiMapper.handleRemoveFromTunnelRequestQueue(srpId, pcepTunnelData);
-
-            log.error("Remove Tunnel for srpId: " + srpId);
-
-            tunnelRemoved(td);
+            log.error("Received error for srpId: " + srpId);
+            tunnelUpdated(td, State.FAILED);
         }
 
         /**

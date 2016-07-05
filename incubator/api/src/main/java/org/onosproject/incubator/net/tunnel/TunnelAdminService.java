@@ -19,6 +19,7 @@ package org.onosproject.incubator.net.tunnel;
 import com.google.common.annotations.Beta;
 import org.onosproject.net.Path;
 import org.onosproject.net.provider.ProviderId;
+import org.onosproject.incubator.net.tunnel.Tunnel.State;
 
 /**
  * Service for administering the inventory of provisioned tunnels.
@@ -61,5 +62,14 @@ public interface TunnelAdminService {
      * @param path explicit route (path changed) or null (path not changed) for the tunnel
      */
     void updateTunnel(Tunnel tunnel, Path path);
+
+    /**
+     * Invokes the core to update a tunnel based on specified tunnel parameters.
+     *
+     * @param tunnel Tunnel
+     * @param path explicit route (path changed) or null (path not changed) for the tunnel
+     * @param state State of the tunnel to be updated with
+     */
+    void updateTunnel(Tunnel tunnel, Path path, State state);
 
 }

@@ -146,6 +146,13 @@ public class PcepTunnelAddedTest {
                 tunnelService.tunnelIdAsKeyStore.replace(tunnel.tunnelId(), tunnel);
             }
         }
+
+        @Override
+        public void updateTunnel(Tunnel tunnel, Path path, State state) {
+            if (tunnelService.tunnelIdAsKeyStore.containsKey(tunnel.tunnelId())) {
+                tunnelService.tunnelIdAsKeyStore.replace(tunnel.tunnelId(), tunnel);
+            }
+        }
     }
 
     private class MockMasterShipService extends MastershipServiceAdapter {

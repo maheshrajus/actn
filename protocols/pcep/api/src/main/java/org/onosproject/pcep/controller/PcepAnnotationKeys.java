@@ -72,4 +72,14 @@ public final class PcepAnnotationKeys {
      * Annotation key for the virtual network name.
      */
     public static final String VN_NAME = "vnName";
+
+    /**
+     * Annotation key for the error type matched according to SRP id.
+     */
+    public static final String ERROR_TYPE = "errorType";
+
+    /**
+     * Annotation key for the error value matched according to SRP id.
+     */
+    public static final String ERROR_VALUE = "errorValue";
 }
