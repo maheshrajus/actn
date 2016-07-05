@@ -121,15 +121,10 @@ import com.google.common.collect.ImmutableList;
 
 import com.google.common.collect.ImmutableSet;
 
+import static org.onosproject.incubator.net.tunnel.Tunnel.State.*;
 import static org.onosproject.incubator.net.tunnel.Tunnel.Type.MPLS;
 import static org.onosproject.incubator.net.tunnel.Tunnel.Type.SDMPLS;
 import static org.onosproject.incubator.net.tunnel.Tunnel.Type.MDMPLS;
-import static org.onosproject.incubator.net.tunnel.Tunnel.State.INIT;
-import static org.onosproject.incubator.net.tunnel.Tunnel.State.ESTABLISHED;
-import static org.onosproject.incubator.net.tunnel.Tunnel.State.ACTIVE;
-import static org.onosproject.incubator.net.tunnel.Tunnel.State.UNSTABLE;
-import static org.onosproject.incubator.net.tunnel.Tunnel.State.INVALID;
-import static org.onosproject.incubator.net.tunnel.Tunnel.State.FAILED;
 import static org.onosproject.pce.pceservice.LspType.WITH_SIGNALLING;
 import static org.onosproject.pce.pceservice.LspType.SR_WITHOUT_SIGNALLING;
 import static org.onosproject.pce.pceservice.LspType.WITHOUT_SIGNALLING_AND_WITHOUT_SR;
@@ -1635,12 +1630,26 @@ public class PceManager implements PceService {
                 } else if (tunnel.state() == ACTIVE) {
                     int srpId = getMdscSrpId(tunnel.tunnelName().value());
                     reportTunnelToListeners(tunnel, true, false, srpId);
-                    pceStore.updateTunnelStatus(tunnel.tunnelId(), tunnel.state());
+                    if (tunnel.type() == SDMPLS) {
+                        pceStore.updateTunnelStatus(tunnel.tunnelId(), tunnel.state());
+                        if (pceStore.isAllChildUp(pceStore.parentTunnel(tunnel.tunnelId()))) {
+                            pceStore.updateTunnelStatus(pceStore.parentTunnel(tunnel.tunnelId()), ACTIVE);
+                            // TODO: Satish  update Tunnel Manager also for up
+                        }
+                    }
                 } else if (tunnel.state() == INVALID) {
                     // Send protocol error message to the caller.
                     pcePathUpdateListener.forEach(item -> item.reportError());
                     tunnelService.downTunnel(appId, tunnel.tunnelId());
+                    if (tunnel.type() == SDMPLS) {
+                        pceStore.updateTunnelStatus(tunnel.tunnelId(), tunnel.state());
+                        pceStore.updateTunnelStatus(pceStore.parentTunnel(tunnel.tunnelId()), INACTIVE);
+                        // TODO: Satish  update Tunnel Manager also for inactive
+                    }
                 } else if (tunnel.state() == FAILED && tunnel.type() == SDMPLS) {
+                    pceStore.updateTunnelStatus(tunnel.tunnelId(), tunnel.state());
+                    pceStore.updateTunnelStatus(pceStore.parentTunnel(tunnel.tunnelId()), INACTIVE);
+                    // TODO: Satish  update Tunnel Manager also for inactive
                     // Trigger MBB at MDLS - Find parent tunnel.
                     TunnelId parentTunnelId = pceStore.parentTunnel(tunnel.tunnelId());
                     Tunnel parentTunnel = queryPath(parentTunnelId);
