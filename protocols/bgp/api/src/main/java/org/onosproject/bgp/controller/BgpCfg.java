@@ -219,14 +219,14 @@ public interface BgpCfg {
     /**
      * Add the BGP peer IP address, the AS number to which it belongs and keep alive time.
      *
-     * @param routerid IP address in string format
+     * @param routerId IP address in string format
      * @param remoteAs AS number to which it belongs
      * @param holdTime keep alive time for the connection
      * @param exportRoute export route flag
      *
      * @return true if added successfully else false
      */
-    boolean addPeer(String routerid, int remoteAs, short holdTime, boolean exportRoute);
+    boolean addPeer(String routerId, int remoteAs, short holdTime, boolean exportRoute);
 
     /**
      * Remove the BGP peer with this IP address.
@@ -265,11 +265,11 @@ public interface BgpCfg {
     /**
      * Return the BGP Peer information with this matching IP.
      *
-     * @param routerid router IP address in string format
+     * @param routerId router IP address in string format
      *
      * @return BGPPeerCfg object
      */
-    BgpPeerCfg displayPeers(String routerid);
+    BgpPeerCfg displayPeers(String routerId);
 
     /**
      * Check if this BGP peer is configured.
@@ -283,11 +283,11 @@ public interface BgpCfg {
     /**
      * Check if this BGP speaker is having connection with the peer.
      *
-     * @param routerid router IP address in string format
+     * @param routerId router IP address in string format
      *
      * @return true if the connection exists else false
      */
-    boolean isPeerConnected(String routerid);
+    boolean isPeerConnected(String routerId);
 
     /**
      * Return the peer tree map.
@@ -366,11 +366,16 @@ public interface BgpCfg {
      * @param dstDeviceId destination device ID
      * @param dstInterface destination interface
      * @param dstPort destination port
+     * @param maxReservedBandWidth max reservable bandwidth
+     * @param maxBandWidth max bandwidth
+     * @param unReservedBandWidth un reservable bandwidth
      * @return true if added successfully else false
      */
     void addLink(DeviceId srcDeviceId, IpAddress srcInterface,
                     Integer srcPort, DeviceId dstDeviceId, IpAddress dstInterface, Integer dstPort,
-                    Double maxReservedbandWidth);
+                    Double maxReservedBandWidth,
+                    Double maxBandWidth,
+                    Double unReservedBandWidth);
 
     /**
      * Deletes BGP link.

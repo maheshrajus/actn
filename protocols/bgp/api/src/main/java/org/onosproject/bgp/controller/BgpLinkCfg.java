@@ -67,7 +67,21 @@ public interface BgpLinkCfg {
     /**
      * Returns max reserved bandwidth.
      *
-     * @return
+     * @return max reservable bandwidth
      */
     Double maxReservedBandwidth();
+
+    /**
+     * Returns max bandwidth.
+     *
+     * @return max bandwidth
+     */
+    Double maxBandwidth();
+
+    /**
+     * Returns max reserved bandwidth.
+     *
+     * @return un reserved bandwidth
+     */
+    Double unReservedBandwidth();
 }
