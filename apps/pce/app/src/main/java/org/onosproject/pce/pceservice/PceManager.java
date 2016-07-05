@@ -987,13 +987,8 @@ public class PceManager implements PceService {
         Versioned<Double> localAllocBw = pceStore.getAllocatedLocalReservedBw(LinkKey.linkKey(link));
         Set<Double> unResvBw = pceStore.getUnreservedBw(LinkKey.linkKey(link));
         Double prirZeroBw = unResvBw.iterator().next();
-
-        if (bandwidth >= prirZeroBw - localAllocBw.value()) {
-            return true;
-        }
-        return false;
+        return (bandwidth >= prirZeroBw - localAllocBw.value());
     }
-
 
     @Override
     public Boolean queryParentTunnelStatus(TunnelId tunnelId) {
@@ -1568,51 +1563,13 @@ public class PceManager implements PceService {
         }
     }
 
-    /**
-     * Returns PCE store parent tunnel ID.
-     *
-     * @param tunnelId child tunnel ID
-     * @return parent tunnel ID
-     */
-    public TunnelId getPceStoreParentTunnel(TunnelId tunnelId) {
-        return pceStore.parentTunnel(tunnelId);
-    }
-
-    /**
-     * Update PCE tunnel store status.
-     *
-     * @param tunnel tunnel ID
-     * @param status status to update, false for delete otherwise true
-     */
-    public void updatePceStoreTunnelStatus(TunnelId tunnel, Tunnel.State status) {
-        checkNotNull(tunnel, "Tunnel ID cannot be null");
-
-        TunnelId tunnelId = getPceStoreParentTunnel(tunnel);
-        if (tunnelId == null) {
-            return;
-        }
-        // TODO: After shashi rework
-        pceStore.updateTunnelStatus(tunnel, status);
-    }
-
-    public void deletePceStoreTunnel(TunnelId tunnel) {
-        checkNotNull(tunnel, "Tunnel ID cannot be null");
-
-        TunnelId tunnelId = getPceStoreParentTunnel(tunnel);
-        if (tunnelId == null) {
-            return;
-        }
-
-        pceStore.removeChildTunnel(tunnelId, tunnel);
-    }
-
     // Listens on tunnel events.
     private class InnerTunnelListener implements TunnelListener {
         @Override
         public void event(TunnelEvent event) {
             // Event gets generated with old tunnel object.
             Tunnel tunnel = event.subject();
-            if (tunnel.type() != MPLS) {
+            if (tunnel.type() != MPLS && tunnel.type() != MDMPLS && tunnel.type() != SDMPLS) {
                 return;
             }
 
@@ -1625,15 +1582,10 @@ public class PceManager implements PceService {
 
             switch (event.type()) {
             case TUNNEL_ADDED:
-                // Allocate bandwidth for non-initiated, delegated LSPs with non-zero bandwidth (learned LSPs).
-                String pceInit = tunnel.annotations().value(PCE_INIT);
-                if (FALSE.equalsIgnoreCase(pceInit) && bwConstraintValue != 0 && lspType != WITH_SIGNALLING) {
-                    reserveBandwidth(tunnel.path(), bwConstraintValue, null);
-                }
                 if (tunnel.state() == ACTIVE) {
                     int srpId = getMdscSrpId(tunnel.tunnelName().value());
                     reportTunnelToListeners(tunnel, true, false, srpId);
-                    updatePceStoreTunnelStatus(tunnel.tunnelId(), tunnel.state());
+                    pceStore.updateTunnelStatus(tunnel.tunnelId(), tunnel.state());
                 }
                 break;
 
@@ -1675,14 +1627,14 @@ public class PceManager implements PceService {
                 } else if (tunnel.state() == ACTIVE) {
                     int srpId = getMdscSrpId(tunnel.tunnelName().value());
                     reportTunnelToListeners(tunnel, true, false, srpId);
-                    updatePceStoreTunnelStatus(tunnel.tunnelId(), tunnel.state());
+                    pceStore.updateTunnelStatus(tunnel.tunnelId(), tunnel.state());
                 } else if (tunnel.state() == INVALID) {
                     // Send protocol error message to the caller.
                     pcePathUpdateListener.forEach(item -> item.reportError());
                     tunnelService.downTunnel(appId, tunnel.tunnelId());
                 } else if (tunnel.state() == FAILED && tunnel.type() == SDMPLS) {
                     // Trigger MBB at MDLS - Find parent tunnel.
-                    TunnelId parentTunnelId = getPceStoreParentTunnel(tunnel.tunnelId());
+                    TunnelId parentTunnelId = pceStore.parentTunnel(tunnel.tunnelId());
                     Tunnel parentTunnel = queryPath(parentTunnelId);
 
                     String errType = tunnel.annotations().value(ERROR_TYPE);
@@ -1735,15 +1687,10 @@ public class PceManager implements PceService {
                             ExcludeDeviceConstraint dstBorderExcludeConstarint = ExcludeDeviceConstraint.of(excludeDeviceList);
                             constraintList.add(dstBorderExcludeConstarint);
 
-                            if (updatePath(parentTunnelId, constraintList) == PathErr.SUCCESS) {
-                                /* reset MBB counter */
-                            }
-                        } else {
-                            /* reset MBB counter */
+                            updatePath(parentTunnelId, constraintList);
                         }
                         break;
                     }
-
                     // For parent tunnel, MDSC will not be the master for source device.
                     updateFailedPath(parentTunnel);
                 }
@@ -1773,8 +1720,7 @@ public class PceManager implements PceService {
 
                 int srpId = getMdscSrpId(tunnel.tunnelName().value());
                 reportTunnelToListeners(tunnel, true, true, srpId);
-                deletePceStoreTunnel(tunnel.tunnelId());
-
+                pceStore.removeChildTunnel(pceStore.parentTunnel(tunnel.tunnelId()), tunnel.tunnelId());
                 break;
 
             default:
@@ -1960,19 +1906,6 @@ public class PceManager implements PceService {
         }
     }
 
-    //Computes path from tunnel store and also path failed to setup.
-    private void callForOptimization() {
-        //Recompute the LSPs which it was delegated [LSPs stored in PCE store (failed paths)]
-        for (PcePathInfo failedPathInfo : pceStore.getFailedPathInfos()) {
-            checkForMasterAndSetupPath(failedPathInfo);
-        }
-
-        //Recompute the LSPs for which it was delegated [LSPs stored in tunnel store]
-        tunnelService.queryTunnel(MPLS).forEach(t -> {
-        checkForMasterAndUpdateTunnel(t.path().src().deviceId(), t);
-        });
-    }
-
     private boolean checkForMasterAndSetupPath(PcePathInfo failedPathInfo) {
         /**
          * Master of ingress node will setup the path failed stored in PCE store.
@@ -1987,17 +1920,5 @@ public class PceManager implements PceService {
         }
 
         return false;
-    }
-
-    //Timer to call global optimization
-    private class GlobalOptimizationTimer implements Runnable {
-
-        public GlobalOptimizationTimer() {
-        }
-
-        @Override
-        public void run() {
-            callForOptimization();
-        }
     }
 }

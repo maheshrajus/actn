@@ -53,9 +53,17 @@ public class BgpLinkConfigCommand extends AbstractShellCommand {
     @Argument(index = 5, name = "destinationPort", description = "Destination port", required = true,
                                                                                      multiValued = false)
     Integer dstPort = null;
-    @Argument(index = 6, name = "bandwidth", description = "Link bandwidth", required = true,
-                                                                                     multiValued = false)
-    Double bandWidth = null;
+    @Argument(index = 6, name = "maxReservablebandwidth", description = "Max reservable Link bandwidth",
+                                                          required = false, multiValued = false)
+    Double maxReservableBandWidth = null;
+
+    @Argument(index = 7, name = "maxBandwidth", description = "max Link bandwidth", required = false,
+                                                           multiValued = false)
+    Double maxBandWidth = null;
+
+    @Argument(index = 8, name = "unReservedBandwidth", description = "Unreserved Link bandwidth", required = false,
+                                                           multiValued = false)
+    Double unReservedBandWidth = null;
 
     @Activate
     public void activate() {
@@ -74,6 +82,6 @@ public class BgpLinkConfigCommand extends AbstractShellCommand {
         BgpCfg bgpCfg = bgpController.getConfig();
         bgpCfg.addLink(DeviceId.deviceId(srcDeviceId), IpAddress.valueOf(srcInterface), (Integer) srcPort,
                        DeviceId.deviceId(dstDeviceId), IpAddress.valueOf(dstInterface), (Integer) dstPort,
-                       bandWidth);
+                       maxReservableBandWidth, maxBandWidth, unReservedBandWidth);
     }
 }

@@ -43,8 +43,10 @@ import org.onosproject.bgpio.types.BgpLSIdentifierTlv;
 import org.onosproject.bgpio.types.BgpValueType;
 import org.onosproject.bgpio.types.IPv4AddressTlv;
 import org.onosproject.bgpio.types.IsIsNonPseudonode;
+import org.onosproject.bgpio.types.LinkStateAttributes;
 import org.onosproject.bgpio.types.OspfNonPseudonode;
 import org.onosproject.bgpio.types.attr.BgpLinkAttrMaxLinkBandwidth;
+import org.onosproject.bgpio.types.attr.BgpLinkAttrUnRsrvdLinkBandwidth;
 import org.onosproject.net.AnnotationKeys;
 import org.onosproject.net.Device;
 import org.onosproject.net.DeviceId;
@@ -477,7 +479,8 @@ public class BgpConfig implements BgpCfg {
 
     @Override
     public void addLink(DeviceId srcDeviceId, IpAddress srcInterface, Integer srcPort, DeviceId dstDeviceId, IpAddress
-            dstInterface, Integer dstPort, Double maxReservedBandwidth) {
+            dstInterface, Integer dstPort, Double maxReservedBandwidth,
+                        Double maxBandwidth, Double unReservedBandwidth) {
 
         Device srcDevice = deviceService.getDevice(srcDeviceId);
         Device dstDevice = deviceService.getDevice(dstDeviceId);
@@ -488,17 +491,29 @@ public class BgpConfig implements BgpCfg {
 
         if (this.getLinks().containsKey(srcDeviceId.toString())) {
             this.bgpLinks.replace(srcDeviceId.toString(), new BgpLinkConfig(srcDeviceId, srcInterface, srcPort,
-                                  dstDeviceId, dstInterface, dstPort, maxReservedBandwidth));
+                                  dstDeviceId, dstInterface, dstPort, maxReservedBandwidth,
+                                                                            maxBandwidth,
+                                                                            unReservedBandwidth));
         } else {
             this.bgpLinks.put(srcDeviceId.toString(), new BgpLinkConfig(srcDeviceId, srcInterface, srcPort,
                                                                         dstDeviceId,
                                                             dstInterface,
-                                                dstPort, maxReservedBandwidth));
+                                                dstPort, maxReservedBandwidth,
+                                                                        maxBandwidth,
+                                                                        unReservedBandwidth));
         }
         PathAttrNlriDetails details = new PathAttrNlriDetails();
 
         List<BgpValueType> pathAttr = new LinkedList<>();
-        pathAttr.add(BgpLinkAttrMaxLinkBandwidth.of(maxReservedBandwidth.floatValue(), (short) 1));
+
+        pathAttr.add(BgpLinkAttrMaxLinkBandwidth.of(maxReservedBandwidth.floatValue(),
+                                                    LinkStateAttributes.ATTR_LINK_MAX_RES_BANDWIDTH));
+        pathAttr.add(BgpLinkAttrMaxLinkBandwidth.of(maxBandwidth.floatValue(),
+                                                    LinkStateAttributes.ATTR_LINK_MAX_BANDWIDTH));
+
+        List<Float> unReservedBw = new LinkedList<>();
+        unReservedBw.add(unReservedBandwidth.floatValue());
+        pathAttr.add(BgpLinkAttrUnRsrvdLinkBandwidth.of(unReservedBw, LinkStateAttributes.ATTR_LINK_UNRES_BANDWIDTH));
         details.setPathAttribute(pathAttr);
         details.setIdentifier(Integer.valueOf(srcDevice.annotations().value("domainIdentifier")));
         details.setProtocolID(BgpNodeLSNlriVer4.ProtocolType.valueOf(srcDevice.annotations().value("protocol")));

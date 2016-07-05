@@ -360,12 +360,12 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
     public void releaseTunnel(Tunnel tunnel) {
         if ((tunnel.type() != MPLS)  && (tunnel.type() != SDMPLS)) {
             if (tunnel.type() == MDMPLS) {
-                log.error("Tunnel Type should not be MDMPLS");
+                /* log.error("Tunnel Type should not be MDMPLS");
                 TunnelDescription td = new DefaultTunnelDescription(tunnel.tunnelId(),
                         tunnel.src(), tunnel.dst(), tunnel.type(), tunnel.groupId(),
                         tunnel.providerId(), tunnel.tunnelName(), tunnel.path(),
                         (SparseAnnotations) tunnel.annotations());
-                tunnelRemoved(td);
+                tunnelRemoved(td); */
                 return;
             }
             log.error("Tunnel Type MPLS/SDMPLS are only supported");
@@ -1642,7 +1642,6 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
                 if (attributes.getMetricObjectList() != null) {
                     ListIterator<PcepMetricObject> iterator = attributes.getMetricObjectList().listIterator();
                     PcepMetricObject metricObj = iterator.next();
-
                     while (metricObj != null) {
                         if (metricObj.getBType() == IGP_METRIC) {
                             costType = "COST";
@@ -1702,6 +1701,7 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
                 log.error("Stateful IPv4 identifier TLV is null in PCRpt msg.");
                 return;
             }
+
             IpTunnelEndPoint tunnelEndPointSrc = IpTunnelEndPoint
                     .ipTunnelPoint(IpAddress.valueOf(ipv4LspIdenTlv.getIpv4IngressAddress()));
             IpTunnelEndPoint tunnelEndPointDst = IpTunnelEndPoint
@@ -1749,7 +1749,6 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
                      */
                     return;
                 }
-
                 DeviceId deviceId = getDevice(pccId);
                 if (deviceId == null) {
                     log.error("Ingress deviceId not found");
@@ -1757,9 +1756,17 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
                 }
                 annotations = getAnnotations(lspObj, ipv4LspIdenTlv, bandwidth, lspType, costType);
 
-                td = new DefaultTunnelDescription(null, tunnelEndPointSrc, tunnelEndPointDst, MPLS, new DefaultGroupId(
-                        0), providerId, TunnelName.tunnelName(new String(pathNameTlv.getValue())), path, labelStack,
-                        annotations);
+                Collection<Tunnel>  tempTunnel = tunnelService.queryTunnel(TunnelName.
+                        tunnelName(new String(pathNameTlv.getValue())));
+                Tunnel.Type tempType;
+                if (tempTunnel.isEmpty()) {
+                    tempType = MPLS;
+                } else {
+                    tempType = tempTunnel.iterator().next().type();
+                }
+                td = new DefaultTunnelDescription(null, tunnelEndPointSrc, tunnelEndPointDst, tempType,
+                        new DefaultGroupId(0), providerId, TunnelName.tunnelName(new String(pathNameTlv.getValue())),
+                        path, labelStack, annotations);
 
                 // Do not support PCC initiated LSP after LSP DB sync is completed.
                 if (!lspObj.getSFlag() && !lspObj.getCFlag()) {
@@ -1792,7 +1799,6 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
                     Tunnel tunnelInserted = new DefaultTunnel(providerId, tunnelEndPointSrc, tunnelEndPointDst, MPLS,
                             tunnelState, new DefaultGroupId(0), tId, TunnelName.tunnelName(String.valueOf(pathNameTlv
                                     .getValue())), path, labelStack, annotations);
-
                     PcepTunnelData pcepTunnelData = new PcepTunnelData(tunnelInserted, path, LSP_STATE_RPT);
                     pcepTunnelData.setStatefulIpv4IndentifierTlv(ipv4LspIdenTlv);
                     pcepTunnelApiMapper.addToTunnelIdMap(pcepTunnelData);
@@ -1802,7 +1808,6 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
                 }
                 return;
             }
-
             //delegated owner will update can be a master or non-master
             if (lspObj.getDFlag()) {
 
@@ -1812,13 +1817,12 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
                 annotations = getAnnotations(lspObj, ipv4LspIdenTlv,
                         bandwidth, lspType,
                         tunnel.annotations().value(COST_TYPE));
-                td = new DefaultTunnelDescription(null, tunnelEndPointSrc, tunnelEndPointDst, MPLS, new DefaultGroupId(
-                        0), providerId, TunnelName.tunnelName(new String(pathNameTlv.getValue())),
+                td = new DefaultTunnelDescription(null, tunnelEndPointSrc, tunnelEndPointDst, tunnel.type(),
+                        new DefaultGroupId(0), providerId, TunnelName.tunnelName(new String(pathNameTlv.getValue())),
                         tunnel.path(), labelStack, annotations);
                 tunnelUpdateInDelegatedCase(pccId, annotations, td, providerId);
             }
             removeOrUpdatetunnel(tunnel, pccId, lspObj, providerId, tunnelState);
-            return;
         }
 
         private void removeOrUpdatetunnel(Tunnel tunnel, PccId pccId, PcepLspObject lspObj, ProviderId providerId,
