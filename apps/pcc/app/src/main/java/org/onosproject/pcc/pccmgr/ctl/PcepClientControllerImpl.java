@@ -242,7 +242,7 @@ public class PcepClientControllerImpl implements PcepClientController {
                     switch (tlv.getType()) {
                         case PathSetupTypeTlv.TYPE:
                             pathSetupTlv = (PathSetupTypeTlv) tlv;
-                            lspType = LspType.values()[(int) pathSetupTlv.getPst()];
+                            lspType = LspType.values()[pathSetupTlv.getPst()];
                             break;
 
                         default:
@@ -436,8 +436,8 @@ public class PcepClientControllerImpl implements PcepClientController {
                     }
 
                     if (pathName == null) {
-                        pc.sendMessage(Collections
-                                .singletonList(getErrMsg(pc.factory(), ERROR_TYPE_10, ERROR_VALUE_8, srpObj.getSrpID())));
+                        pc.sendMessage(Collections.singletonList(getErrMsg(pc.factory(), ERROR_TYPE_10, ERROR_VALUE_8,
+                                                                           srpObj.getSrpID())));
                         continue;
                     }
 

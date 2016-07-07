@@ -1587,7 +1587,7 @@ public class PceManager implements PceService {
                             return;
                         }
                         TunnelId cTunnelId = tempTunnel.iterator().next().tunnelId();
-                        pceStore.addChildTunnel(pceStore.parentTunnel(cTunnelId), cTunnelId, tunnel.state());
+                        pceStore.addChildTunnel(pceStore.parentTunnel(cTunnelId), tunnel.tunnelId(), tunnel.state());
                     }
                 }
                 break;
@@ -1633,8 +1633,11 @@ public class PceManager implements PceService {
                     if (tunnel.type() == SDMPLS) {
                         pceStore.updateTunnelStatus(tunnel.tunnelId(), tunnel.state());
                         if (pceStore.isAllChildUp(pceStore.parentTunnel(tunnel.tunnelId()))) {
-                            pceStore.updateTunnelStatus(pceStore.parentTunnel(tunnel.tunnelId()), ACTIVE);
-                            // TODO: Satish  update Tunnel Manager also for up
+                            TunnelId parentTunnelId = pceStore.parentTunnel(tunnel.tunnelId());
+                            Tunnel parentTunnel = queryPath(parentTunnelId);
+                            pceStore.updateTunnelStatus(parentTunnelId, ACTIVE);
+                            // Update Tunnel Manager also for up
+                            tunnelAdminService.updateTunnel(parentTunnel, parentTunnel.path(), ACTIVE);
                         }
                     }
                 } else if (tunnel.state() == INVALID) {
@@ -1643,22 +1646,27 @@ public class PceManager implements PceService {
                     tunnelService.downTunnel(appId, tunnel.tunnelId());
                     if (tunnel.type() == SDMPLS) {
                         pceStore.updateTunnelStatus(tunnel.tunnelId(), tunnel.state());
-                        pceStore.updateTunnelStatus(pceStore.parentTunnel(tunnel.tunnelId()), INACTIVE);
-                        // TODO: Satish  update Tunnel Manager also for inactive
+
+                        TunnelId parentTunnelId = pceStore.parentTunnel(tunnel.tunnelId());
+                        Tunnel parentTunnel = queryPath(parentTunnelId);
+                        pceStore.updateTunnelStatus(parentTunnelId, INACTIVE);
+                        // Update Tunnel Manager also for inactive
+                        tunnelAdminService.updateTunnel(parentTunnel, parentTunnel.path(), INACTIVE);
                     }
                 } else if (tunnel.state() == FAILED && tunnel.type() == SDMPLS) {
                     pceStore.updateTunnelStatus(tunnel.tunnelId(), tunnel.state());
-                    pceStore.updateTunnelStatus(pceStore.parentTunnel(tunnel.tunnelId()), INACTIVE);
-                    // TODO: Satish  update Tunnel Manager also for inactive
-                    // Trigger MBB at MDLS - Find parent tunnel.
+
                     TunnelId parentTunnelId = pceStore.parentTunnel(tunnel.tunnelId());
                     Tunnel parentTunnel = queryPath(parentTunnelId);
+                    pceStore.updateTunnelStatus(parentTunnelId, INACTIVE);
+                    // Update Tunnel Manager also for inactive
+                    tunnelAdminService.updateTunnel(parentTunnel, parentTunnel.path(), INACTIVE);
 
+                    // Trigger MBB at MDLS
                     String errType = tunnel.annotations().value(ERROR_TYPE);
                     if (errType != null && Integer.valueOf(errType) == ERROR_TYPE_24) {
 
                         LinkedList<Constraint> constraintList = new LinkedList<>();
-
                         if (tunnel.annotations().value(BANDWIDTH) != null) {
                             //Requested bandwidth will be same as previous allocated bandwidth for the tunnel
                             PceBandwidthConstraint localConst = new PceBandwidthConstraint(Bandwidth
@@ -1682,7 +1690,6 @@ public class PceManager implements PceService {
                             log.error("Ingress border device not found! {}", srcBorderLsrId);
                         }
                         excludeDeviceList.add(srcBorderDev);
-
                         ExcludeDeviceConstraint srcBdrExcludeConstraint = ExcludeDeviceConstraint.of(excludeDeviceList);
                         constraintList.add(srcBdrExcludeConstraint);
 
@@ -1703,7 +1710,6 @@ public class PceManager implements PceService {
 
                             ExcludeDeviceConstraint dstBdrExcConstraint = ExcludeDeviceConstraint.of(excludeDeviceList);
                             constraintList.add(dstBdrExcConstraint);
-
                             updatePath(parentTunnelId, constraintList);
                         }
                         break;
