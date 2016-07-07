@@ -28,7 +28,7 @@
       <action class="org.onosproject.pce.cli.PceDeletePathCommand"/>
     </command>
     <command>
-      <action class="org.onosproject.pce.cli.PceLspTypeCommand"/>
+      <action class="org.onosproject.pce.cli.PceLspTypeAndModeCommand"/>
     </command>
     <command>
       <action class="org.onosproject.pce.cli.PceQueryLspTypeCommand"/>
