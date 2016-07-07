@@ -177,6 +177,8 @@ public class PceManager implements PceService {
     private static final Boolean TUNNEL_INIT = false;
     private static final Boolean TUNNEL_CREATED = true;
 
+    private static final int MAX_MBB_RETRY = 2;
+
     private LspType defaultLspType;
     public String pceMode = "PNC";
     private IdGenerator localLspIdIdGen;
@@ -256,6 +258,8 @@ public class PceManager implements PceService {
     public static final int PERIODIC_DELAY = 30;
 
     private PceService pceService;
+
+    private Map<String, Integer> mbbCounter = new HashMap<>();
 
     private DomainManager domainManager;
 
@@ -1648,6 +1652,9 @@ public class PceManager implements PceService {
                             // Update Tunnel Manager also for up
                             tunnelAdminService.updateTunnel(parentTunnel, parentTunnel.path(), ACTIVE);
                         }
+                    } else if (tunnel.type() == MDMPLS) {
+                        // Delete the MBB counter entry.
+                        mbbCounter.remove(tunnel.tunnelName().value());
                     }
                 } else if (tunnel.state() == INVALID) {
                     // Send protocol error message to the caller.
@@ -1674,6 +1681,17 @@ public class PceManager implements PceService {
                     // Trigger MBB at MDLS
                     String errType = tunnel.annotations().value(ERROR_TYPE);
                     if (errType != null && Integer.valueOf(errType) == ERROR_TYPE_24) {
+                        Integer mbbCount = mbbCounter.get(parentTunnel.tunnelName());
+                        if (mbbCount == null) {
+                            mbbCounter.put(parentTunnel.tunnelName().value(), new Integer(1));
+                        } else {
+                            if (mbbCount > MAX_MBB_RETRY) {
+                                log.error("Aborting MBB as computation failed by PNC for continuous {} times", mbbCount);
+                                break;
+                            } else {
+                                mbbCounter.replace(parentTunnel.tunnelName().value(), (mbbCount + 1));
+                            }
+                        }
 
                         LinkedList<Constraint> constraintList = new LinkedList<>();
                         if (tunnel.annotations().value(BANDWIDTH) != null) {
