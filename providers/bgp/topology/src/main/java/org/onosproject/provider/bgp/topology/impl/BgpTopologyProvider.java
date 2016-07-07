@@ -515,8 +515,12 @@ public class BgpTopologyProvider extends AbstractProvider implements DeviceProvi
                                                              TeLinkConfig.class);
 
         config.maxResvBandwidth(maxReservableBw)
-                .unResvBandwidth(unresv)
-                .apply();
+                .unResvBandwidth(unresv.iterator().next());
+                //.apply();
+
+        networkConfigService.applyConfig(LinkKey.linkKey(linkDes.src(),
+                linkDes.dst()), TeLinkConfig.class, config.node());
+
 
     }
 

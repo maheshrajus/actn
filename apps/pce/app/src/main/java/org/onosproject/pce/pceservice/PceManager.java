@@ -30,6 +30,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.LinkedHashSet;
 
 import org.onlab.packet.Ethernet;
 import org.onlab.packet.IPv4;
@@ -122,6 +123,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
 import static org.onosproject.incubator.net.tunnel.Tunnel.State.*;
+import static org.onosproject.net.config.NetworkConfigEvent.Type.CONFIG_ADDED;
+import static org.onosproject.net.config.NetworkConfigEvent.Type.CONFIG_REMOVED;
+import static org.onosproject.net.config.NetworkConfigEvent.Type.CONFIG_UPDATED;
 import static org.onosproject.incubator.net.tunnel.Tunnel.Type.MPLS;
 import static org.onosproject.incubator.net.tunnel.Tunnel.Type.SDMPLS;
 import static org.onosproject.incubator.net.tunnel.Tunnel.Type.MDMPLS;
@@ -258,7 +262,7 @@ public class PceManager implements PceService {
     // TODO: Move this to Topology+ later
     private final ConfigFactory<LinkKey, TeLinkConfig> configFactory =
             new ConfigFactory<LinkKey, TeLinkConfig>(SubjectFactories.LINK_SUBJECT_FACTORY,
-                    TeLinkConfig.class, "teLinkConfig", true) {
+                    TeLinkConfig.class, "teLinkConfig") {
                 @Override
                 public TeLinkConfig createConfig() {
                     return new TeLinkConfig();
@@ -980,9 +984,14 @@ public class PceManager implements PceService {
     @Override
     public boolean pceBandwidthAvailable(Link link, Double bandwidth) {
         Versioned<Double> localAllocBw = pceStore.getAllocatedLocalReservedBw(LinkKey.linkKey(link));
+        Double localBw = 0.0;
         Set<Double> unResvBw = pceStore.getUnreservedBw(LinkKey.linkKey(link));
         Double prirZeroBw = unResvBw.iterator().next();
-        return (bandwidth >= prirZeroBw - localAllocBw.value());
+        if (localAllocBw != null) {
+            localBw = localAllocBw.value();
+        }
+
+        return (bandwidth <= prirZeroBw - localBw);
     }
 
     @Override
@@ -1801,6 +1810,10 @@ public class PceManager implements PceService {
             }
 
             if (event.configClass().equals(TeLinkConfig.class)) {
+                if ((event.type() != CONFIG_ADDED) &&  (event.type() != CONFIG_UPDATED)
+                        && (event.type() != CONFIG_REMOVED)) {
+                    return;
+                }
                 LinkKey linkKey = (LinkKey) event.subject();
 
                 TeLinkConfig cfg = netCfgService.getConfig(linkKey, TeLinkConfig.class);
@@ -1812,7 +1825,9 @@ public class PceManager implements PceService {
                 switch (event.type()) {
                     case  CONFIG_ADDED:
                     case  CONFIG_UPDATED:
-                        pceStore.addUnreservedBw(linkKey, cfg.unResvBandwidth());
+                        Set<Double> unresvBw = new LinkedHashSet<>();
+                        unresvBw.add(cfg.unResvBandwidth());
+                        pceStore.addUnreservedBw(linkKey, unresvBw);
                         break;
                     case CONFIG_REMOVED:
                         pceStore.removeUnreservedBw(linkKey);

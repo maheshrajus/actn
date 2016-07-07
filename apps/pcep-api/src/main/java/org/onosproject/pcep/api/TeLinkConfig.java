@@ -43,7 +43,11 @@ public class TeLinkConfig extends Config<LinkKey> {
      * @return maximum reservable bandwidth
      */
     public Double maxResvBandwidth() {
-        return get(MAX_RESV_BW, 0.0);
+
+        String resvBw = get(MAX_RESV_BW, null);
+        return resvBw != null ?
+                Double.valueOf(resvBw) :
+                0.0;
     }
 
     /**
@@ -51,9 +55,15 @@ public class TeLinkConfig extends Config<LinkKey> {
      *
      * @return set of unreserved bandwidth
      */
-    public Set<Double> unResvBandwidth() {
-        return ImmutableSet.copyOf(getList(UNRESV_BWS,
-                Double::valueOf, Arrays.asList(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)));
+    public Double unResvBandwidth() {
+        String unResvBw = get(UNRESV_BWS, null);
+        return unResvBw != null ?
+                Double.valueOf(unResvBw) :
+                0.0;
+
+        //return Double.valueOf(get(UNRESV_BWS, null));
+        /* return ImmutableSet.copyOf(getList(UNRESV_BWS,
+                Double::valueOf, Arrays.asList(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)));*/
     }
 
     /**SS
@@ -90,7 +100,7 @@ public class TeLinkConfig extends Config<LinkKey> {
      * @param unResvBw unreserved bandwidths of the link in priority order
      * @return te link configuration
      */
-    public TeLinkConfig unResvBandwidth(Set<Double> unResvBw) {
+    public TeLinkConfig unResvBandwidth(Double unResvBw) {
         return (TeLinkConfig) setOrClear(UNRESV_BWS, unResvBw);
     }
 

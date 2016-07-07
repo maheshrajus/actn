@@ -426,7 +426,7 @@ public class DistributedPceStore implements PceStore {
         checkNotNull(linkkey);
         checkNotNull(bandwidth);
         Versioned<Double> allocatedBw = localReservedBw.get(linkkey);
-        if (allocatedBw.value() < bandwidth) {
+        if (allocatedBw == null || allocatedBw.value() < bandwidth) {
             return false;
         }
 
@@ -442,6 +442,7 @@ public class DistributedPceStore implements PceStore {
     @Override
     public Versioned<Double> getAllocatedLocalReservedBw(LinkKey linkkey) {
         checkNotNull(linkkey);
+        Versioned<Double> bw = localReservedBw.get(linkkey);
         return localReservedBw.get(linkkey);
     }
 
