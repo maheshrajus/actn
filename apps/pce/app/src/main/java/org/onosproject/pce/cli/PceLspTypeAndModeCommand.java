@@ -58,13 +58,14 @@ public class PceLspTypeAndModeCommand extends AbstractShellCommand {
        LspType lspType = null;
 
        PceService service = get(PceService.class);
-
-       if (lspTypeName.equals("SR")) {
-           lspType =  LspType.SR_WITHOUT_SIGNALLING;
-       } else if (lspTypeName.equals("CR")) {
-           lspType =  LspType.WITHOUT_SIGNALLING_AND_WITHOUT_SR;
-       } else if (lspTypeName.equals("RSVP-TE")) {
-            lspType =  LspType.WITH_SIGNALLING;
+       if (lspTypeName != null) {
+           if (lspTypeName.equals("SR")) {
+               lspType =  LspType.SR_WITHOUT_SIGNALLING;
+           } else if (lspTypeName.equals("CR")) {
+               lspType =  LspType.WITHOUT_SIGNALLING_AND_WITHOUT_SR;
+           } else if (lspTypeName.equals("RSVP-TE")) {
+               lspType =  LspType.WITH_SIGNALLING;
+           }
        }
 
        service.setdefaultLspType(lspType);

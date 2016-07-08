@@ -16,7 +16,6 @@
 package org.onosproject.pce.pceservice;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -31,10 +30,8 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.LinkedHashSet;
-
 import org.onlab.packet.Ethernet;
 import org.onlab.packet.IPv4;
-
 import org.apache.felix.scr.annotations.Activate;
 import org.apache.felix.scr.annotations.Component;
 import org.apache.felix.scr.annotations.Deactivate;
@@ -47,7 +44,6 @@ import org.onlab.packet.TCP;
 import org.onlab.util.Bandwidth;
 import org.onosproject.core.ApplicationId;
 import org.onosproject.core.CoreService;
-
 import org.onosproject.incubator.net.resource.label.LabelResourceAdminService;
 import org.onosproject.incubator.net.resource.label.LabelResourceId;
 import org.onosproject.incubator.net.resource.label.LabelResourceService;
@@ -117,11 +113,8 @@ import org.onosproject.store.service.StorageService;
 import org.onosproject.store.service.Versioned;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import com.google.common.collect.ImmutableList;
-
 import com.google.common.collect.ImmutableSet;
-
 import static org.onosproject.incubator.net.tunnel.Tunnel.State.*;
 import static org.onosproject.net.config.NetworkConfigEvent.Type.CONFIG_ADDED;
 import static org.onosproject.net.config.NetworkConfigEvent.Type.CONFIG_REMOVED;
@@ -132,7 +125,6 @@ import static org.onosproject.incubator.net.tunnel.Tunnel.Type.MDMPLS;
 import static org.onosproject.pce.pceservice.LspType.WITH_SIGNALLING;
 import static org.onosproject.pce.pceservice.LspType.SR_WITHOUT_SIGNALLING;
 import static org.onosproject.pce.pceservice.LspType.WITHOUT_SIGNALLING_AND_WITHOUT_SR;
-
 import static org.onosproject.pce.pceservice.PcepAnnotationKeys.BANDWIDTH;
 import static org.onosproject.pce.pceservice.PcepAnnotationKeys.LOCAL_LSP_ID;
 import static org.onosproject.pce.pceservice.PcepAnnotationKeys.LSP_SIG_TYPE;
@@ -144,7 +136,6 @@ import static org.onosproject.pce.pceservice.PcepAnnotationKeys.COST_TYPE;
 import static org.onosproject.pce.pceservice.PcepAnnotationKeys.VN_NAME;
 import static org.onosproject.pce.pceservice.PcepAnnotationKeys.ERROR_TYPE;
 import static org.onosproject.pcep.pcepio.types.PcepErrorDetailInfo.ERROR_TYPE_24;
-
 import org.onosproject.net.packet.InboundPacket;
 import org.onosproject.net.packet.PacketContext;
 import org.onosproject.net.packet.PacketProcessor;
@@ -157,7 +148,6 @@ import org.onosproject.net.packet.PacketService;
 @Service
 public class PceManager implements PceService {
     private static final Logger log = LoggerFactory.getLogger(PceManager.class);
-
     public static final long GLOBAL_LABEL_SPACE_MIN = 4097;
     public static final long GLOBAL_LABEL_SPACE_MAX = 5121;
     private static final String DEVICE_NULL = "Device-cannot be null";
@@ -165,29 +155,22 @@ public class PceManager implements PceService {
     public static final String PCE_SERVICE_APP = "org.onosproject.pce";
     private static final String LOCAL_LSP_ID_GEN_TOPIC = "pcep-local-lsp-id";
     private static final String SETUP_PATH_ID_GEN_TOPIC = "pcep-setup-path-id";
-
     private static final int PREFIX_LENGTH = 32;
-
     private static final String LSRID = "lsrId";
     private static final String TRUE = "true";
     private static final String FALSE = "false";
     private static final String END_OF_SYNC_IP_PREFIX = "0.0.0.0/32";
     public static final int PCEP_PORT = 4189;
-
     private static final Boolean TUNNEL_INIT = false;
     private static final Boolean TUNNEL_CREATED = true;
-
     private static final int MAX_MBB_RETRY = 2;
-
     private LspType defaultLspType;
     public String pceMode = "PNC";
     private IdGenerator localLspIdIdGen;
     private IdGenerator setupPathIdGen;
     protected DistributedSet<Short> localLspIdFreeList;
-
     // LSR-id and device-id mapping for checking capability if L3 device is not having its capability
     private Map<String, DeviceId> lsrIdDeviceIdMap = new HashMap<>();
-
     // PCE path update listener set
     protected Set<PcePathUpdateListener> pcePathUpdateListener = new CopyOnWriteArraySet<>();
 
@@ -249,18 +232,13 @@ public class PceManager implements PceService {
     private BasicPceccHandler crHandler;
     private PceccSrTeBeHandler srTeHandler;
     private ApplicationId appId;
-
     private final PcepPacketProcessor processor = new PcepPacketProcessor();
     private final TopologyListener topologyListener = new InternalTopologyListener();
     private ScheduledExecutorService executor;
-
     public static final int INITIAL_DELAY = 30;
     public static final int PERIODIC_DELAY = 30;
-
     private PceService pceService;
-
     private Map<String, Integer> mbbCounter = new HashMap<>();
-
     private DomainManager domainManager;
 
     // TODO: Move this to Topology+ later
@@ -1599,7 +1577,6 @@ public class PceManager implements PceService {
             if (tunnel.type() != MPLS && tunnel.type() != MDMPLS && tunnel.type() != SDMPLS) {
                 return;
             }
-
             LspType lspType = LspType.valueOf(tunnel.annotations().value(LSP_SIG_TYPE));
             String tunnelBandwidth = tunnel.annotations().value(BANDWIDTH);
             double bwConstraintValue = 0;
@@ -1645,13 +1622,11 @@ public class PceManager implements PceService {
                         constraints.add(new PceBandwidthConstraint(Bandwidth
                                 .bps(Double.parseDouble(bandwidth))));
                     }
-
                     String costType = tunnel.annotations().value(COST_TYPE);
                     if (costType != null) {
                         CostConstraint costConstraint = new CostConstraint(CostConstraint.Type.valueOf(costType));
                         constraints.add(costConstraint);
                     }
-
                     constraints.add(CapabilityConstraint
                             .of(CapabilityType.valueOf(tunnel.annotations().value(LSP_SIG_TYPE))));
 
@@ -1681,7 +1656,6 @@ public class PceManager implements PceService {
                     tunnelService.downTunnel(appId, tunnel.tunnelId());
                     if (tunnel.type() == SDMPLS) {
                         pceStore.updateTunnelStatus(tunnel.tunnelId(), tunnel.state());
-
                         TunnelId parentTunnelId = pceStore.parentTunnel(tunnel.tunnelId());
                         Tunnel parentTunnel = queryPath(parentTunnelId);
                         pceStore.updateTunnelStatus(parentTunnelId, INACTIVE);
@@ -1690,13 +1664,11 @@ public class PceManager implements PceService {
                     }
                 } else if (tunnel.state() == FAILED && tunnel.type() == SDMPLS) {
                     pceStore.updateTunnelStatus(tunnel.tunnelId(), tunnel.state());
-
                     TunnelId parentTunnelId = pceStore.parentTunnel(tunnel.tunnelId());
                     Tunnel parentTunnel = queryPath(parentTunnelId);
                     pceStore.updateTunnelStatus(parentTunnelId, INACTIVE);
                     // Update Tunnel Manager also for inactive
                     tunnelAdminService.updateTunnel(parentTunnel, parentTunnel.path(), INACTIVE);
-
                     // Trigger MBB at MDLS
                     String errType = tunnel.annotations().value(ERROR_TYPE);
                     if (errType != null && Integer.valueOf(errType) == ERROR_TYPE_24) {
@@ -1705,13 +1677,13 @@ public class PceManager implements PceService {
                             mbbCounter.put(parentTunnel.tunnelName().value(), new Integer(1));
                         } else {
                             if (mbbCount > MAX_MBB_RETRY) {
-                                log.error("Aborting MBB as computation failed by PNC for continuous {} times", mbbCount);
+                                log.error("Aborting MBB as computation failed by PNC for continuous {} times",
+                                        mbbCount);
                                 break;
                             } else {
                                 mbbCounter.replace(parentTunnel.tunnelName().value(), (mbbCount + 1));
                             }
                         }
-
                         LinkedList<Constraint> constraintList = new LinkedList<>();
                         if (tunnel.annotations().value(BANDWIDTH) != null) {
                             //Requested bandwidth will be same as previous allocated bandwidth for the tunnel
@@ -1723,14 +1695,12 @@ public class PceManager implements PceService {
                             constraintList.add(CostConstraint.of(CostConstraint.Type.valueOf(tunnel.annotations()
                                     .value(COST_TYPE))));
                         }
-
                         List<Device> excludeDeviceList = new ArrayList<>();
                         String srcBorderLsrId = ((IpTunnelEndPoint) parentTunnel.src()).ip().toString();
                         DeviceId srcBorderDevId = pceStore.getLsrIdDevice(srcBorderLsrId);
                         if (srcBorderDevId == null) {
                             log.error("Ingress border device id not found! {}", srcBorderLsrId);
                         }
-
                         Device srcBorderDev = deviceService.getDevice(srcBorderDevId);
                         if (srcBorderDev == null) {
                             log.error("Ingress border device not found! {}", srcBorderLsrId);
@@ -1738,7 +1708,6 @@ public class PceManager implements PceService {
                         excludeDeviceList.add(srcBorderDev);
                         ExcludeDeviceConstraint srcBdrExcludeConstraint = ExcludeDeviceConstraint.of(excludeDeviceList);
                         constraintList.add(srcBdrExcludeConstraint);
-
                         if (updatePath(parentTunnelId, constraintList) == PathErr.COMPUTATION_FAIL) {
                             constraintList.remove(srcBdrExcludeConstraint);
                             excludeDeviceList = new ArrayList<>();
@@ -1747,7 +1716,6 @@ public class PceManager implements PceService {
                             if (dstBorderDevId == null) {
                                 log.error("Egress border device id not found! {}", dstBorderLsrId);
                             }
-
                             Device dstBorderDev = deviceService.getDevice(dstBorderDevId);
                             if (dstBorderDev == null) {
                                 log.error("Egress border device not found! {}", dstBorderLsrId);
@@ -1770,14 +1738,12 @@ public class PceManager implements PceService {
                 if (lspType != WITH_SIGNALLING) {
                     localLspIdFreeList.add(Short.valueOf(tunnel.annotations().value(LOCAL_LSP_ID)));
                 }
-
                 // If not zero bandwidth, and delegated (initiated LSPs will also be delegated).
                 if (bwConstraintValue != 0) {
                     if (lspType != WITH_SIGNALLING) {
                         releaseBandwidth(event.subject());
                     }
                 }
-
                 // Release basic PCECC labels.
                 if (lspType == WITHOUT_SIGNALLING_AND_WITHOUT_SR) {
                     if (mastershipService.getLocalRole(tunnel.path().src().deviceId()) == MastershipRole.MASTER) {
@@ -1786,7 +1752,6 @@ public class PceManager implements PceService {
                 } else {
                     pceStore.removeTunnelInfo(tunnel.tunnelId());
                 }
-
                 int srpId = getMdscSrpId(tunnel.tunnelName().value());
                 reportTunnelToListeners(tunnel, true, true, srpId);
                 if (tunnel.type() == SDMPLS) {
