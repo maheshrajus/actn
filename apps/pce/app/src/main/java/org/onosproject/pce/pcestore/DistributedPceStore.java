@@ -48,7 +48,7 @@ import org.onosproject.pce.pceservice.constraint.PceBandwidthConstraint;
 import org.onosproject.pce.pcestore.api.LspLocalLabelInfo;
 import org.onosproject.pce.pcestore.api.PceStore;
 import org.onosproject.store.serializers.KryoNamespaces;
-
+import org.onosproject.pce.pceservice.constraint.SharedBandwidthConstraint;
 import org.onosproject.store.service.ConsistentMap;
 import org.onosproject.store.service.DistributedSet;
 import org.onosproject.store.service.Serializer;
@@ -151,6 +151,7 @@ public class DistributedPceStore implements PceStore {
                                         CostConstraint.class,
                                         CostConstraint.Type.class,
                                         PceBandwidthConstraint.class,
+                                        SharedBandwidthConstraint.class,
                                         CapabilityConstraint.class,
                                         CapabilityConstraint.CapabilityType.class,
                                         LspType.class)

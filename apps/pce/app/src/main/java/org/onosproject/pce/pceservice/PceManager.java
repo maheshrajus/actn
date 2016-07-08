@@ -372,7 +372,6 @@ public class PceManager implements PceService {
     private PathErr setupPath(String vnName, DeviceId src, DeviceId dst, String tunnelName,
                               List<Constraint> constraints, LspType lspType) {
         Set<Path> paths = null;
-
         //compute the path with given constraints
         Set<Path> computedPathSet = computePath(src, dst, constraints);
         if (computedPathSet.isEmpty()) {
@@ -598,7 +597,27 @@ public class PceManager implements PceService {
                 }
             }
         }
+        CostConstraint costConstraint = null;
+        if (constraints != null) {
+            Iterator<Constraint> iterator = constraints.iterator();
 
+            while (iterator.hasNext()) {
+                Constraint constraint = iterator.next();
+                if (constraint instanceof CostConstraint) {
+                    costConstraint = (CostConstraint) constraint;
+                }
+            }
+            /*
+             * Add cost at the end of the list of constraints. The path computation algorithm also computes
+             * cumulative cost. The function which checks the limiting/capability constraints also returns
+             * per link cost. This function can either return the result of limiting/capability constraint
+             * validation or the value of link cost, depending upon what is the last constraint in the loop.
+             */
+            if (costConstraint != null) {
+                constraints.remove(costConstraint);
+                constraints.add(costConstraint);
+            }
+        }
 
         Set<Path> paths = pathService.getPaths(src, dst, weight(constraints));
         if (!paths.isEmpty()) {
@@ -1095,7 +1114,7 @@ public class PceManager implements PceService {
      *
      * @return value of local LSP identifier
      */
-    private short getNextLocalLspId() {
+    private synchronized short getNextLocalLspId() {
         // If there is any free id use it. Otherwise generate new id.
         if (localLspIdFreeList.isEmpty()) {
             return (short) localLspIdIdGen.getNewId();

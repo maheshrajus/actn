@@ -1672,6 +1672,9 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
                     labels.add(LabelResourceId.labelResourceId(((Integer) linkOrLabel).longValue()));
                 }
             }
+            if (links.isEmpty()) {
+                return;
+            }
             Path path = new DefaultPath(providerId, links, cost, EMPTY);
             NetworkResource labelStack = new DefaultLabelStack(labels);
             // To carry PST TLV, SRP object can be present with value 0 even when PCRpt is not in response to any action
@@ -1867,7 +1870,7 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
             LinkedList<PcepValueType> llSubObj = eroObj.getSubObjects();
             if (0 == llSubObj.size()) {
                 log.error("ERO in report message does not have hop information");
-                return null;
+                return new ArrayList<>();
             }
             ListIterator<PcepValueType> tlvIterator = llSubObj.listIterator();
 
@@ -1915,25 +1918,44 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
                         src = dst;
                     }
                     break;
-                case SrEroSubObject.TYPE:
-                    SrEroSubObject srEroSubObj = (SrEroSubObject) subObj;
-                    subObjList.add(srEroSubObj.getSid());
+                    case SrEroSubObject.TYPE:
+                        SrEroSubObject srEroSubObj = (SrEroSubObject) subObj;
+                        subObjList.add(srEroSubObj.getSid());
 
-                    if (srEroSubObj.getSt() == PcepNaiIpv4Adjacency.ST_TYPE) {
-                        PcepNaiIpv4Adjacency nai = (PcepNaiIpv4Adjacency) (srEroSubObj.getNai());
-                        IpAddress srcIp = IpAddress.valueOf(nai.getLocalIpv4Addr());
-                        src = new ConnectPoint(IpElementId.ipElement(srcIp), PortNumber.portNumber(0));
-                        IpAddress dstIp = IpAddress.valueOf(nai.getRemoteIpv4Addr());
-                        dst = new ConnectPoint(IpElementId.ipElement(dstIp), PortNumber.portNumber(0));
-                        Link link = DefaultLink.builder()
-                                .providerId(providerId)
-                                .src(src)
-                                .dst(dst)
-                                .type(Link.Type.DIRECT)
-                                .build();
-                        subObjList.add(link);
-                    }
-                default:
+                        if (srEroSubObj.getSt() == PcepNaiIpv4Adjacency.ST_TYPE) {
+                            PcepNaiIpv4Adjacency nai = (PcepNaiIpv4Adjacency) (srEroSubObj.getNai());
+                            int srcIp = nai.getLocalIpv4Addr();
+                            int dstIp = nai.getRemoteIpv4Addr();
+                            Iterable<Link> links = linkService.getActiveLinks();
+                            for (Link l : links) {
+                                long lSrc = l.src().port().toLong();
+                                long lDst = l.dst().port().toLong();
+                                if (lSrc == srcIp) {
+                                    src = l.src();
+                                } else if (lDst == srcIp) {
+                                    src = l.dst();
+                                }
+                                if (lSrc == dstIp) {
+                                    dst = l.src();
+                                } else if (lDst == dstIp) {
+                                    dst = l.dst();
+                                }
+                                if (src != null && dst != null) {
+                                    break;
+                                }
+                            }
+                            if (src == null || dst == null) {
+                                return new ArrayList<>();
+                            }
+                            Link link = DefaultLink.builder()
+                                    .providerId(providerId)
+                                    .src(src)
+                                    .dst(dst)
+                                    .type(Link.Type.DIRECT)
+                                    .build();
+                            subObjList.add(link);
+                        }
+                    default:
                     // the other sub objects are not required
                 }
             }
