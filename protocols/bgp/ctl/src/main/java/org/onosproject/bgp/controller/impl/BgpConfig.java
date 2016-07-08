@@ -34,7 +34,7 @@ import org.onosproject.bgp.controller.impl.BgpControllerImpl.BgpPeerManagerImpl;
 import org.onosproject.bgpio.exceptions.BgpParseException;
 import org.onosproject.bgpio.protocol.linkstate.BgpLinkLSIdentifier;
 import org.onosproject.bgpio.protocol.linkstate.BgpLinkLsNlriVer4;
-import org.onosproject.bgpio.protocol.linkstate.BgpNodeLSNlriVer4;
+import org.onosproject.bgpio.protocol.linkstate.BgpNodeLSNlriVer4.ProtocolType;
 import org.onosproject.bgpio.protocol.linkstate.NodeDescriptors;
 import org.onosproject.bgpio.protocol.linkstate.PathAttrNlriDetails;
 import org.onosproject.bgpio.types.AreaIDTlv;
@@ -448,7 +448,8 @@ public class BgpConfig implements BgpCfg {
     }
 
     public BgpLinkLsNlriVer4 getNlri(Device srcDevice, IpAddress srcInterface, Integer srcPort,
-                                      Device dstDevice, IpAddress dstInterface, Integer dstPort) {
+                                      Device dstDevice, IpAddress dstInterface, Integer dstPort,
+                                     PathAttrNlriDetails details) {
 
 
 
@@ -459,21 +460,20 @@ public class BgpConfig implements BgpCfg {
                                                                    (short) subTlvsLocal.size(),
                                                                    NodeDescriptors.LOCAL_NODE_DES_TYPE);
 
-        List<BgpValueType> subTlvsRemote = getNodeDescriptor(srcDevice);
+        List<BgpValueType> subTlvsRemote = getNodeDescriptor(dstDevice);
         NodeDescriptors remoteNodeDescriptors = new NodeDescriptors(subTlvsRemote,
                                                                     (short) subTlvsRemote.size(),
                                                                     NodeDescriptors.REMOTE_NODE_DES_TYPE);
 
         LinkedList<BgpValueType> linkDescriptor = new LinkedList<>();
-        linkDescriptor.add(IPv4AddressTlv.of(Ip4Address.valueOf(srcInterface.toString()), (short) 1));
-        linkDescriptor.add(IPv4AddressTlv.of(Ip4Address.valueOf(dstInterface.toString()), (short) 1));
+        linkDescriptor.add(IPv4AddressTlv.of(Ip4Address.valueOf(srcInterface.toString()), (short) 259));
+        linkDescriptor.add(IPv4AddressTlv.of(Ip4Address.valueOf(dstInterface.toString()), (short) 260));
 
         BgpLinkLSIdentifier linkLSIdentifier = new BgpLinkLSIdentifier(localNodeDescriptors,
                                                                        remoteNodeDescriptors, linkDescriptor);
 
-        BgpLinkLsNlriVer4 nlri = new BgpLinkLsNlriVer4(Byte.valueOf(srcDevice.annotations().value("protocol")),
-                                                       (Integer.valueOf(srcDevice.annotations()
-                                                       .value("domainIdentifier"))), linkLSIdentifier, null, false);
+        BgpLinkLsNlriVer4 nlri = new BgpLinkLsNlriVer4(details.protocolID().getType(),
+                                                       details.identifier(), linkLSIdentifier, null, false);
         return nlri;
     }
 
@@ -516,12 +516,26 @@ public class BgpConfig implements BgpCfg {
         pathAttr.add(BgpLinkAttrUnRsrvdLinkBandwidth.of(unReservedBw, LinkStateAttributes.ATTR_LINK_UNRES_BANDWIDTH));
         details.setPathAttribute(pathAttr);
         details.setIdentifier(Integer.valueOf(srcDevice.annotations().value("domainIdentifier")));
-        details.setProtocolID(BgpNodeLSNlriVer4.ProtocolType.valueOf(srcDevice.annotations().value("protocol")));
+        int portoValue = Integer.valueOf(srcDevice.annotations().value("protocol"));
+
+        if (portoValue == 1) {
+            details.setProtocolID(ProtocolType.ISIS_LEVEL_ONE);
+        } else if (portoValue == 2) {
+            details.setProtocolID(ProtocolType.ISIS_LEVEL_TWO);
+        } else if (portoValue == 3) {
+            details.setProtocolID(ProtocolType.OSPF_V2);
+        } else if (portoValue == 4) {
+            details.setProtocolID(ProtocolType.DIRECT);
+        } else if (portoValue == 5) {
+            details.setProtocolID(ProtocolType.STATIC_CONFIGURATION);
+        } else if (portoValue == 6) {
+            details.setProtocolID(ProtocolType.OSPF_V3);
+        }
 
         for (BgpLinkListener l : bgpController.linkListener()) {
             try {
                 l.addLink((BgpLinkLsNlriVer4) getNlri(srcDevice, srcInterface, srcPort, dstDevice, dstInterface,
-                                                      dstPort), details);
+                                                      dstPort, details), details);
             } catch (BgpParseException e) {
                 e.printStackTrace();
             }
@@ -532,7 +546,8 @@ public class BgpConfig implements BgpCfg {
 
     @Override
     public void deleteLink(DeviceId srcDeviceId, IpAddress srcInterface, Integer srcPort, DeviceId dstDeviceId,
-                           IpAddress dstInterface, Integer dstPort) {
+                           IpAddress dstInterface, Integer dstPort, Double maxReservedBandwidth,
+                           Double maxBandwidth, Double unReservedBandwidth) {
 
         Device srcDevice = deviceService.getDevice(srcDeviceId);
         Device dstDevice = deviceService.getDevice(dstDeviceId);
@@ -542,11 +557,40 @@ public class BgpConfig implements BgpCfg {
         }
 
         this.bgpLinks.remove(srcDeviceId.toString());
+        PathAttrNlriDetails details = new PathAttrNlriDetails();
+
+        List<BgpValueType> pathAttr = new LinkedList<>();
+
+        pathAttr.add(BgpLinkAttrMaxLinkBandwidth.of(maxReservedBandwidth.floatValue(),
+                                                    LinkStateAttributes.ATTR_LINK_MAX_RES_BANDWIDTH));
+        pathAttr.add(BgpLinkAttrMaxLinkBandwidth.of(maxBandwidth.floatValue(),
+                                                    LinkStateAttributes.ATTR_LINK_MAX_BANDWIDTH));
+
+        List<Float> unReservedBw = new LinkedList<>();
+        unReservedBw.add(unReservedBandwidth.floatValue());
+        pathAttr.add(BgpLinkAttrUnRsrvdLinkBandwidth.of(unReservedBw, LinkStateAttributes.ATTR_LINK_UNRES_BANDWIDTH));
+        details.setPathAttribute(pathAttr);
+        details.setIdentifier(Integer.valueOf(srcDevice.annotations().value("domainIdentifier")));
+        int portoValue = Integer.valueOf(srcDevice.annotations().value("protocol"));
+
+        if (portoValue == 1) {
+            details.setProtocolID(ProtocolType.ISIS_LEVEL_ONE);
+        } else if (portoValue == 2) {
+            details.setProtocolID(ProtocolType.ISIS_LEVEL_TWO);
+        } else if (portoValue == 3) {
+            details.setProtocolID(ProtocolType.OSPF_V2);
+        } else if (portoValue == 4) {
+            details.setProtocolID(ProtocolType.DIRECT);
+        } else if (portoValue == 5) {
+            details.setProtocolID(ProtocolType.STATIC_CONFIGURATION);
+        } else if (portoValue == 6) {
+            details.setProtocolID(ProtocolType.OSPF_V3);
+        }
 
         for (BgpLinkListener l : bgpController.linkListener()) {
             try {
                 l.deleteLink((BgpLinkLsNlriVer4) getNlri(srcDevice, srcInterface, srcPort, dstDevice, dstInterface,
-                                                         dstPort));
+                                                         dstPort, details));
             } catch (BgpParseException e) {
                 e.printStackTrace();
             }

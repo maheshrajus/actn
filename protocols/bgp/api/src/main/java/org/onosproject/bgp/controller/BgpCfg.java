@@ -381,9 +381,18 @@ public interface BgpCfg {
      * Deletes BGP link.
      *
      * @param srcDeviceId source device ID
+     * @param srcInterface source interface
+     * @param srcPort source port
+     * @param dstDeviceId destination device ID
+     * @param dstInterface destination interface
+     * @param dstPort destination port
+     * @param maxReservedBandwidth max reservable bandwidth
+     * @param maxBandwidth max bandwidth
+     * @param unReservedBandwidth un reservable bandwidth
      */
     void deleteLink(DeviceId srcDeviceId, IpAddress srcInterface, Integer srcPort, DeviceId dstDeviceId, IpAddress
-            dstInterface, Integer dstPort);
+            dstInterface, Integer dstPort, Double maxReservedBandwidth,
+                    Double maxBandwidth, Double unReservedBandwidth);
 
     /**
      * Returns BGP link.

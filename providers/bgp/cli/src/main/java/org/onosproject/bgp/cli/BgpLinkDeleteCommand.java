@@ -53,6 +53,17 @@ public class BgpLinkDeleteCommand extends AbstractShellCommand {
     @Argument(index = 5, name = "destinationPort", description = "Destination port", required = true,
                                                                                      multiValued = false)
     Integer dstPort = null;
+    @Argument(index = 6, name = "maxReservablebandwidth", description = "Max reservable Link bandwidth",
+            required = false, multiValued = false)
+    Double maxReservableBandWidth = null;
+
+    @Argument(index = 7, name = "maxBandwidth", description = "max Link bandwidth", required = false,
+            multiValued = false)
+    Double maxBandWidth = null;
+
+    @Argument(index = 8, name = "unReservedBandwidth", description = "Unreserved Link bandwidth", required = false,
+            multiValued = false)
+    Double unReservedBandWidth = null;
 
     @Activate
     public void activate() {
@@ -71,6 +82,7 @@ public class BgpLinkDeleteCommand extends AbstractShellCommand {
         this.bgpController = get(BgpController.class);
         BgpCfg bgpCfg = bgpController.getConfig();
         bgpCfg.deleteLink(DeviceId.deviceId(srcDeviceId), IpAddress.valueOf(srcInterface), (Integer) srcPort,
-                       DeviceId.deviceId(dstDeviceId), IpAddress.valueOf(dstInterface), (Integer) dstPort);
+                       DeviceId.deviceId(dstDeviceId), IpAddress.valueOf(dstInterface), (Integer) dstPort,
+                          maxReservableBandWidth, maxBandWidth, unReservedBandWidth);
     }
 }
