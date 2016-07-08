@@ -463,28 +463,30 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
             return;
         }
 
-        // If delegation flag is set then only send update message[means delegated PCE can send update msg for that
-        // LSP].If annotation is null D flag is not set else it is set.
-        Short localLspId = 0;
-        for (Tunnel t : tunnels) {
-            if (!t.tunnelId().equals(tunnel.tunnelId()) && t.tunnelName().equals(tunnel.tunnelName())) {
-                localLspId = Short.valueOf(t.annotations().value(LOCAL_LSP_ID));
-            }
-        }
-
-        if (localLspId == 0) {
-            log.error("Local LSP ID for old tunnel not found");
-            return;
-        }
-
         //PCInitiate tunnels are always have D flag set, else check for tunnels who are delegated via LspKey
         if (pc.capability().statefulPceCapability()) {
             if (tunnel.annotations().value(PCE_INIT) != null && tunnel.annotations().value(PCE_INIT).equals("true")) {
                 pcepUpdateTunnel(tunnel, path, pc);
-            } else if (pc.delegationInfo(
-                    new LspKey(Integer.valueOf(tunnel.annotations().value(PLSP_ID)),
-                            localLspId.shortValue())) != null) {
-                pcepUpdateTunnel(tunnel, path, pc);
+            } else {
+                // If delegation flag is set then only send update message[means delegated PCE can send update msg for
+                // that LSP. If annotation is null D flag is not set else it is set.
+                Short localLspId = 0;
+                for (Tunnel t : tunnels) {
+                    if (!t.tunnelId().equals(tunnel.tunnelId()) && t.tunnelName().equals(tunnel.tunnelName())) {
+                        localLspId = Short.valueOf(t.annotations().value(LOCAL_LSP_ID));
+                    }
+                }
+
+                if (localLspId == 0) {
+                    log.error("Local LSP ID for old tunnel not found");
+                    return;
+                }
+
+                if (pc.delegationInfo(new LspKey(Integer.valueOf(tunnel.annotations().value(PLSP_ID)),
+                                                 localLspId.shortValue())) != null) {
+
+                    pcepUpdateTunnel(tunnel, path, pc);
+                }
             }
         }
     }
