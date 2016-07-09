@@ -351,6 +351,10 @@ public class PceManager implements PceService {
                               List<Constraint> constraints, LspType lspType) {
         Set<Path> paths = null;
         //compute the path with given constraints
+        if (!getPceMode().equals("MDSC")) {
+            constraints.add(CapabilityConstraint.of(CapabilityType.valueOf(lspType.name())));
+        }
+
         Set<Path> computedPathSet = computePath(src, dst, constraints);
         if (computedPathSet.isEmpty()) {
             return PathErr.COMPUTATION_FAIL;
