@@ -492,7 +492,7 @@ public class BgpTopologyProvider extends AbstractProvider implements DeviceProvi
         List<BgpValueType> tlvs = ((LinkStateAttributes) attribute.iterator().next()).linkStateAttributes();
         double maxReservableBw = 0;
         List<Float>  unreservedBw = new ArrayList<>();
-        Set<Double> unresv = new HashSet<>();
+        //Set<Double> unresv = new HashSet<>();
 
         for (BgpValueType tlv : tlvs) {
             switch (tlv.getType()) {
@@ -507,15 +507,15 @@ public class BgpTopologyProvider extends AbstractProvider implements DeviceProvi
             default: // do nothing
             }
         }
-        unreservedBw.forEach(bw -> unresv.add(bw.doubleValue()));
-
+        //unreservedBw.forEach(bw -> unresv.add(bw.doubleValue()));
 
         //Configure bandwidth for src and dst port
         TeLinkConfig config = networkConfigService.addConfig(LinkKey.linkKey(linkDes.src(), linkDes.dst()),
                                                              TeLinkConfig.class);
+        Double bw = unreservedBw.get(unreservedBw.size()-1).doubleValue();
 
         config.maxResvBandwidth(maxReservableBw)
-                .unResvBandwidth(unresv.iterator().next());
+                .unResvBandwidth(bw);
                 //.apply();
 
         networkConfigService.applyConfig(LinkKey.linkKey(linkDes.src(),

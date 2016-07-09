@@ -15,12 +15,8 @@
  */
 package org.onosproject.pcep.api;
 
-import com.google.common.collect.ImmutableSet;
 import org.onosproject.net.LinkKey;
 import org.onosproject.net.config.Config;
-
-import java.util.Arrays;
-import java.util.Set;
 
 /**
  * Configuration to specify traffic engineering parameters of the link.
