@@ -1749,9 +1749,9 @@ public class PceManager implements PceService {
                     if (mastershipService.getLocalRole(tunnel.path().src().deviceId()) == MastershipRole.MASTER) {
                             crHandler.releaseLabel(tunnel);
                     }
-                } else {
                     pceStore.removeTunnelInfo(tunnel.tunnelId());
                 }
+
                 int srpId = getMdscSrpId(tunnel.tunnelName().value());
                 reportTunnelToListeners(tunnel, true, true, srpId);
                 if (tunnel.type() == SDMPLS) {
