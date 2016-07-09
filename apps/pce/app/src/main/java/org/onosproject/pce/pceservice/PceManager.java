@@ -996,13 +996,7 @@ public class PceManager implements PceService {
             localBw = localAllocBw.value();
         }
 
-        Double bw;
-        if (prirZeroBw >= localBw) {
-            bw = prirZeroBw - localBw;
-        } else {
-            bw = localBw - prirZeroBw;
-        }
-        return (bandwidth <= bw);
+        return (bandwidth <= prirZeroBw - localBw);
     }
 
     @Override
