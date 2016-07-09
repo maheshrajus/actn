@@ -188,7 +188,11 @@ public class BgpLinkCfgProvider extends AbstractProvider {
                                      link.srcPort(),
                                      link.dstDeviceId(),
                                      link.dstInterface(),
-                                     link.dstPort());
+                                     link.dstPort(),
+                                     link.maxReservedBandwidth(),
+                                     link.maxBandwidth(),
+                                     link.unReservedBandwidth());
+
             }
         }
 
