@@ -417,7 +417,7 @@
                     type: type,
                     name: name,
                     id: id,
-                    class: 'radioButtonSpace' primary customred
+                    class: 'radioButtonSpace'
                 });
             } else {
                 p.append('input').attr({
