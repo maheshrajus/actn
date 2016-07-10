@@ -1254,7 +1254,7 @@ public class PceManager implements PceService {
             bwToAllocate = 0;
             if ((shBwConstraint != null) && (shBwConstraint.links().contains(link))) {
                 if (additionalBwValue != null) {
-                    bwToAllocate = bandwidthConstraint - additionalBwValue;
+                    bwToAllocate = additionalBwValue;
                 }
             } else {
                 bwToAllocate = bandwidthConstraint;
@@ -1334,10 +1334,8 @@ public class PceManager implements PceService {
 
         for (Link link : newTunnel.path().links()) {
             if (oldTunnel.path().links().contains(link)) {
-                if (isAllocate) {
-                    pceStore.allocLocalReservedBw(LinkKey.linkKey(link), newTunnelBw - oldTunnelBw);
-                } else {
-                    pceStore.releaseLocalReservedBw(LinkKey.linkKey(link), newTunnelBw - oldTunnelBw);
+                if (!isAllocate) {
+                    pceStore.releaseLocalReservedBw(LinkKey.linkKey(link), oldTunnelBw - newTunnelBw);
                 }
 
             } else {

@@ -22,7 +22,6 @@ import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -480,10 +479,17 @@ public class BgpTopologyProvider extends AbstractProvider implements DeviceProvi
     // Creates label resource pool for the specific device. For all devices label range is 5122-9217
     private void createDevicePool(DeviceId deviceId) {
         if (labelResourceAdminService == null) {
+            log.error("Label resource admin service not available. Abort device pool creation for device {}.", deviceId);
             return;
         }
 
-        labelResourceAdminService.createDevicePool(deviceId, beginLabel, endLabel);
+        boolean poolCreation = labelResourceAdminService.createDevicePool(deviceId, beginLabel, endLabel);
+
+        if (!poolCreation) {
+            log.error("Unsuccessful to create device pool for device {}.", deviceId);
+        } else {
+            log.info("Successful to create device pool for device {}.", deviceId);
+        }
     }
 
     private void registerBandwidth(LinkDescription linkDes, PathAttrNlriDetails details) {
