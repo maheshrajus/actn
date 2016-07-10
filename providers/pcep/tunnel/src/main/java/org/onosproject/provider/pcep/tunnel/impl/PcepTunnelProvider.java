@@ -593,7 +593,14 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
         }
         if ((tunnel.type() == MPLS)  || (tunnel.type() == SDMPLS)) {
             pcepTunnelApiMapper.removeFromCoreTunnelRequestQueue(tunnel.tunnelId());
-            tunnelAdminService.updateTunnel(tunnel, path);
+
+            TunnelDescription td = new DefaultTunnelDescription(tunnel.tunnelId(), tunnel.src(), tunnel.dst(),
+                                                                tunnel.type(), tunnel.groupId(), tunnel.providerId(),
+                                                                tunnel.tunnelName(), path, tunnel.resource(),
+                                                                (SparseAnnotations) tunnel.annotations());
+
+            service.tunnelUpdated(td);
+            // tunnelAdminService.updateTunnel(tunnel, path);
             return;
         }
 
@@ -1584,7 +1591,7 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
         }
 
         private SparseAnnotations getAnnotations(PcepLspObject lspObj, StatefulIPv4LspIdentifiersTlv ipv4LspIdenTlv,
-                float bandwidth, LspType lspType, String costType) {
+                float bandwidth, LspType lspType, String costType, boolean isPceInit) {
 
             Builder builder = DefaultAnnotations.builder();
 
@@ -1596,8 +1603,13 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
                 builder.set(COST_TYPE, costType);
             }
 
+            if (isPceInit) {
+                builder.set(PCE_INIT, String.valueOf(isPceInit));
+            }
+
             SparseAnnotations annotations = builder
-                    .set(BANDWIDTH, (new Float(bandwidth)).toString()).set(LSP_SIG_TYPE, lspType.name())
+                    .set(BANDWIDTH, (new Float(bandwidth)).toString())
+                    .set(LSP_SIG_TYPE, lspType.name())
                     .set(PCC_TUNNEL_ID, String.valueOf(ipv4LspIdenTlv.getTunnelId()))
                     .set(PLSP_ID, String.valueOf(lspObj.getPlspId()))
                     .set(LOCAL_LSP_ID, String.valueOf(ipv4LspIdenTlv.getLspId()))
@@ -1759,7 +1771,7 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
                     log.error("Ingress deviceId not found");
                     return;
                 }
-                annotations = getAnnotations(lspObj, ipv4LspIdenTlv, bandwidth, lspType, costType);
+                annotations = getAnnotations(lspObj, ipv4LspIdenTlv, bandwidth, lspType, costType, lspObj.getCFlag());
 
                 Collection<Tunnel>  tempTunnel = tunnelService.queryTunnel(TunnelName.
                         tunnelName(new String(pathNameTlv.getValue())));
@@ -1819,9 +1831,12 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
                 if (tunnel.annotations().value(BANDWIDTH) != null) {
                     bandwidth = Float.parseFloat(tunnel.annotations().value(BANDWIDTH));
                 }
+
+                boolean isPceInit = tunnel.annotations().value(PCE_INIT) == null ? false : Boolean.valueOf((tunnel.annotations().value(PCE_INIT)));
+
                 annotations = getAnnotations(lspObj, ipv4LspIdenTlv,
                         bandwidth, lspType,
-                        tunnel.annotations().value(COST_TYPE));
+                        tunnel.annotations().value(COST_TYPE), isPceInit);
                 td = new DefaultTunnelDescription(null, tunnelEndPointSrc, tunnelEndPointDst, tunnel.type(),
                         new DefaultGroupId(0), providerId, TunnelName.tunnelName(new String(pathNameTlv.getValue())),
                         tunnel.path(), labelStack, annotations);
