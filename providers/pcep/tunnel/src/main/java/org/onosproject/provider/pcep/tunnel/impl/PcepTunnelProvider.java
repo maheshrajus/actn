@@ -240,6 +240,7 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
     private InnerTunnelProvider listener = new InnerTunnelProvider();
     protected PcepTunnelApiMapper pcepTunnelApiMapper = new PcepTunnelApiMapper();
     private static final int DEFAULT_BANDWIDTH_VALUE = 10;
+    private static final String AS_NUMBER = "asNumber";
 
     /**
      * Creates a Tunnel provider.
@@ -306,10 +307,20 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
 
         // Get the pcc client
         PcepClient pc = pcepClientController.getClient(PccId.pccId(((IpTunnelEndPoint) tunnel.src()).ip()));
-        if (!(pc instanceof PcepClient)) {
-            log.error("There is no PCC connected with ip addresss {}"
-                              + ((IpTunnelEndPoint) tunnel.src()).ip().toString());
-            return;
+        if (pc == null) {
+            String asNumber = deviceService.getDevice(path.src().deviceId()).annotations().value(AS_NUMBER);
+            if (asNumber == null) {
+                log.error("There is no AS number for this device");
+                return;
+            }
+            IpAddress ipAddress = pcepClientController.getConfig().pcepDomainMap()
+                    .get(Integer.valueOf(asNumber)).ipAddress();
+            pc = pcepClientController.getClient(PccId.pccId(ipAddress));
+            if (pc == null) {
+                log.error("There is no PCC connected with ip addresss {}"
+                        + ((IpTunnelEndPoint) tunnel.src()).ip().toString());
+                return;
+            }
         }
 
         //If stateful and PC Initiation capability is not supported by client not sending Initiate msg
@@ -342,17 +353,31 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
         }
 
         PcepClient pc = pcepClientController.getClient(PccId.pccId(((IpTunnelEndPoint) tunnel.src()).ip()));
-        if (!(pc instanceof PcepClient)) {
-            log.error("There is no PCC connected with this device {}"
-                    + srcElement.toString());
-            return;
+        if (pc == null) {
+            String asNumber = deviceService.getDevice(path.src().deviceId()).annotations().value(AS_NUMBER);
+            if (asNumber == null) {
+                log.error("There is no AS number for this device");
+                return;
+            }
+            IpAddress ipAddress = pcepClientController.getConfig().pcepDomainMap()
+                    .get(Integer.valueOf(asNumber)).ipAddress();
+            pc = pcepClientController.getClient(PccId.pccId(ipAddress));
+            if (pc == null) {
+                log.error("There is no PCC connected with ip addresss {}"
+                        + ((IpTunnelEndPoint) tunnel.src()).ip().toString());
+                return;
+            }
         }
 
         //If stateful and PC Initiation capability is not supported by client not sending Initiate msg
         //Only master will initiate setup tunnel
-        if (pc.capability().pcInstantiationCapability()
-                && mastershipService.isLocalMaster(getDevice(pc.getPccId()))) {
-            pcepSetupTunnel(tunnel, path, pc);
+        if (pc.capability().pcInstantiationCapability()) {
+            if (null == getDevice(pc.getPccId())) {
+                pcepSetupTunnel(tunnel, path, pc);
+            }
+            else if (mastershipService.isLocalMaster(getDevice(pc.getPccId()))){
+                pcepSetupTunnel(tunnel, path, pc);
+            }
         }
     }
 
@@ -379,10 +404,20 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
         }
 
         PcepClient pc = pcepClientController.getClient(PccId.pccId(((IpTunnelEndPoint) tunnel.src()).ip()));
-        if (!(pc instanceof PcepClient)) {
-            log.error("There is no PCC connected with ip addresss {}"
-                    + ((IpTunnelEndPoint) tunnel.src()).ip().toString());
-            return;
+        if (pc == null) {
+            String asNumber = deviceService.getDevice(tunnel.path().src().deviceId()).annotations().value(AS_NUMBER);
+            if (asNumber == null) {
+                log.error("There is no AS number for this device");
+                return;
+            }
+            IpAddress ipAddress = pcepClientController.getConfig().pcepDomainMap()
+                    .get(Integer.valueOf(asNumber)).ipAddress();
+            pc = pcepClientController.getClient(PccId.pccId(ipAddress));
+            if (pc == null) {
+                log.error("There is no PCC connected with ip addresss {}"
+                        + ((IpTunnelEndPoint) tunnel.src()).ip().toString());
+                return;
+            }
         }
 
         //Only master will release tunnel
@@ -419,10 +454,20 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
         }
 
         PcepClient pc = pcepClientController.getClient(PccId.pccId(((IpElementId) srcElement).ipAddress()));
-        if (!(pc instanceof PcepClient)) {
-            log.error("There is no PCC connected with ip addresss {}"
-                    + ((IpElementId) srcElement).ipAddress().toString());
-            return;
+        if (pc == null) {
+            String asNumber = deviceService.getDevice(tunnel.path().src().deviceId()).annotations().value(AS_NUMBER);
+            if (asNumber == null) {
+                log.error("There is no AS number for this device");
+                return;
+            }
+            IpAddress ipAddress = pcepClientController.getConfig().pcepDomainMap()
+                    .get(Integer.valueOf(asNumber)).ipAddress();
+            pc = pcepClientController.getClient(PccId.pccId(ipAddress));
+            if (pc == null) {
+                log.error("There is no PCC connected with ip addresss {}"
+                        + ((IpTunnelEndPoint) tunnel.src()).ip().toString());
+                return;
+            }
         }
 
         //Only master will release tunnel
@@ -457,10 +502,20 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
         }
 
         PcepClient pc = pcepClientController.getClient(PccId.pccId(((IpTunnelEndPoint) tunnel.src()).ip()));
-        if (!(pc instanceof PcepClient)) {
-            log.error("There is no PCC connected with ip addresss {}"
-                    + ((IpTunnelEndPoint) tunnel.src()).ip().toString());
-            return;
+        if (pc == null) {
+            String asNumber = deviceService.getDevice(path.src().deviceId()).annotations().value(AS_NUMBER);
+            if (asNumber == null) {
+                log.error("There is no AS number for this device");
+                return;
+            }
+            IpAddress ipAddress = pcepClientController.getConfig().pcepDomainMap()
+                    .get(Integer.valueOf(asNumber)).ipAddress();
+            pc = pcepClientController.getClient(PccId.pccId(ipAddress));
+            if (pc == null) {
+                log.error("There is no PCC connected with ip addresss {}"
+                        + ((IpTunnelEndPoint) tunnel.src()).ip().toString());
+                return;
+            }
         }
 
         //PCInitiate tunnels are always have D flag set, else check for tunnels who are delegated via LspKey
@@ -511,10 +566,20 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
         }
 
         PcepClient pc = pcepClientController.getClient(PccId.pccId(((IpElementId) srcElement).ipAddress()));
-        if (!(pc instanceof PcepClient)) {
-            log.error("There is no PCC connected with ip addresss {}"
-                    + ((IpElementId) srcElement).ipAddress().toString());
-            return;
+        if (pc == null) {
+            String asNumber = deviceService.getDevice(path.src().deviceId()).annotations().value(AS_NUMBER);
+            if (asNumber == null) {
+                log.error("There is no AS number for this device");
+                return;
+            }
+            IpAddress ipAddress = pcepClientController.getConfig().pcepDomainMap()
+                    .get(Integer.valueOf(asNumber)).ipAddress();
+            pc = pcepClientController.getClient(PccId.pccId(ipAddress));
+            if (pc == null) {
+                log.error("There is no PCC connected with ip addresss {}"
+                        + ((IpTunnelEndPoint) tunnel.src()).ip().toString());
+                return;
+            }
         }
 
         // If delegation flag is set then only send update message[means delegated PCE can send update msg for that

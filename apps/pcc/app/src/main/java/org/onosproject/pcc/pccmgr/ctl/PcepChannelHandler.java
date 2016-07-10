@@ -597,8 +597,11 @@ class PcepChannelHandler extends IdleStateAwareChannelHandler {
         InetSocketAddress inetAddress = (InetSocketAddress) channel.getRemoteAddress();
         PcepPeerCfg pcepPeerCfg = pccConfig.getPeer(IpAddress.valueOf(inetAddress.getAddress()).toString());
 
+        llOptionalTlv = new LinkedList<PcepValueType>();
+        StatefulPceCapabilityTlv statefulPceCapabilityTlv = new StatefulPceCapabilityTlv(true, true, true, true, true);
+        llOptionalTlv.add(statefulPceCapabilityTlv);
+
         if (pcepPeerCfg.getAsNumber() != 0) {
-            llOptionalTlv = new LinkedList<PcepValueType>();
 
             DomainIdTlv dmnIdTlv = new DomainIdTlv((short) 2, pcepPeerCfg.getAsNumber());
             llOptionalTlv.add(dmnIdTlv);

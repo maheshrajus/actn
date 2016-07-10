@@ -234,7 +234,7 @@ public class PcepOpenObjectVer1 implements PcepOpenObject {
                 tlv = new GmplsCapabilityTlv(iValue);
                 break;
             case StatefulPceCapabilityTlv.TYPE:
-                log.debug("StatefulPceCapabilityTlv");
+                log.info("StatefulPceCapabilityTlv");
                 if (StatefulPceCapabilityTlv.LENGTH != hLength) {
                     throw new PcepParseException("Invalid length received for StatefulPceCapabilityTlv.");
                 }
