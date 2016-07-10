@@ -67,6 +67,7 @@ public class DistributedVnStore implements VnStore {
                                 .register(KryoNamespaces.API)
                                 .register(VirtualNetworkInfo.class,
                                           CostConstraint.class,
+                                          CostConstraint.Type.class,
                                           PceBandwidthConstraint.class,
                                           VnEndPoints.class,
                                           PathEndPoint.class)

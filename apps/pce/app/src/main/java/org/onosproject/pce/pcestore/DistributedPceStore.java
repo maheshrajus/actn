@@ -34,6 +34,7 @@ import org.apache.felix.scr.annotations.ReferenceCardinality;
 import org.apache.felix.scr.annotations.Service;
 
 import org.onlab.util.KryoNamespace;
+import org.onosproject.incubator.net.tunnel.Tunnel;
 import org.onosproject.incubator.net.tunnel.Tunnel.State;
 import org.onosproject.incubator.net.tunnel.TunnelId;
 import org.onosproject.incubator.net.resource.label.LabelResource;
@@ -174,6 +175,8 @@ public class DistributedPceStore implements PceStore {
                 .withSerializer(Serializer.using(
                         new KryoNamespace.Builder()
                                 .register(KryoNamespaces.API)
+                                .register(TunnelId.class,
+                                        Tunnel.State.class)
                                 .build()))
                 .build();
 
