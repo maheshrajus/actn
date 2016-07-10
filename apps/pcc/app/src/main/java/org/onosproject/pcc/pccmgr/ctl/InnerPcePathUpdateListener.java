@@ -20,7 +20,7 @@ import java.util.Collections;
  */
 public class InnerPcePathUpdateListener implements PcePathUpdateListener {
 
-    protected PcepFactory factory = PcepConfig.getInstance().getController().getPcepMessageFactory1();
+    //protected PcepFactory factory = PcepConfig.getInstance().getController().getPcepMessageFactory1();
     public static final long IDENTIFIER_SET = 0x100000000L;
     public static final long SET = 0xFFFFFFFFL;
 
