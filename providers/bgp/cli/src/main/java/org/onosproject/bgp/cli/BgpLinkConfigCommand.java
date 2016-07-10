@@ -41,18 +41,19 @@ public class BgpLinkConfigCommand extends AbstractShellCommand {
     @Argument(index = 1, name = "sourceInterface", description = "Source interface address",
                                                                     required = true, multiValued = false)
     String srcInterface = null;
-    @Argument(index = 2, name = "sourcePort", description = "Source port", required = true,
-                                                                                     multiValued = false)
-    Integer srcPort = null;
-    @Argument(index = 3, name = "destinationDeviceId", description = "Destination device ID", required = true,
+    @Argument(index = 2, name = "destinationDeviceId", description = "Destination device ID", required = true,
                                                                                      multiValued = false)
     String dstDeviceId = null;
-    @Argument(index = 4, name = "destinationInterface", description = "Destination interface",
+    @Argument(index = 3, name = "destinationInterface", description = "Destination interface",
                                                                     required = true, multiValued = false)
     String dstInterface = null;
-    @Argument(index = 5, name = "destinationPort", description = "Destination port", required = true,
+    @Argument(index = 4, name = "cost", description = "cost", required = true,
+            multiValued = false)
+    Integer cost = null;
+
+    @Argument(index = 5, name = "teCost", description = "TE cost", required = true,
                                                                                      multiValued = false)
-    Integer dstPort = null;
+    Integer teCost = null;
     @Argument(index = 6, name = "maxReservablebandwidth", description = "Max reservable Link bandwidth",
                                                           required = false, multiValued = false)
     Double maxReservableBandWidth = null;
@@ -80,8 +81,8 @@ public class BgpLinkConfigCommand extends AbstractShellCommand {
         log.info("Configure BGP link");
         this.bgpController = get(BgpController.class);
         BgpCfg bgpCfg = bgpController.getConfig();
-        bgpCfg.addLink(DeviceId.deviceId(srcDeviceId), IpAddress.valueOf(srcInterface), (Integer) srcPort,
-                       DeviceId.deviceId(dstDeviceId), IpAddress.valueOf(dstInterface), (Integer) dstPort,
+        bgpCfg.addLink(DeviceId.deviceId(srcDeviceId), IpAddress.valueOf(srcInterface), cost,
+                       DeviceId.deviceId(dstDeviceId), IpAddress.valueOf(dstInterface), teCost,
                        maxReservableBandWidth, maxBandWidth, unReservedBandWidth);
     }
 }

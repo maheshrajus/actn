@@ -37,11 +37,11 @@ public interface BgpLinkCfg {
     IpAddress srcInterface();
 
     /**
-     * Returns source port.
+     * Returns cost.
      *
      * @return
      */
-    Integer srcPort();
+    Integer cost();
 
     /**
      * Returns destination port.
@@ -58,11 +58,11 @@ public interface BgpLinkCfg {
     IpAddress dstInterface();
 
     /**
-     * Retursn destination port.
+     * Returns TE cost.
      *
      * @return
      */
-    Integer dstPort();
+    Integer teCost();
 
     /**
      * Returns max reserved bandwidth.

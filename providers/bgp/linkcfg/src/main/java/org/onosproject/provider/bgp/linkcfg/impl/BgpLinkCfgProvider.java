@@ -124,9 +124,9 @@ public class BgpLinkCfgProvider extends AbstractProvider {
         nodes = config.bgpLinks();
         for (int i = 0; i < nodes.size(); i++) {
             bgpConfig.addLink(DeviceId.deviceId(nodes.get(i).srcDeviceId()),
-                              nodes.get(i).srcInterface(), nodes.get(i).srcPort(),
+                              nodes.get(i).srcInterface(), nodes.get(i).cost(),
                               DeviceId.deviceId(nodes.get(i).dstDeviceId()),
-                              nodes.get(i).dstInterface(), nodes.get(i).dstPort(),
+                              nodes.get(i).dstInterface(), nodes.get(i).teCost(),
                               nodes.get(i).maxReservedBandwidth(),
                               nodes.get(i).maxBandwidth(),
                               nodes.get(i).unReservedBandwidth());
@@ -185,10 +185,10 @@ public class BgpLinkCfgProvider extends AbstractProvider {
                 BgpLinkCfg link = absPeerList.get(j);
                 bgpConfig.deleteLink(link.srcDeviceId(),
                                      link.srcInterface(),
-                                     link.srcPort(),
+                                     link.cost(),
                                      link.dstDeviceId(),
                                      link.dstInterface(),
-                                     link.dstPort(),
+                                     link.teCost(),
                                      link.maxReservedBandwidth(),
                                      link.maxBandwidth(),
                                      link.unReservedBandwidth());
@@ -200,9 +200,9 @@ public class BgpLinkCfgProvider extends AbstractProvider {
         nodes = config.bgpLinks();
         for (int i = 0; i < nodes.size(); i++) {
             bgpConfig.addLink(DeviceId.deviceId(nodes.get(i).srcDeviceId()),
-                              nodes.get(i).srcInterface(), nodes.get(i).srcPort(),
+                              nodes.get(i).srcInterface(), nodes.get(i).cost(),
                               DeviceId.deviceId(nodes.get(i).dstDeviceId()),
-                              nodes.get(i).dstInterface(), nodes.get(i).dstPort(),
+                              nodes.get(i).dstInterface(), nodes.get(i).teCost(),
                               nodes.get(i).maxReservedBandwidth(),
                               nodes.get(i).maxBandwidth(),
                               nodes.get(i).unReservedBandwidth());

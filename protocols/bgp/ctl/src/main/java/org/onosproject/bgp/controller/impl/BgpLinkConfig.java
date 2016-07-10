@@ -62,7 +62,7 @@ public class BgpLinkConfig implements BgpLinkCfg {
     }
 
     @Override
-    public Integer srcPort() {
+    public Integer cost() {
         return srcPort;
     }
 
@@ -81,7 +81,7 @@ public class BgpLinkConfig implements BgpLinkCfg {
     }
 
     @Override
-    public Integer dstPort() {
+    public Integer teCost() {
         return dstPort;
     }
 

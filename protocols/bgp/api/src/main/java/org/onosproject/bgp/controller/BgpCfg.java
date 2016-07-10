@@ -362,17 +362,17 @@ public interface BgpCfg {
      *
      * @param srcDeviceId source device ID
      * @param srcInterface source interface
-     * @param srcPort source port
+     * @param cost cost
      * @param dstDeviceId destination device ID
      * @param dstInterface destination interface
-     * @param dstPort destination port
+     * @param teCost TE cost
      * @param maxReservedBandWidth max reservable bandwidth
      * @param maxBandWidth max bandwidth
      * @param unReservedBandWidth un reservable bandwidth
      * @return true if added successfully else false
      */
     void addLink(DeviceId srcDeviceId, IpAddress srcInterface,
-                    Integer srcPort, DeviceId dstDeviceId, IpAddress dstInterface, Integer dstPort,
+                    Integer cost, DeviceId dstDeviceId, IpAddress dstInterface, Integer teCost,
                     Double maxReservedBandWidth,
                     Double maxBandWidth,
                     Double unReservedBandWidth);
@@ -382,16 +382,16 @@ public interface BgpCfg {
      *
      * @param srcDeviceId source device ID
      * @param srcInterface source interface
-     * @param srcPort source port
+     * @param cost cost
      * @param dstDeviceId destination device ID
      * @param dstInterface destination interface
-     * @param dstPort destination port
+     * @param teCost TE cost
      * @param maxReservedBandwidth max reservable bandwidth
      * @param maxBandwidth max bandwidth
      * @param unReservedBandwidth un reservable bandwidth
      */
-    void deleteLink(DeviceId srcDeviceId, IpAddress srcInterface, Integer srcPort, DeviceId dstDeviceId, IpAddress
-            dstInterface, Integer dstPort, Double maxReservedBandwidth,
+    void deleteLink(DeviceId srcDeviceId, IpAddress srcInterface, Integer cost, DeviceId dstDeviceId, IpAddress
+            dstInterface, Integer teCost, Double maxReservedBandwidth,
                     Double maxBandwidth, Double unReservedBandwidth);
 
     /**

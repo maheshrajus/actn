@@ -80,11 +80,12 @@ public class BgpLinkQueryCommand extends AbstractShellCommand {
      * @param cfg BGP link configuration data
      */
     void display(BgpLinkCfg cfg) {
-        print("SourceDevice : %s, SourceInterface : %s, SourcePort : %d, DestinationDevice : %s, Destination" +
-                      "Interface " +
-                      ": %s, DestinationPort : %d, maxReservedBandWidth : %f", cfg.srcDeviceId().toString(), cfg
-                .srcInterface().toString(),
-              cfg.srcPort(), cfg.dstDeviceId(), cfg.dstInterface().toString(), cfg.dstPort(),
-                                                                               cfg.maxReservedBandwidth());
+        print("SourceDevice : %s, SourceInterface : %s, DestinationDevice : %s, Destination" +
+                      "Interface : %s, Cost : %d, TE_Cost : %d, maxReserveableBandWidth : %f, maxBandWidth : %f," +
+                      "unReservedBandWidth : %f ", cfg.srcDeviceId()
+                .toString(), cfg
+                .srcInterface().toString(), cfg.dstDeviceId(), cfg.dstInterface().toString(),
+              cfg.cost(), cfg.teCost(),
+              cfg.maxReservedBandwidth(), cfg.maxBandwidth(), cfg.unReservedBandwidth());
     }
 }

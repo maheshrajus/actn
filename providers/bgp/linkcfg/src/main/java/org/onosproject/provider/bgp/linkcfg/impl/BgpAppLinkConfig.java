@@ -41,13 +41,13 @@ public class BgpAppLinkConfig extends Config<ApplicationId> {
 
     public static final String SRC_DEVICEID = "sourceDeviceId";
     public static final String SRC_INTERFACE = "sourceInterface";
-    public static final String SRC_PORT = "sourcePort";
     public static final String DST_DEVICEID = "destinationDeviceId";
     public static final String DST_INTERFACE = "destinationInterface";
-    public static final String DST_PORT = "destinationPort";
     public static final String MAX_RESERVED_BANDWIDTH = "maxReservableBandwidth";
     public static final String MAX_BANDWIDTH = "maxBandwidth";
     public static final String UN_RESERVED_BANDWIDTH = "unReservedBandwidth";
+    public static final String COST = "cost";
+    public static final String TE_COST = "teCost";
 
     public static final String BGP_LINK = "bgpLink";
 
@@ -91,7 +91,7 @@ public class BgpAppLinkConfig extends Config<ApplicationId> {
      * @return routerId
      */
     public Short sourcePort() {
-        return Short.parseShort(get(SRC_PORT, null));
+        return Short.parseShort(get(COST, null));
     }
 
     /**
@@ -118,7 +118,7 @@ public class BgpAppLinkConfig extends Config<ApplicationId> {
      * @return routerId
      */
     public Short destinationPort() {
-        return Short.parseShort(get(DST_PORT, null));
+        return Short.parseShort(get(TE_COST, null));
     }
 
     /**
@@ -175,9 +175,9 @@ public class BgpAppLinkConfig extends Config<ApplicationId> {
         nodes = bgpLinks();
         for (int i = 0; i < nodes.size(); i++) {
             if ((nodes.get(i).srcDeviceId == null) || (nodes.get(i).srcInterface == null)
-              || (nodes.get(i).srcPort == null)
+              || (nodes.get(i).cost == null)
               || (nodes.get(i).dstDeviceId == null) || (nodes.get(i).dstInterface == null)
-              || (nodes.get(i).dstPort == null)) {
+              || (nodes.get(i).teCost == null)) {
                 return false;
             }
         }
@@ -201,10 +201,10 @@ public class BgpAppLinkConfig extends Config<ApplicationId> {
         jsonNodes.forEach(jsonNode -> nodes.add(new BgpLinkConfig(
                 jsonNode.path(SRC_DEVICEID).asText(),
                 IpAddress.valueOf(jsonNode.path(SRC_INTERFACE).asText()),
-                jsonNode.path(SRC_PORT).asInt(),
+                jsonNode.path(COST).asInt(),
                 jsonNode.path(DST_DEVICEID).asText(),
                 IpAddress.valueOf(jsonNode.path(DST_INTERFACE).asText()),
-                jsonNode.path(DST_PORT).asInt(),
+                jsonNode.path(TE_COST).asInt(),
                 jsonNode.path(MAX_RESERVED_BANDWIDTH).asDouble(),
                 jsonNode.path(MAX_BANDWIDTH).asDouble(),
                 jsonNode.path(UN_RESERVED_BANDWIDTH).asDouble())));
@@ -219,25 +219,25 @@ public class BgpAppLinkConfig extends Config<ApplicationId> {
 
         private final String srcDeviceId;
         private final IpAddress srcInterface;
-        private final Integer srcPort;
         private final String dstDeviceId;
         private final IpAddress dstInterface;
-        private final Integer dstPort;
+        private final Integer cost;
+        private final Integer teCost;
         private final Double maxReservedBandwidth;
         private final Double maxBandwidth;
         private final Double unReservedBandwidth;
 
-        public BgpLinkConfig(String srcDeviceId, IpAddress srcInterface, Integer srcPort, String dstDeviceId,
-                             IpAddress dstInterface, Integer dstPort,
+        public BgpLinkConfig(String srcDeviceId, IpAddress srcInterface, Integer cost, String dstDeviceId,
+                             IpAddress dstInterface, Integer teCost,
                              Double maxReservedBandwidth,
                              Double maxBandwidth,
                              Double unReservedBandwidth) {
             this.srcDeviceId = checkNotNull(srcDeviceId);
             this.srcInterface = srcInterface;
-            this.srcPort = srcPort;
             this.dstDeviceId = checkNotNull(dstDeviceId);
             this.dstInterface = dstInterface;
-            this.dstPort = dstPort;
+            this.cost = cost;
+            this.teCost = teCost;
             this.maxReservedBandwidth = maxReservedBandwidth;
             this.maxBandwidth = maxBandwidth;
             this.unReservedBandwidth = unReservedBandwidth;
@@ -251,8 +251,8 @@ public class BgpAppLinkConfig extends Config<ApplicationId> {
             return srcInterface;
         }
 
-        public Integer srcPort() {
-            return srcPort;
+        public Integer cost() {
+            return cost;
         }
 
         public String dstDeviceId() {
@@ -263,8 +263,8 @@ public class BgpAppLinkConfig extends Config<ApplicationId> {
             return dstInterface;
         }
 
-        public Integer dstPort() {
-            return dstPort;
+        public Integer teCost() {
+            return teCost;
         }
 
         public Double maxReservedBandwidth() {

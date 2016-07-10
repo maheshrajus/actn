@@ -250,7 +250,11 @@ public class BgpTopologyProvider extends AbstractProvider implements DeviceProvi
                     if (tlv instanceof IsIsPseudonode) {
                         deviceType = VIRTUAL;
                         newBuilder.set(AnnotationKeys.ROUTER_ID, new String(((IsIsPseudonode) tlv).getIsoNodeId()));
-                        newBuilder.set(PROTOCOL, Integer.toString(NodeDescriptors.IS_IS_LEVEL_1_PROTOCOL_ID));
+                        try {
+                            newBuilder.set(PROTOCOL, Integer.toString(nodeNlri.getProtocolId().getType()));
+                        } catch (BgpParseException e) {
+                            e.printStackTrace();
+                        }
                     } else if (tlv instanceof OspfPseudonode) {
                         deviceType = VIRTUAL;
                         newBuilder
@@ -258,7 +262,12 @@ public class BgpTopologyProvider extends AbstractProvider implements DeviceProvi
                         newBuilder.set(PROTOCOL, Integer.toString(NodeDescriptors.OSPF_V2_PROTOCOL_ID));
                     } else if (tlv instanceof IsIsNonPseudonode) {
                         newBuilder.set(AnnotationKeys.ROUTER_ID, new String(((IsIsNonPseudonode) tlv).getIsoNodeId()));
-                        newBuilder.set(PROTOCOL, Integer.toString(NodeDescriptors.IS_IS_LEVEL_1_PROTOCOL_ID));
+                        //newBuilder.set(PROTOCOL, Integer.toString(NodeDescriptors.IS_IS_LEVEL_1_PROTOCOL_ID));
+                        try {
+                            newBuilder.set(PROTOCOL, Integer.toString(nodeNlri.getProtocolId().getType()));
+                        } catch (BgpParseException e) {
+                            e.printStackTrace();
+                        }
                     } else if (tlv instanceof OspfNonPseudonode) {
                         newBuilder.set(AnnotationKeys.ROUTER_ID,
                                 Integer.toString(((OspfNonPseudonode) tlv).getrouterID()));
