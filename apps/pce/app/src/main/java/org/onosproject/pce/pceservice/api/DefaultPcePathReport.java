@@ -63,11 +63,12 @@ public final class DefaultPcePathReport implements PcePathReport {
      * @param rroPath path rro
      * @param xroPath path xro
      */
-    private DefaultPcePathReport(String pathName, String plspId, String localLspId, String pceTunnelId,
+    private DefaultPcePathReport(String pathName, String srpId, String plspId, String localLspId, String pceTunnelId,
                                  boolean isDelegate, boolean isSync, boolean isRemoved, State adminState,
                                  State state, IpAddress ingress, IpAddress egress, String errorInfo,
                                  Path eroPath, Path rroPath, Path xroPath) {
         this.pathName = pathName;
+        this.srpId = srpId;
         this.plspId = plspId;
         this.localLspId = localLspId;
         this.pceTunnelId = pceTunnelId;
@@ -166,7 +167,7 @@ public final class DefaultPcePathReport implements PcePathReport {
 
     @Override
     public int hashCode() {
-        return Objects.hash(pathName, plspId, localLspId, pceTunnelId, isDelegate, isSync, isRemoved, adminState,
+        return Objects.hash(pathName, srpId, plspId, localLspId, pceTunnelId, isDelegate, isSync, isRemoved, adminState,
                 state, ingress, egress, errorInfo, eroPath, rroPath, xroPath);
     }
 
@@ -178,6 +179,7 @@ public final class DefaultPcePathReport implements PcePathReport {
         if (obj instanceof DefaultPcePathReport) {
             DefaultPcePathReport that = (DefaultPcePathReport) obj;
             return Objects.equals(pathName, that.pathName)
+                    && Objects.equals(srpId, that.srpId)
                     && Objects.equals(plspId, that.plspId)
                     && Objects.equals(localLspId, that.localLspId)
                     && Objects.equals(pceTunnelId, that.pceTunnelId)
@@ -200,6 +202,7 @@ public final class DefaultPcePathReport implements PcePathReport {
     public String toString() {
         return toStringHelper(this)
                 .add("pathName", pathName())
+                .add("srpId", srpId())
                 .add("plspId", plspId())
                 .add("localLspId", localLspId())
                 .add("pceTunnelId", pceTunnelId())
@@ -345,7 +348,7 @@ public final class DefaultPcePathReport implements PcePathReport {
 
         @Override
         public PcePathReport build() {
-            return new DefaultPcePathReport(pathName, plspId, localLspId, pceTunnelId, isDelegate, isSync,
+            return new DefaultPcePathReport(pathName, srpId, plspId, localLspId, pceTunnelId, isDelegate, isSync,
                     isRemoved, adminState, state, ingress, egress, errorInfo, eroPath, rroPath, xroPath);
         }
     }

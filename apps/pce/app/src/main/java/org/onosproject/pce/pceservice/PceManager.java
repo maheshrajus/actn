@@ -837,6 +837,7 @@ public class PceManager implements PceService {
         Map<DomainManager.Oper, Set<Path>> setPath = domainManager().compareDomainSpecificPaths(oldPaths, newPaths);
 
         Set<TunnelId> childTunnelIds = pceStore.childTunnel(oldParentTunnel.tunnelId()).keySet();
+        childTunnelIds.remove(oldParentTunnel.tunnelId());
 
         for (Map.Entry<DomainManager.Oper, Set<Path>> entry : setPath.entrySet()) {
             Set<Path> path = entry.getValue();
