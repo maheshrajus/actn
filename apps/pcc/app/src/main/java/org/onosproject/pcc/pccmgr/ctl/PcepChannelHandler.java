@@ -252,6 +252,7 @@ class PcepChannelHandler extends IdleStateAwareChannelHandler {
                         h.pcepConfig.setPeerConnState(h.peerAddr, PcepPeerCfg.State.ESTABLISHED);
                         //Session is established, add a PCEP device
                         h.addNode();
+                        syncLspDb(h.pc);
                     }
                 }
             }
@@ -267,7 +268,6 @@ class PcepChannelHandler extends IdleStateAwareChannelHandler {
                 log.info("Message received in established state " + m.getType());
                 //dispatch the message
                 h.dispatchMessage(m);
-                syncLspDb(h.pc);
             }
         };
         private boolean handshakeComplete;

@@ -104,6 +104,12 @@ public interface PcepStateReport {
         int write(ChannelBuffer bb) throws PcepParseException;
     }
 
+    PcepEroObject getEroObject();
+
+    PcepRroObject getRroObject();
+
+    PcepAttribute getAttrObject();
+
     /**
      * Returns PcepSrpObject.
      *

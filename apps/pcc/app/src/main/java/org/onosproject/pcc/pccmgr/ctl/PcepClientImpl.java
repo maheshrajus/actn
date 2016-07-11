@@ -56,6 +56,7 @@ import org.onosproject.pcep.pcepio.protocol.PcepSrpObject;
 import org.onosproject.pcep.pcepio.protocol.PcepStateReport;
 import org.onosproject.pcep.pcepio.protocol.PcepVersion;
 import org.onosproject.pcep.pcepio.protocol.PcepXroObject;
+import org.onosproject.pcep.pcepio.protocol.ver1.PcepStateReportVer1;
 import org.onosproject.pcep.pcepio.types.IPv4SubObject;
 import org.onosproject.pcep.pcepio.types.PcepValueType;
 import org.onosproject.pcep.pcepio.types.StatefulIPv4LspIdentifiersTlv;

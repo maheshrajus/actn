@@ -325,8 +325,13 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
 
         //If stateful and PC Initiation capability is not supported by client not sending Initiate msg
         //Only master will initiate setup tunnel
-        if (pc.capability().pcInstantiationCapability() && mastershipService.isLocalMaster(getDevice(pc.getPccId()))) {
-            pcepSetupTunnel(tunnel, path, pc);
+        if (pc.capability().pcInstantiationCapability()) {
+            if (null == getDevice(pc.getPccId())) {
+                pcepSetupTunnel(tunnel, path, pc);
+            }
+            else if (mastershipService.isLocalMaster(getDevice(pc.getPccId()))){
+                pcepSetupTunnel(tunnel, path, pc);
+            }
         }
     }
 
@@ -421,8 +426,13 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
         }
 
         //Only master will release tunnel
-        if (pc.capability().pcInstantiationCapability() && mastershipService.isLocalMaster(getDevice(pc.getPccId()))) {
-            pcepReleaseTunnel(tunnel, pc);
+        if (pc.capability().pcInstantiationCapability()) {
+            if (null == getDevice(pc.getPccId())) {
+                pcepReleaseTunnel(tunnel, pc);
+            }
+            else if (mastershipService.isLocalMaster(getDevice(pc.getPccId()))){
+                pcepReleaseTunnel(tunnel, pc);
+            }
         }
     }
 
@@ -471,8 +481,13 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
         }
 
         //Only master will release tunnel
-        if (pc.capability().pcInstantiationCapability() && mastershipService.isLocalMaster(getDevice(pc.getPccId()))) {
-            pcepReleaseTunnel(tunnel, pc);
+        if (pc.capability().pcInstantiationCapability()) {
+            if (null == getDevice(pc.getPccId())) {
+                pcepReleaseTunnel(tunnel, pc);
+            }
+            else if (mastershipService.isLocalMaster(getDevice(pc.getPccId()))){
+                pcepReleaseTunnel(tunnel, pc);
+            }
         }
     }
 
@@ -1516,8 +1531,8 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
                             srpId = srpObj.getSrpID();
                         }
 
-                        log.debug("Plsp ID in handle message " + lspObj.getPlspId());
-                        log.debug("SRP ID in handle message " + srpId);
+                        log.info("Plsp ID in handle message " + lspObj.getPlspId());
+                        log.info("SRP ID in handle message " + srpId);
 
                         if (!(pcepTunnelApiMapper.checkFromTunnelRequestQueue(srpId))) {
                             // For PCRpt without matching SRP id.
@@ -1831,7 +1846,7 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
                      */
                     return;
                 }
-                DeviceId deviceId = getDevice(pccId);
+                DeviceId deviceId = path.src().deviceId();
                 if (deviceId == null) {
                     log.error("Ingress deviceId not found");
                     return;

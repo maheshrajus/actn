@@ -29,6 +29,9 @@ import org.onosproject.pcep.pcepio.protocol.PcepSrpObject;
 import org.onosproject.pcep.pcepio.protocol.PcepStateReport;
 import org.onosproject.pcep.pcepio.protocol.PcepType;
 import org.onosproject.pcep.pcepio.protocol.PcepVersion;
+import org.onosproject.pcep.pcepio.protocol.PcepRroObject;
+import org.onosproject.pcep.pcepio.protocol.PcepAttribute;
+import org.onosproject.pcep.pcepio.protocol.PcepEroObject;
 import org.onosproject.pcep.pcepio.types.PcepObjectHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -265,12 +268,31 @@ class PcepReportMsgVer1 implements PcepReportMsg {
                     lspObj.write(cb);
                 }
 
+                /*
                 //path is mandatory
                 PcepStateReport.PcepMsgPath msgPath = stateRpt.getMsgPath();
                 if (msgPath == null) {
                     throw new PcepParseException("Message path is mandatory object for PcRpt message.");
                 } else {
                     msgPath.write(cb);
+                }*/
+
+                //write Object header
+                PcepEroObject eroObj = stateRpt.getEroObject();
+                if (eroObj == null) {
+                    throw new PcepParseException("ERO Object is mandatory object for PcRpt message.");
+                } else {
+                    eroObj.write(cb);
+                }
+
+                PcepAttribute pcepAttr = stateRpt.getAttrObject();
+                if (pcepAttr != null) {
+                    pcepAttr.write(cb);
+                }
+
+                PcepRroObject rroObj = stateRpt.getRroObject();
+                if (rroObj != null) {
+                    rroObj.write(cb);
                 }
             }
 

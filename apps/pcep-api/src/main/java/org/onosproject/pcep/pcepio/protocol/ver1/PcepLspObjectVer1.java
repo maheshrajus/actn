@@ -311,7 +311,9 @@ public class PcepLspObjectVer1 implements PcepLspObject {
         cb.writeInt(iTemp);
 
         // Add optional TLV
-        packOptionalTlv(cb);
+        if (null != llOptionalTlv) {
+            packOptionalTlv(cb);
+        }
 
         //Update object length now
         int length = cb.writerIndex() - objStartIndex;

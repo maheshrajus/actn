@@ -316,6 +316,21 @@ public class PcepStateReportVer1 implements PcepStateReport {
     }
 
     @Override
+    public PcepEroObject getEroObject() {
+        return eroObject;
+    }
+
+    @Override
+    public PcepRroObject getRroObject() {
+        return rroObject;
+    }
+
+    @Override
+    public PcepAttribute getAttrObject() {
+        return pcepAttr;
+    }
+
+    @Override
     public PcepLspObject getLspObject() {
         return lspObject;
     }

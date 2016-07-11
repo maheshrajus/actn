@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.HashSet;
 import org.apache.felix.scr.annotations.Activate;
@@ -472,15 +473,13 @@ public class DistributedPceStore implements PceStore {
             return tunnelId;
         }
 
-        Iterator iterator = parentChildTunnelStatusMap.keySet().iterator();
-        while (iterator.hasNext()) {
-            TunnelId parentTunnel = (TunnelId) iterator.next();
-            Map<TunnelId, State> childTunnels = parentChildTunnelStatusMap.get(parentTunnel).value();
 
-            for (Map.Entry<TunnelId, State> tunnel : childTunnels.entrySet()) {
-                if (tunnelId.equals(tunnel.getKey())) {
-                    return parentTunnel;
-                }
+        //first get corresponding parent and update child
+        Iterator parentTunnelIds = parentChildTunnelStatusMap.keySet().iterator();
+        while (parentTunnelIds.hasNext()) {
+            TunnelId id = (TunnelId) parentTunnelIds.next();
+            if (parentChildTunnelStatusMap.get(id).value().keySet().contains(tunnelId)) {
+                return id;
             }
         }
 
@@ -518,18 +517,21 @@ public class DistributedPceStore implements PceStore {
         if (parentChildTunnelStatusMap.get(tunnelId) != null) {
             Map<TunnelId, State> childTunnels = parentChildTunnelStatusMap.get(tunnelId).value();
             childTunnels.replace(tunnelId, status);
+            parentChildTunnelStatusMap.replace(tunnelId, childTunnels);
             return true;
         }
-        // first get corresponding parent and update child
-        Iterator parentTunnels = parentChildTunnelStatusMap.entrySet().iterator();
-        while (parentTunnels.hasNext()) {
-            TunnelId id = (TunnelId) parentTunnels.next();
-            Map<TunnelId, State> childTunnel = parentChildTunnelStatusMap.get(id).value();
-            for (Map.Entry<TunnelId, State> tunnel : childTunnel.entrySet()) {
-                if (tunnelId.equals(tunnel.getKey())) {
-                    childTunnel.replace(tunnelId, status);
-                    return true;
-                }
+
+        //first get corresponding parent and update child
+        Iterator parentTunnelIds = parentChildTunnelStatusMap.keySet().iterator();
+        while (parentTunnelIds.hasNext()) {
+            TunnelId id = (TunnelId) parentTunnelIds.next();
+            if (parentChildTunnelStatusMap.get(id).value().keySet().contains(tunnelId)) {
+
+                Map<TunnelId, State> childTunnels = parentChildTunnelStatusMap.get(id).value();
+                childTunnels.replace(tunnelId, status);
+                //parentChildTunnelStatusMap.get(id).value().replace(tunnelId, status);
+                parentChildTunnelStatusMap.replace(id, childTunnels);
+                return true;
             }
         }
         return false;
@@ -544,6 +546,7 @@ public class DistributedPceStore implements PceStore {
             } else {
                 childTunnels.replace(childId, status);
             }
+            parentChildTunnelStatusMap.replace(parentId, childTunnels);
             return true;
         }
         return false;
@@ -555,6 +558,7 @@ public class DistributedPceStore implements PceStore {
             Map<TunnelId, State> childTunnels = parentChildTunnelStatusMap.get(parentId).value();
             if (childTunnels.get(childId) != null) {
                 childTunnels.remove(childId);
+                parentChildTunnelStatusMap.replace(parentId, childTunnels);
                 return true;
             }
         }
@@ -589,7 +593,7 @@ public class DistributedPceStore implements PceStore {
         if (parentChildTunnelStatusMap.get(parentId) != null) {
             Map<TunnelId, State> childTunnels = parentChildTunnelStatusMap.get(parentId).value();
             for (Map.Entry<TunnelId, State> childTunnel : childTunnels.entrySet()) {
-                if (parentId == childTunnel.getKey()) {
+                if (parentId.equals(childTunnel.getKey())) {
                     continue;
                 }
                 if (!childTunnel.getValue().equals(State.ACTIVE)) {

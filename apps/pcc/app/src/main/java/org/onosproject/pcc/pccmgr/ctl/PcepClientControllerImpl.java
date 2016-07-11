@@ -253,6 +253,7 @@ public class PcepClientControllerImpl implements PcepClientController {
                 PcepLspObject lspObj = initLsp.getLspObject();
                 ListIterator<PcepValueType> listTlvIterator = lspObj.getOptionalTlv().listIterator();
                 pathNameTlv = null;
+                StatefulIPv4LspIdentifiersTlv lspIdentifierTlv = null;
 
                 while (listTlvIterator.hasNext()) {
                     PcepValueType tlv = listTlvIterator.next();
@@ -260,7 +261,9 @@ public class PcepClientControllerImpl implements PcepClientController {
                         case SymbolicPathNameTlv.TYPE:
                             pathNameTlv = (SymbolicPathNameTlv) tlv;
                             break;
-
+                        case StatefulIPv4LspIdentifiersTlv.TYPE:
+                            lspIdentifierTlv = (StatefulIPv4LspIdentifiersTlv) tlv;
+                            break;
                         default:
                             break;
                     }
@@ -282,24 +285,25 @@ public class PcepClientControllerImpl implements PcepClientController {
 
                 if (srpObj.getRFlag()) {
                     log.info("Remove path with PLSPID " + lspObj.getPlspId());
-                    pathErr = pceService.releasePath(IpAddress.valueOf(endPointObj.getSourceIpAddress()),
-                            IpAddress.valueOf(endPointObj.getDestIpAddress()),
+                    assert lspIdentifierTlv != null;
+                    pathErr = pceService.releasePath(IpAddress.valueOf(lspIdentifierTlv.getIpv4IngressAddress()),
+                            IpAddress.valueOf(lspIdentifierTlv.getIpv4EgressAddress()),
                                     String.valueOf(lspObj.getPlspId()));
                 } else {
 
                     if (initLsp.getAssociationObjectList() != null) {
                         ListIterator<PcepAssociationObject> iterator
                                 = initLsp.getAssociationObjectList().listIterator();
-                        PcepAssociationObject associationObj = iterator.next();
 
+                        while (iterator.hasNext()) {
+                            PcepAssociationObject associationObj = iterator.next();
 
-                        while (associationObj != null) {
                             ListIterator<PcepValueType> listAssTlvIterator
-                                    = lspObj.getOptionalTlv().listIterator();
+                                    = associationObj.getOptionalTlv().listIterator();
                            virtualNetworklv = null;
 
-                            while (listTlvIterator.hasNext()) {
-                                PcepValueType tlv = listTlvIterator.next();
+                            while (listAssTlvIterator.hasNext()) {
+                                PcepValueType tlv = listAssTlvIterator.next();
                                 switch (tlv.getType()) {
                                     case VirtualNetworkTlv.TYPE:
                                         virtualNetworklv = (VirtualNetworkTlv) tlv;
@@ -319,7 +323,7 @@ public class PcepClientControllerImpl implements PcepClientController {
                                 // Assign bandwidth
                                 if (initBandwidthObject.getBandwidth() != 0.0) {
                                     initConstrntList.add(PceBandwidthConstraint.of(
-                                            Double.valueOf(initBandwidthObject.getBandwidth()),
+                                            (double) initBandwidthObject.getBandwidth(),
                                             DataRateUnit.valueOf("BPS")));
                                 }
 
@@ -327,10 +331,9 @@ public class PcepClientControllerImpl implements PcepClientController {
                                 if (initAttributes != null && initAttributes.getMetricObjectList() != null) {
                                     ListIterator<PcepMetricObject> metricIterator
                                             = initAttributes.getMetricObjectList().listIterator();
-                                    PcepMetricObject initMetricObj = metricIterator.next();
 
-
-                                    while (initMetricObj != null) {
+                                    while (metricIterator.hasNext()) {
+                                        PcepMetricObject initMetricObj = metricIterator.next();
                                         if (initMetricObj.getBType() == IGP_METRIC) {
                                             CostConstraint costConstraint = new CostConstraint(COST);
                                             initConstrntList.add(costConstraint);
@@ -338,16 +341,13 @@ public class PcepClientControllerImpl implements PcepClientController {
                                             CostConstraint costConstraint = new CostConstraint(TE_COST);
                                             initConstrntList.add(costConstraint);
                                         }
-
-                                        initMetricObj = metricIterator.next();
                                     }
                                 }
                             }
-
-                            associationObj = iterator.next();
                         }
                     }
 
+                    assert virtualNetworklv != null;
                     pathErr = pceService.setupPath(new String(virtualNetworklv.getValue()),
                                                            IpAddress.valueOf(endPointObj.getSourceIpAddress()),
                                                            IpAddress.valueOf(endPointObj.getDestIpAddress()),
@@ -656,11 +656,13 @@ public class PcepClientControllerImpl implements PcepClientController {
 
         @Override
         public PcepClientDriver getConnectedClient(PceId pceId) {
-            Iterator<ConcurrentHashMap.Entry<PceId, PcepClient>> iterator = connectedClients.entrySet().iterator();
-            if (iterator.hasNext()) {
-                return (PcepClientDriver) iterator.next();
+            if (pceId == null) {
+                Iterator<ConcurrentHashMap.Entry<PceId, PcepClient>> iterator = connectedClients.entrySet().iterator();
+                if (iterator.hasNext()) {
+                    return (PcepClientDriver) iterator.next().getValue();
+                }
+                return null;
             }
-
             return (PcepClientDriver) connectedClients.get(pceId);
         }
 
