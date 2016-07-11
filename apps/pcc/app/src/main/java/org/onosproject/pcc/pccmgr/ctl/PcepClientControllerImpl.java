@@ -459,10 +459,9 @@ public class PcepClientControllerImpl implements PcepClientController {
                 PcepAttribute attributes = updReq.getMsgPath().getPcepAttribute();
                 if (attributes != null && attributes.getMetricObjectList() != null) {
                     ListIterator<PcepMetricObject> iterator = attributes.getMetricObjectList().listIterator();
-                    PcepMetricObject metricObj = iterator.next();
 
-
-                    while (metricObj != null) {
+                    while (iterator.hasNext()) {
+                        PcepMetricObject metricObj = iterator.next();
                         if (metricObj.getBType() == IGP_METRIC) {
                             CostConstraint costConstraint = new CostConstraint(COST);
                             constrntList.add(costConstraint);
@@ -471,7 +470,6 @@ public class PcepClientControllerImpl implements PcepClientController {
                             constrntList.add(costConstraint);
                         }
 
-                        metricObj = iterator.next();
                     }
                 }
             }
