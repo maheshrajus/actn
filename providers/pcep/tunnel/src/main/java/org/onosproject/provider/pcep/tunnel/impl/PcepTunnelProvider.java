@@ -1897,7 +1897,7 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
                     bandwidth = Float.parseFloat(tunnel.annotations().value(BANDWIDTH));
                 }
 
-                boolean isPceInit = tunnel.annotations().value(PCE_INIT) == null ? false : Boolean.valueOf((tunnel.annotations().value(PCE_INIT)));
+                boolean isPceInit = tunnel.annotations().value(PCE_INIT) == null ? false : Boolean.valueOf((tunnel.annotations().value(PCE_INIT))).booleanValue();
 
                 annotations = getAnnotations(lspObj, ipv4LspIdenTlv,
                         bandwidth, lspType,
