@@ -78,21 +78,23 @@ public class DomainManagerImpl implements DomainManager {
 
         Map<Oper, Set<Path>> pathMap = new HashMap<>();
         Set<Path> updatePaths = new HashSet<>();
+        Set<Path> oldPathsTemp= new HashSet<>(oldPaths);
+        Set<Path> newPathsTemp = new HashSet<>(newPaths);
 
         for (Path oldpath : oldPaths) {
             for (Path newPath : newPaths) {
                 if (oldpath.src().deviceId().equals(newPath.src().deviceId())
                         && oldpath.dst().deviceId().equals(newPath.dst().deviceId())) {
                     updatePaths.add(newPath);
-                    oldPaths.remove(oldpath);
-                    newPaths.remove(newPath);
+                    oldPathsTemp.remove(oldpath);
+                    newPathsTemp.remove(newPath);
                 }
             }
         }
 
-        pathMap.put(Oper.ADD, newPaths);
+        pathMap.put(Oper.ADD, newPathsTemp);
         pathMap.put(Oper.UPDATE, updatePaths);
-        pathMap.put(Oper.DELETE, oldPaths);
+        pathMap.put(Oper.DELETE, oldPathsTemp);
 
         return pathMap;
     }
