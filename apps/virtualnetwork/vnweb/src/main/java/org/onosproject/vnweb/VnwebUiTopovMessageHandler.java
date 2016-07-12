@@ -364,14 +364,14 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
                     String asNumber = annots.value(AS_NUMBER);
                     highlights = addDeviceBadge(highlights,
                             dev.id().toString(), asNumber);
-                    Set<Link> links = linkService.getDeviceLinks(dev.id());
-                    for (Link link : links) {
+                   /*   Set<Link> links = linkService.getDeviceLinks(dev.id());
+                  for (Link link : links) {
                         lh = new LinkHighlight(
                                 TopoUtils.compactLinkString(link),
                                 PRIMARY_HIGHLIGHT).addMod(new Mod(CUSTOM_RED));
 
                         highlights.add(lh);
-                    }
+                    } */
                 }
             }
 
