@@ -321,7 +321,7 @@ public class PcepClientControllerImpl implements PcepClientController {
                                         = initLsp.getPcepAttribute().getBandwidthObject();
 
                                 // Assign bandwidth
-                                if (initBandwidthObject.getBandwidth() != 0.0) {
+                                if ((initBandwidthObject != null) && (initBandwidthObject.getBandwidth() != 0.0)) {
                                     initConstrntList.add(PceBandwidthConstraint.of(
                                             (double) initBandwidthObject.getBandwidth(),
                                             DataRateUnit.valueOf("BPS")));
