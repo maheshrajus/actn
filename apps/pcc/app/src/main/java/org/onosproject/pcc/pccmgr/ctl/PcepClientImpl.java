@@ -346,8 +346,8 @@ public class PcepClientImpl implements PcepClientDriver {
 
         //build LSP object
         tlv = new StatefulIPv4LspIdentifiersTlv(reportInfo.ingress().getIp4Address().toInt(),
-                                                Short.parseShort(reportInfo.localLspId()),
-                                                Short.parseShort(reportInfo.pceTunnelId()),
+                                                Short.valueOf(reportInfo.localLspId()),
+                                                Short.valueOf(reportInfo.pceTunnelId()),
                                                 reportInfo.ingress().getIp4Address().toInt(),
                                                 reportInfo.egress().getIp4Address().toInt());
         llOptionalTlv.add(tlv);

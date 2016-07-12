@@ -630,15 +630,47 @@ public class PceManager implements PceService {
         checkNotNull(dstLsrId);
         checkNotNull(tunnelName);
 
-        if (lspType == null) {
+        CapabilityType type;
+
+        switch (defaultLspType()) {
+            case WITH_SIGNALLING:
+                type = CapabilityType.WITH_SIGNALLING;
+                break;
+            case SR_WITHOUT_SIGNALLING:
+                type = CapabilityType.SR_WITHOUT_SIGNALLING;
+                break;
+            case WITHOUT_SIGNALLING_AND_WITHOUT_SR:
+                type = CapabilityType.WITHOUT_SIGNALLING_AND_WITHOUT_SR;
+                break;
+            default:
+                type = null;
+        }
+        /*if (lspType == null) {
             lspType = defaultLspType();
+        }*/
+
+        CapabilityConstraint capabilityConstraint = null;
+
+        Iterator<Constraint> iterator = constraints.iterator();
+
+        while (iterator.hasNext()) {
+            Constraint constraint = iterator.next();
+            if (constraint instanceof CapabilityConstraint) {
+                capabilityConstraint = ((CapabilityConstraint) constraint);
+            }
+        }
+
+        if (capabilityConstraint != null) {
+            constraints.remove(capabilityConstraint);
+            capabilityConstraint  = CapabilityConstraint.of(type);
+            constraints.add(capabilityConstraint);
         }
 
         // Get the devices from lsrId's
         DeviceId srcDeviceId = pceStore.getLsrIdDevice(srcLsrId.toString());
         DeviceId dstDeviceId = pceStore.getLsrIdDevice(dstLsrId.toString());
 
-        return setupPath(vnName, srcDeviceId, dstDeviceId, tunnelName, constraints, lspType);
+        return setupPath(vnName, srcDeviceId, dstDeviceId, tunnelName, constraints, defaultLspType());
 
     }
 
