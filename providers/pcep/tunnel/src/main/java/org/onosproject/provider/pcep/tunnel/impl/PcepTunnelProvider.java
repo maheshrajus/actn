@@ -1095,14 +1095,31 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
         //build ERO object
         PcepEroObject eroobj = pc.factory().buildEroObject().setSubObjects(llSubObjects).build();
 
-        float  iBandwidth = (float) 0.0;
-        if (tunnel.annotations().value(BANDWIDTH) != null) {
-            iBandwidth = Float.valueOf(tunnel.annotations().value(BANDWIDTH));
-        }
-        // build bandwidth object
-        PcepBandwidthObject bandwidthObject = pc.factory().buildBandwidthObject().setBandwidth(iBandwidth).build();
         // build pcep attribute
-        PcepAttribute pcepAttribute = pc.factory().buildPcepAttribute().setBandwidthObject(bandwidthObject).build();
+        PcepAttribute.Builder  attBldr = pc.factory().buildPcepAttribute();
+
+        // build metric object
+        byte metricType = 0x02; /* TE_METRIC */
+        if ("COST".equals(tunnel.annotations().value(COST_TYPE))) {
+            metricType = 0x01; /* IGP_METRIC */
+        }
+
+        LinkedList<PcepMetricObject> llMetricList = new LinkedList<PcepMetricObject>();
+        PcepMetricObject metricObject = pc.factory().buildMetricObject()
+                .setBType(metricType)
+                .setMetricVal((int) tunnel.path().cost()).build();
+        llMetricList.add(metricObject);
+        attBldr.setMetricObjectList(llMetricList);
+
+        // build bandwidth object
+        if (tunnel.annotations().value(BANDWIDTH) != null) {
+            float iBandwidth = Float.valueOf(tunnel.annotations().value(BANDWIDTH));
+            PcepBandwidthObject bandwidthObject = pc.factory().buildBandwidthObject()
+                    .setBandwidth(iBandwidth).build();
+            attBldr.setBandwidthObject(bandwidthObject);
+        }
+
+        PcepAttribute pcepAttribute =  attBldr.build();
 
         PcInitiatedLspRequest.Builder initiateLspReqBldr = pc.factory().buildPcInitiatedLspRequest()
                 .setSrpObject(srpobj)
@@ -1408,14 +1425,31 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
             // build ero object
             PcepEroObject eroobj = pc.factory().buildEroObject().setSubObjects(llSubObjects).build();
 
-            float iBandwidth = (float) 0.0;
-            if (tunnel.annotations().value(BANDWIDTH) != null) {
-                iBandwidth = Float.parseFloat(tunnel.annotations().value(BANDWIDTH));
-            }
-            // build bandwidth object
-            PcepBandwidthObject bandwidthObject = pc.factory().buildBandwidthObject().setBandwidth(iBandwidth).build();
             // build pcep attribute
-            PcepAttribute pcepAttribute = pc.factory().buildPcepAttribute().setBandwidthObject(bandwidthObject).build();
+            PcepAttribute.Builder  attBldr = pc.factory().buildPcepAttribute();
+
+            byte metricType = 0x02; /* TE_METRIC */
+            if ("COST".equals(tunnel.annotations().value(COST_TYPE))) {
+                metricType = 0x01; /* IGP_METRIC */
+            }
+
+            LinkedList<PcepMetricObject> llMetricList = new LinkedList<PcepMetricObject>();
+            PcepMetricObject metricObject = pc.factory().buildMetricObject()
+                    .setBType(metricType)
+                    .setMetricVal((int) tunnel.path().cost()).build();
+            llMetricList.add(metricObject);
+            attBldr.setMetricObjectList(llMetricList);
+
+            if (tunnel.annotations().value(BANDWIDTH) != null) {
+                float iBandwidth = Float.parseFloat(tunnel.annotations().value(BANDWIDTH));
+                // build bandwidth object
+                PcepBandwidthObject bandwidthObject = pc.factory().buildBandwidthObject()
+                                                        .setBandwidth(iBandwidth).build();
+                attBldr.setBandwidthObject(bandwidthObject);
+            }
+
+            PcepAttribute pcepAttribute =  attBldr.build();
+
             // build pcep msg path
             PcepMsgPath msgPath = pc.factory().buildPcepMsgPath().setEroObject(eroobj).setPcepAttribute(pcepAttribute)
                     .build();
