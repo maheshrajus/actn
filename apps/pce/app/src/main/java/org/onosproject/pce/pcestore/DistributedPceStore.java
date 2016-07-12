@@ -503,9 +503,10 @@ public class DistributedPceStore implements PceStore {
         checkNotNull(tunnelId);
         if (parentChildTunnelStatusMap.get(tunnelId) != null) {
             Map<TunnelId, State> childTunnels = parentChildTunnelStatusMap.get(tunnelId).value();
-            if (!childTunnels.isEmpty()) {
-                childTunnels.keySet().forEach(childTunnels::remove);
-            }
+            childTunnels.clear();
+//            if (!childTunnels.isEmpty()) {
+//                childTunnels.keySet().forEach(childTunnels::remove);
+//            }
             parentChildTunnelStatusMap.remove(tunnelId);
         }
         return true;

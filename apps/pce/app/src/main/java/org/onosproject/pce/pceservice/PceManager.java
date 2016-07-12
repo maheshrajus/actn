@@ -871,7 +871,7 @@ public class PceManager implements PceService {
                         Tunnel tempTunnel = tunnelService.queryTunnel(updateTunnel);
                         Collection<Tunnel> childTunnels = tunnelService.queryTunnel(tempTunnel.tunnelName());
                         childTunnels.forEach(t -> {
-                            if (updateTunnel != t.tunnelId()) {
+                            if (!updateTunnel.equals(t.tunnelId())) {
                                 pceStore.addChildTunnel(newParentTunnelId, t.tunnelId(), t.state());
                             }
                         });
@@ -902,6 +902,10 @@ public class PceManager implements PceService {
         while (childTunnelItr.hasNext()) {
             TunnelId childTunnelId = (TunnelId) childTunnelItr.next();
             Tunnel tmpTunnel = tunnelService.queryTunnel(childTunnelId);
+            if (tmpTunnel == null || tmpTunnel.path() == null) {
+                continue;
+            }
+
             DeviceId tunnelSrc = tmpTunnel.path().links().get(0).src().deviceId();
             DeviceId tunnelDst = tmpTunnel.path().links().get(tmpTunnel.path().links().size() - 1).dst().deviceId();
 
