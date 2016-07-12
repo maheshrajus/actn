@@ -1672,7 +1672,7 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
         }
 
         private SparseAnnotations getAnnotations(PcepLspObject lspObj, StatefulIPv4LspIdentifiersTlv ipv4LspIdenTlv,
-                float bandwidth, LspType lspType, String costType, boolean isPceInit) {
+                float bandwidth, LspType lspType, String costType, boolean isPceInit, String vnName) {
 
             Builder builder = DefaultAnnotations.builder();
 
@@ -1686,6 +1686,10 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
 
             if (isPceInit) {
                 builder.set(PCE_INIT, String.valueOf(isPceInit));
+            }
+
+            if (vnName != null) {
+                builder.set(VN_NAME, vnName);
             }
 
             SparseAnnotations annotations = builder
@@ -1852,7 +1856,7 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
                     log.error("Ingress deviceId not found");
                     return;
                 }
-                annotations = getAnnotations(lspObj, ipv4LspIdenTlv, bandwidth, lspType, costType, lspObj.getCFlag());
+                annotations = getAnnotations(lspObj, ipv4LspIdenTlv, bandwidth, lspType, costType, lspObj.getCFlag(), null);
 
                 Collection<Tunnel>  tempTunnel = tunnelService.queryTunnel(TunnelName.
                         tunnelName(new String(pathNameTlv.getValue())));
@@ -1917,7 +1921,7 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
 
                 annotations = getAnnotations(lspObj, ipv4LspIdenTlv,
                         bandwidth, lspType,
-                        tunnel.annotations().value(COST_TYPE), isPceInit);
+                        tunnel.annotations().value(COST_TYPE), isPceInit, tunnel.annotations().value(VN_NAME));
                 td = new DefaultTunnelDescription(null, tunnelEndPointSrc, tunnelEndPointDst, tunnel.type(),
                         new DefaultGroupId(0), providerId, TunnelName.tunnelName(new String(pathNameTlv.getValue())),
                         tunnel.path(), labelStack, annotations);

@@ -761,6 +761,11 @@ public class PceManager implements PceService {
         annotationBuilder.set(DELEGATE, TRUE);
         annotationBuilder.set(PLSP_ID, tunnel.annotations().value(PLSP_ID));
         annotationBuilder.set(PCC_TUNNEL_ID, tunnel.annotations().value(PCC_TUNNEL_ID));
+
+        if (tunnel.annotations().value(VN_NAME) != null) {
+            annotationBuilder.set(VN_NAME, tunnel.annotations().value(VN_NAME));
+        }
+
         Path computedPath = computedPathSet.iterator().next();
 
         LabelStack labelStack = null;
