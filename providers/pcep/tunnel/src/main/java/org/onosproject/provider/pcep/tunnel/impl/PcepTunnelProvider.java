@@ -1906,7 +1906,7 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
                 return;
             }
             //delegated owner will update can be a master or non-master
-            if (lspObj.getDFlag()) {
+            if (lspObj.getDFlag() && !lspObj.getRFlag()) {
 
                 if (tunnel.annotations().value(BANDWIDTH) != null) {
                     bandwidth = Float.parseFloat(tunnel.annotations().value(BANDWIDTH));
@@ -1921,6 +1921,7 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
                         new DefaultGroupId(0), providerId, TunnelName.tunnelName(new String(pathNameTlv.getValue())),
                         tunnel.path(), labelStack, annotations);
                 tunnelUpdateInDelegatedCase(pccId, annotations, td, providerId);
+                return;
             }
             removeOrUpdatetunnel(tunnel, pccId, lspObj, providerId, tunnelState);
         }
