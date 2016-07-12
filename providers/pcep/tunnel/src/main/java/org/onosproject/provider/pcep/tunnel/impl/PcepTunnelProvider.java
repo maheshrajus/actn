@@ -1360,7 +1360,8 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
 
             llOptionalTlv = new LinkedList<PcepValueType>();
 
-            if (lspSigType != WITH_SIGNALLING) {
+            if ((lspSigType != WITH_SIGNALLING)
+            || (tunnel.type() == SDMPLS)) {
                 String localLspIdString = tunnel.annotations().value(LOCAL_LSP_ID);
                 String pccTunnelIdString = tunnel.annotations().value(PCC_TUNNEL_ID);
                 short localLspId = 0;

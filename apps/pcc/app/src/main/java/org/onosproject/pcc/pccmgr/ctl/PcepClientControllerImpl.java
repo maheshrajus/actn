@@ -417,7 +417,7 @@ public class PcepClientControllerImpl implements PcepClientController {
                     String pathName = new String(pathNameTlv.getValue());
                     SrpIdMapping srpIdMapping = new SrpIdMapping(srpObj.getSrpID(), 0, 0);
                     pceSrpStore.addSrpIdMapping(pathName, srpIdMapping);
-                    log.info("Adding symName: " + pathName + ", SrpId: " + srpObj.getSrpID());
+                    log.info("Adding symbalicName: " + pathName + ", SrpId: " + srpObj.getSrpID());
                 } else {
                     TunnelEndPoint src = IpTunnelEndPoint
                             .ipTunnelPoint(IpAddress.valueOf(lspIdentifier.getIpv4EgressAddress()));
@@ -452,7 +452,7 @@ public class PcepClientControllerImpl implements PcepClientController {
 
                 // Assign bandwidth
                 if (bandwidthObject.getBandwidth() != 0.0) {
-                    constrntList.add(PceBandwidthConstraint.of(Double.valueOf(bandwidthObject.getBandwidth()),
+                    constrntList.add(PceBandwidthConstraint.of((double) bandwidthObject.getBandwidth(),
                                                             DataRateUnit.valueOf("BPS")));
                 }
 
