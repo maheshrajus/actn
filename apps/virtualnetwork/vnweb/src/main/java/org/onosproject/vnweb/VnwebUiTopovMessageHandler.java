@@ -18,6 +18,7 @@ package org.onosproject.vnweb;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableSet;
+import org.omg.PortableInterceptor.ACTIVE;
 import org.onlab.osgi.ServiceDirectory;
 import org.onlab.util.Bandwidth;
 import org.onosproject.incubator.net.tunnel.Tunnel;
@@ -74,10 +75,15 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
     private static final String VNWEB_SET_DESTINATION = "pceTopovSetDst";
     private static final String VNWEB_SETUP_PATH = "vnSetup";
     private static final String VNWEB_UPDATE_MSG_HANDLE_REPLY = "showVnInfoMsgUpdateCnstrs";
+    private static final String VNWEB_UPDATE_MSG_HANDLE_ENDPTS_REPLY = "showVnInfoMsgUpdateEndpoints";
     private static final String VNWEB_UPDATE_MSG_HANDLE_CONSTRAINTS = "vnUpdatemsgHandleConstr";
+    private static final String VNWEB_UPDATE_MSG_HANDLE_ENDPTS = "vnUpdatemsgHandleEndPtss";
     private static final String VNWEB_DEVICE_HIGHLIGHT = "vnDeviceHighlight";
 
     private static final String VN_ID = "vnid";
+    private static final String VN_ID_UPDATE_TYPE = "type";
+    private static final String VN_ID_UPDATE_TYPE_ENDPTS = "endpoints";
+    private static final String VN_ID_UPDATE_TYPE_CONSTR = "constraints";
     private static final String VN_ID_QUERY = "query";
     private static final String BUFFER_ARRAY = "a";
     private static final String VNWEB_QUERY_SHOW = "show";
@@ -92,6 +98,7 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
     private static final String COST_TYPE_IGP = "igp";
     private static final String COST_TYPE_TE = "te";
     private static final String BANDWIDTH_TYPE_KBPS = "kbps";
+    private static final String BANDWIDTH_TYPE_MBPS = "mbps";
     private static final String STRING_NULL = "null";
     private static final double BANDWIDTH_KBPS = 1_000;
     private static final double BANDWIDTH_MBPS = 1_000_000;
@@ -101,13 +108,11 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
             "pCol5", "pCol6", "pCol7", "pCol8", "pCol9", "pCol10", "pCol11",
             "pCol12", "pCol13", "pCol14", "pCol15"};
     private static final int LINK_COLOR_MAX = 15;
-    private static final int TYPE_BW = 2;
-    private static final int TYPE_COST = 1;
-    private static final String FILL_BW = "bwtype";
+    private static final String FILL_BW = "BandWidth";
     private static final String FILL_COST = "CostType";
     private static final String FILL_VN = "VnName";
     private static final String FILL_SRC = "SRC";
-    private static final String FILL_DST = "SRC";
+    private static final String FILL_DST = "DST";
 
     private final Logger log = LoggerFactory.getLogger(getClass());
     // Delay for showHighlights event processing on GUI client side to
@@ -134,7 +139,8 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
                 new VnIdRemoveHandle(), new ClearHandler(),
                 new SetSrcHandler(), new SetDstHandler(), new SetPathHandler(),
                 new VnIdUpdateHandle(), new VnIdUpdateHandleConstr(),
-                new VnDeviceHighlight());
+                new VnDeviceHighlight(),
+                new VnIdUpdateHandleEndpts());
     }
 
     // === Handler classes: Begin
@@ -186,7 +192,7 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
             List<VirtualNetworkInfo> listVn = vnService.queryAllVn();
 
             for (VirtualNetworkInfo vn : listVn) {
-                arrayNode.add(vn.vnName().toString());
+                arrayNode.add(vn.vnName());
             }
 
             result.putArray(BUFFER_ARRAY).addAll(arrayNode);
@@ -198,6 +204,7 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
             } else {
                 sendMessage(VNWEB_VNID_UPDATE_MSG, sid, result);
             }
+            clearForMode();
         }
     }
 
@@ -228,6 +235,7 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
             if (!vnService.deleteVn(vnName)) {
                 log.debug("Virtual network creation failed.");
             }
+            clearForMode();
         }
     }
 
@@ -240,39 +248,79 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
         public void process(long sid, ObjectNode payload) {
             String vnName = string(payload, VN_ID);
             log.debug("update event received for VN ID", vnName);
+            String updateType = string(payload, VN_ID_UPDATE_TYPE);
             ObjectNode result = objectNode();
             ArrayNode arrayNode = arrayNode();
+            if (updateType == null) {
+                log.debug("update type should be atleast one.");
+                return;
+            }
 
             // filling the VN name
             VirtualNetworkInfo vnInfo = vnService.queryVn(vnName);
             arrayNode.add(FILL_VN);
-            arrayNode.add(vnInfo.vnName().toString());
+            arrayNode.add(vnInfo.vnName());
+            if (updateType.equals(VN_ID_UPDATE_TYPE_ENDPTS)) {
+                // filling the SRC device IDs
+                arrayNode.add(FILL_SRC);
+                for (DeviceId device : vnInfo.endPoint().src()) {
+                    arrayNode.add(device.toString());
+                }
+                // filling the SRC device IDs
+                arrayNode.add(FILL_DST);
+                for (DeviceId device : vnInfo.endPoint().dst()) {
+                    arrayNode.add(device.toString());
+                }
 
-            // filling the bandwidth and cost related constraints.
-            List<Constraint> listConstraints = vnInfo.constraints();
-            for (Constraint constrn : listConstraints) {
-                if (constrn instanceof PceBandwidthConstraint) {
+                result.putArray(BUFFER_ARRAY).addAll(arrayNode);
+                sendMessage(VNWEB_UPDATE_MSG_HANDLE_ENDPTS_REPLY, sid, result);
+            } else {
+                // filling the bandwidth and cost related constraints.
+                Iterable<Tunnel> tunnels = vnService.queryVnTunnels(vnName);
+                for (Tunnel tunnel : tunnels) {
+                    if (tunnel.path() == null) {
+                        log.error("path does not exist");
+                        continue;
+                    }
+                    if (!tunnel.state().equals(Tunnel.State.ACTIVE)) {
+                        log.error("tunnel state is not active.");
+                        continue;
+                    }
                     arrayNode.add(FILL_BW);
-                    arrayNode.add("200"); // TODO:
-                }
-                if (constrn instanceof CostConstraint) {
+                    arrayNode.add(tunnel.annotations().value("bandwidth"));
                     arrayNode.add(FILL_COST);
-                    arrayNode.add("1"); // TODO:
+                    arrayNode.add(tunnel.annotations().value("costType"));
+                    break;
                 }
-            }
-            // filling the SRC device IDs
-            arrayNode.add(FILL_SRC);
-            for (DeviceId device : vnInfo.endPoint().src()) {
-                arrayNode.add(device.toString());
-            }
-            // filling the SRC device IDs
-            arrayNode.add(FILL_DST);
-            for (DeviceId device : vnInfo.endPoint().dst()) {
-                arrayNode.add(device.toString());
-            }
+                result.putArray(BUFFER_ARRAY).addAll(arrayNode);
+                sendMessage(VNWEB_UPDATE_MSG_HANDLE_REPLY, sid, result);
 
-            result.putArray(BUFFER_ARRAY).addAll(arrayNode);
-            sendMessage(VNWEB_UPDATE_MSG_HANDLE_REPLY, sid, result);
+                /*
+                List<Constraint> listConstraints = vnInfo.constraints();
+                if (listConstraints.isEmpty()) {
+                    arrayNode.add(FILL_BW);
+                    arrayNode.add(0);
+                    arrayNode.add(FILL_COST);
+                    arrayNode.add("te");
+                }
+                for (Constraint constraint : listConstraints) {
+                    if (constraint instanceof PceBandwidthConstraint) {
+                        PceBandwidthConstraint bandwidth = (PceBandwidthConstraint) constraint;
+                        arrayNode.add(FILL_BW);
+                        arrayNode.add(bandwidth.bandwidth().bps());
+                    }
+                    if (constraint instanceof CostConstraint) {
+                        CostConstraint costConstraint = (CostConstraint) constraint;
+                        arrayNode.add(FILL_COST);
+                        switch (costConstraint.type()) {
+                            case COST:
+                                arrayNode.add("igp");
+                            case TE_COST:
+                                arrayNode.add("te");
+                        }
+                    }
+                } */
+            }
         }
     }
 
@@ -292,18 +340,35 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
             List<Constraint> constraints;
 
             constraints = buildCostAndBandWidthConstraints(bandWidth,
-                    bandWidthType, costType);
-            VnEndPoints endPoint = new VnEndPoints(srcList, dstList);
-            if (!vnService.updateVn(vnName, endPoint)) {
-                log.error("Virtual network creation failed.");
-            }
+                                bandWidthType, costType);
+
             if (!vnService.updateVn(vnName, constraints)) {
                 log.error("Virtual network creation failed.");
             }
             // clear the src and dst list after setup.
-            dstList.removeAll(dstList);
-            srcList.removeAll(srcList);
+            clearForMode();
+        }
+    }
 
+    private final class VnIdUpdateHandleEndpts extends RequestHandler {
+        public VnIdUpdateHandleEndpts() {
+            super(VNWEB_UPDATE_MSG_HANDLE_ENDPTS);
+        }
+
+        @Override
+        public void process(long sid, ObjectNode payload) {
+            String vnName = string(payload, VN_ID);
+            log.debug("update event received for VN ID", vnName);
+
+            VnEndPoints endPoint = new VnEndPoints(srcList, dstList);
+            if (!vnService.updateVn(vnName, endPoint)) {
+                log.error("Virtual network creation failed.");
+            }
+
+            // clear the src and dst list after setup.
+            dstList.clear();
+            srcList.clear();
+            clearForMode();
         }
     }
 
@@ -315,8 +380,8 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
         @Override
         public void process(long sid, ObjectNode payload) {
             log.debug("Stop Display");
-            dstList.removeAll(dstList);
-            srcList.removeAll(srcList);
+            dstList.clear();
+            srcList.clear();
             clearForMode();
         }
     }
@@ -435,8 +500,9 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
             log.error("Virtual network creation failed.");
         }
         // clear the src and dst list after setup.
-        dstList.removeAll(dstList);
-        srcList.removeAll(srcList);
+        dstList.clear();
+        srcList.clear();
+        clearForMode();
 
     }
 
@@ -451,7 +517,7 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
         }
         if (bandWidthType.equals(BANDWIDTH_TYPE_KBPS)) {
             bwValue = bwValue * BANDWIDTH_KBPS;
-        } else {
+        } else if (bandWidthType.equals(BANDWIDTH_TYPE_MBPS)) {
             bwValue = bwValue * BANDWIDTH_MBPS;
         }
 
@@ -485,13 +551,27 @@ public class VnwebUiTopovMessageHandler extends UiMessageHandler {
      */
     private void findTunnelAndHighlights(Iterable<Tunnel> tunnelSet) {
         Highlights highlights = new Highlights();
-        paths.removeAll(paths);
+        paths.clear();
+        Iterable<Device> devices = deviceService.getAvailableDevices();
+        for (Device dev : devices) {
+            if (dev.type() == Device.Type.ROUTER) {
+                Annotations annots = dev.annotations();
+                String asNumber = annots.value(AS_NUMBER);
+                highlights = addDeviceBadge(highlights,
+                        dev.id().toString(), asNumber);
+            }
+        }
 
         for (Tunnel tunnel : tunnelSet) {
             if (tunnel.path() == null) {
                 log.error("path does not exist");
                 sendMessage(TopoJson.highlightsMessage(highlights));
-                return;
+                continue;
+            }
+            if (!tunnel.state().equals(Tunnel.State.ACTIVE)) {
+                log.error("Tunnel state is not active for highlight.");
+                sendMessage(TopoJson.highlightsMessage(highlights));
+                continue;
             }
             Link firstLink = tunnel.path().links().get(0);
             if (firstLink != null) {

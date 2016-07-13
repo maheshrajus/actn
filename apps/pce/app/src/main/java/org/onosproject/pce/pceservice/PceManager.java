@@ -30,6 +30,8 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.LinkedHashSet;
+import java.util.stream.Collectors;
+
 import org.onlab.packet.Ethernet;
 import org.onlab.packet.IPv4;
 import org.apache.felix.scr.annotations.Activate;
@@ -1015,7 +1017,9 @@ public class PceManager implements PceService {
     @Override
     public Iterable<Tunnel> queryPath(String vnName) {
         // TODO: query tunnels by vn name
-        return tunnelService.queryTunnel(MDMPLS);
+        return tunnelService.queryTunnel(MDMPLS).stream()
+                .filter(t -> t.annotations().value(VN_NAME).equals(vnName))
+                .collect(Collectors.toList());
     }
 
     @Override

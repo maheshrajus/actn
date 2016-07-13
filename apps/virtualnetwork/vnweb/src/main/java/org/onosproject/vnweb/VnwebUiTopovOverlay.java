@@ -15,16 +15,21 @@
  */
 package org.onosproject.vnweb;
 
-import org.onosproject.net.AnnotationKeys;
-import org.onosproject.net.Annotations;
-import org.onosproject.net.Device;
-import org.onosproject.net.DeviceId;
+import org.onlab.packet.Ip4Address;
+import org.onlab.packet.IpAddress;
+import org.onosproject.net.*;
 import org.onosproject.net.device.DeviceService;
+import org.onosproject.net.link.LinkEvent;
+import org.onosproject.net.resource.*;
 import org.onosproject.ui.UiTopoOverlay;
 import org.onosproject.ui.topo.ButtonId;
 import org.onosproject.ui.topo.PropertyPanel;
 import org.onosproject.ui.topo.TopoConstants.CoreButtons;
 import org.onosproject.cli.AbstractShellCommand;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Our topology overlay.
@@ -39,10 +44,14 @@ public class VnwebUiTopovOverlay extends UiTopoOverlay {
     public static final String ABR_BIT = "abrBit";
     public static final String ASBR_BIT = "externalBit";
     public static final String TE_METRIC = "teCost";
-
+    public static final String ABR = "ABR";
+    public static final String ASBR = "ASBR";
+    public static final String ABR_ASBR = "ABR/ASBR";
+    public static final String INNER = "Inner";
     private static final ButtonId SRC_BUTTON = new ButtonId("src");
     private static final ButtonId DST_BUTTON = new ButtonId("dst");
-
+    public static final String LSR_ID = "lsrId";
+    public static final long IDENTIFIER_SET = 0x100000000L;
     public VnwebUiTopovOverlay() {
         super(OVERLAY_ID);
     }
@@ -50,22 +59,22 @@ public class VnwebUiTopovOverlay extends UiTopoOverlay {
     @Override
     public void modifyDeviceDetails(PropertyPanel pp, DeviceId deviceId) {
 
-         pp.title(MY_TITLE);
-         DeviceService deviceService = AbstractShellCommand.get(DeviceService.class);
-         pp.removeAllProps();
-         pp.addButton(SRC_BUTTON).addButton(DST_BUTTON);
-         pp.removeButtons(CoreButtons.SHOW_PORT_VIEW)
+        pp.title(MY_TITLE);
+        DeviceService deviceService = AbstractShellCommand.get(DeviceService.class);
+        pp.removeAllProps();
+        pp.addButton(SRC_BUTTON).addButton(DST_BUTTON);
+        pp.removeButtons(CoreButtons.SHOW_PORT_VIEW)
                 .removeButtons(CoreButtons.SHOW_GROUP_VIEW)
                 .removeButtons(CoreButtons.SHOW_METER_VIEW);
 
-         if (deviceService != null) {
+        if (deviceService != null) {
+
             Device device = deviceService.getDevice(deviceId);
             Annotations annots = device.annotations();
 
-            String routerId = annots.value(AnnotationKeys.ROUTER_ID);
             String type = annots.value(AnnotationKeys.TYPE);
             String asNumber = annots.value(AS_NUMBER);
-            String domain = annots.value(DOMAIN_IDENTIFIER);
+            String lsrId = annots.value(LSR_ID);
             String abrStatus = annots.value(ABR_BIT);
             String asbrStatus = annots.value(ASBR_BIT);
 
@@ -73,26 +82,87 @@ public class VnwebUiTopovOverlay extends UiTopoOverlay {
                 pp.addProp("Type", type);
             }
 
-            if (routerId != null) {
-                pp.addProp("Router-ID", routerId);
-            }
-
             if (asNumber != null) {
                 pp.addProp("AS Number", asNumber);
             }
 
-            if (domain != null) {
-                pp.addProp("Domain ID", domain);
+            if (lsrId != null) {
+                pp.addProp("LSR ID", lsrId);
             }
 
-            if (abrStatus != null) {
-                pp.addProp("ABR Role", abrStatus);
-            }
-
-            if (asbrStatus != null) {
-                pp.addProp("ASBR Role", asbrStatus);
+            if (abrStatus.equals("true") && asbrStatus.equals("true")) {
+                pp.addProp("Position", ABR_ASBR);
+            } else if (abrStatus.equals("true")) {
+                pp.addProp("Position", ABR);
+            } else if (asbrStatus.equals("true")) {
+                pp.addProp("Position", ASBR);
+            } else {
+                pp.addProp("Position", INNER);
             }
         }
     }
+    @Override
+    public Map<String, String> additionalLinkData(LinkEvent event) {
+        Map<String, String> map = new HashMap<>();
+        Link link = event.subject();
+        long srcPortNo;
+        long dstPortNo;
+        IpAddress ipDstAddress = null;
+        IpAddress ipSrcAddress = null;
+        String srcPort;
+        String dstPort;
+        String bandWidth;
 
+        srcPortNo = link.src().port().toLong();
+        if (((srcPortNo & IDENTIFIER_SET) == IDENTIFIER_SET)) {
+            srcPort = String.valueOf(srcPortNo);
+        } else {
+            ipSrcAddress = Ip4Address.valueOf((int) srcPortNo);
+            srcPort = ipSrcAddress.toString();
+        }
+
+        dstPortNo = link.dst().port().toLong();
+        if (((dstPortNo & IDENTIFIER_SET) == IDENTIFIER_SET)) {
+            dstPort = String.valueOf(dstPortNo);
+        } else {
+            ipDstAddress = Ip4Address.valueOf((int) dstPortNo);
+            dstPort = ipDstAddress.toString();
+        }
+
+        map.put("Src Address", srcPort);
+        map.put("Dst Address", dstPort);
+        map.put("Te metric", link.annotations().value(TE_METRIC));
+
+        ResourceService resService = AbstractShellCommand.get(ResourceService.class);
+        DiscreteResource devResource = Resources.discrete(link.src().deviceId(), link.src().port()).resource();
+        if (resService == null) {
+            log.warn("resource service does not exist");
+            return map;
+        }
+
+        if (devResource == null) {
+            log.warn("Device resources does not exist");
+            return map;
+        }
+        double regBandwidth = 0;
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            log.error("Exception occured while getting the bandwidth.");
+        }
+        Set<Resource> resources = resService.getRegisteredResources(devResource.id());
+        for (Resource res : resources) {
+            if (res instanceof ContinuousResource) {
+                regBandwidth = ((ContinuousResource) res).value();
+                break;
+            }
+        }
+
+        if (regBandwidth != 0) {
+            bandWidth = String.valueOf(regBandwidth);
+            map.put("Bandwidth", bandWidth);
+        }
+
+        return map;
+    }
 }

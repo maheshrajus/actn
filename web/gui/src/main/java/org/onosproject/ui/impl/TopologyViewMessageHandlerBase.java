@@ -412,7 +412,7 @@ public abstract class TopologyViewMessageHandlerBase extends UiMessageHandler {
         String name = annot.value(AnnotationKeys.NAME);
         int portCount = deviceService.getPorts(deviceId).size();
         int flowCount = getFlowCount(deviceId);
-        int tunnelCount = getTunnelCount(deviceId);
+        //int tunnelCount = getTunnelCount(deviceId);
 
         String title = isNullOrEmpty(name) ? deviceId.toString() : name;
         String typeId = device.type().toString().toLowerCase();
@@ -434,7 +434,7 @@ public abstract class TopologyViewMessageHandlerBase extends UiMessageHandler {
 
             .addProp(Properties.PORTS, portCount)
             .addProp(Properties.FLOWS, flowCount)
-            .addProp(Properties.TUNNELS, tunnelCount)
+            .addProp(Properties.TUNNELS, 0)
 
             .addButton(CoreButtons.SHOW_DEVICE_VIEW)
             .addButton(CoreButtons.SHOW_FLOW_VIEW)

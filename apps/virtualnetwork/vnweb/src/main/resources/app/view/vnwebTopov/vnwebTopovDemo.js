@@ -25,7 +25,7 @@
     // injected refs
     var $log, fs, flash, wss, tds, ds;
     var tunnelNameDataQuery, tunnelNameDataQueryRem, tunnelNameDataQueryUpd,
-        tunnelNameDataQueryUpdConstr;
+        tunnelNameDataQueryUpdConstr, tunnelNameDataQueryUpdEndpts;
     // constants
     var vnQuerymsg = 'vnQuerymsg',
         vnQuerymsgHandle = 'vnQuerymsgHandle',
@@ -40,10 +40,12 @@
         vnUpdatemsgHandle = 'vnUpdatemsgHandle',
         vnUpdatemsgHandleConstr = 'vnUpdatemsgHandleConstr',
         showVnInfoMsgUpdateCnstrs = 'showVnInfoMsgUpdateCnstrs',
-        vnDeviceHighlight = 'vnDeviceHighlight';
+        showVnInfoMsgUpdateEndpts = 'showVnInfoMsgUpdateEndpoints',
+        vnDeviceHighlight = 'vnDeviceHighlight',
+        vnUpdatemsgHandleEndP = 'vnUpdatemsgHandleEndPtss';
 
     var handlerMap = {}, handlerMapRem = {}, handlerMapUpd = {},
-        handlerMapUpdConstr = {};
+        handlerMapUpdConstr = {}, handlerMapUpdEnd = {};
     // === ---------------------------
 
     //===Helper function
@@ -88,25 +90,46 @@
         flash.flash('remove VN path message');
     }
 
-    function dOkUpdate() {
-        tunnelNameDataQueryUpd.a.forEach( function (val, idx) {
-            var vnIdVal = isChecked('vn-id-update-'+idx);
-            if (vnIdVal) {
-                handlerMapUpdConstr[showVnInfoMsgUpdateCnstrs] = showVnQueryInfoUpdateConstrts;
-                wss.bindHandlers(handlerMapUpdConstr);
+    function dOkUpdateConstr() {
 
-                wss.sendEvent(vnUpdatemsgHandle, {
-                    vnid: val
-                });
+        var bandWidth = isChecked('vn-id-update-bw'),
+        bandValue = null,
+        bandType = null;
+
+        if (bandWidth) {
+            bandValue = getCheckedValue('vn-id-update-bw-val');
+
+            if (isChecked('vn-id-update-bw-kbps-val')) {
+                bandType = 'kbps';
+            } else if (isChecked('vn-id-update-bw-mbps-val')) {
+                bandType = 'mbps';
             }
-        } );
+        }
+
+        var costType = isChecked('vn-id-update-cost'),
+            costTypeVal = null;
+
+        if (costType) {
+            if (isChecked('vn-id-update-cost-igp-val')) {
+                costTypeVal = 'igp';
+            } else if (isChecked('vn-id-update-cost-te-val')) {
+                costTypeVal = 'te';
+            }
+        }
+
+        wss.sendEvent(vnUpdatemsgHandleConstr, {
+            vnid: tunnelNameDataQueryUpdConstr.a[1],
+            bw: bandValue,
+            bwtype: bandType,
+            ctype: costTypeVal
+        });
 
         flash.flash('update VN path message');
     }
 
-    function dOkUpdateConstr() {
+    function dOkUpdateEndpts() {
         var checkType;
-        tunnelNameDataQueryUpdConstr.a.forEach( function (val, idx) {
+        tunnelNameDataQueryUpdEndpts.a.forEach( function (val, idx) {
             if (val == 'SRC') {
                 checkType = 'src';
                 return;
@@ -136,35 +159,8 @@
             }
         } );
 
-        var bandWidth = isChecked('vn-id-update-bw'),
-        bandValue = null,
-        bandType = null;
-
-        if (bandWidth) {
-            bandValue = getCheckedValue('vn-id-update-bw-val');
-
-            if (isChecked('vn-id-update-bw-kbps-val')) {
-                bandType = 'kbps';
-            } else if (isChecked('vn-id-update-bw-mbps-val')) {
-                bandType = 'mbps';
-            }
-        }
-
-        var costType = isChecked('vn-id-update-cost'),
-            costTypeVal = null;
-
-        if (costType) {
-            if (isChecked('vn-id-update-cost-igp-val')) {
-                costTypeVal = 'igp';
-            } else if (isChecked('vn-id-update-cost-te-val')) {
-                costTypeVal = 'te';
-            }
-        }
-
-        wss.sendEvent(vnUpdatemsgHandleConstr, {
-            bw: bandValue,
-            bwtype: bandType,
-            ctype: costTypeVal
+        wss.sendEvent(vnUpdatemsgHandleEndP, {
+            vnid: tunnelNameDataQueryUpdEndpts.a[1]
         });
 
         flash.flash('update VN path message');
@@ -249,12 +245,12 @@
             p = form.append('p');
         var constType = 'none';
 
-        function addAttribute(name, id, nameField, type) {
+        function addAttribute(name, id, nameField, type, check) {
             p.append('input').attr({
                 type: type,
                 name: name,
                 id: id,
-                checked: 'checked'
+                checked: check
             });
 
             p.append('span').text(nameField);
@@ -277,6 +273,118 @@
                 return;
             }
 
+            if (constType == 'VN') {
+                p.append('span').text('VN Name: ');
+                p.append('span').text(val);
+                p.append('br');
+            }
+
+            if (constType == 'BW') {
+                addAttribute('vn-id-update-bwbox-name', 'vn-id-update-bw', 'Band Width', 'checkbox', 'checked');
+                p.append('input').attr({
+                    id: 'vn-id-update-bw-val',
+                    type: 'number',
+                    name: 'vn-id-update-bwv-name',
+                    value: val
+                });
+                p.append('br');
+                p.append('input').attr({
+                    id: 'vn-id-update-bw-kbps-val',
+                    type: 'radio',
+                    name: 'vn-id-update-bw-val-name',
+                    class: 'radioButtonSpace'
+                });
+                p.append('span').text('kbps');
+                p.append('input').attr({
+                    id: 'vn-id-update-bw-mbps-val',
+                    type: 'radio',
+                    name: 'vn-id-update-bw-val-name',
+                    class: 'radioButtonSpace'
+                });
+                p.append('span').text('mbps');
+                p.append('input').attr({
+                    id: 'vn-id-update-bw-bps-val',
+                    type: 'radio',
+                    name: 'vn-id-update-bw-val-name',
+                    checked: 'checked',
+                    class: 'radioButtonSpace'
+                });
+                p.append('span').text('bps');
+                p.append('br');
+            }
+
+            if (constType == 'CT') {
+                if (val == 'COST') {
+                    addAttribute('vn-id-update-cost-name', 'vn-id-update-cost', 'Cost Type', 'checkbox');
+                    p.append('input').attr({
+                        id: 'vn-id-update-cost-igp-val',
+                        type: 'radio',
+                        name: 'vn-id-update-cost-val',
+                        checked: 'checked',
+                        class: 'radioButtonSpace'
+                    });
+                    p.append('span').text('IGP');
+                    p.append('br');
+                    p.append('input').attr({
+                        id: 'vn-id-update-cost-te-val',
+                        type: 'radio',
+                        name: 'vn-id-update-cost-val',
+                        class: 'radioButtonSpace'
+                    });
+                    p.append('span').text('TE');
+                    p.append('br');
+
+                } else {
+                    addAttribute('vn-id-update-cost-name', 'vn-id-update-cost', 'Cost Type', 'checkbox', 'checked');
+                    p.append('input').attr({
+                        id: 'vn-id-update-cost-igp-val',
+                        type: 'radio',
+                        name: 'vn-id-update-cost-val',
+                        class: 'radioButtonSpace'
+                    });
+                    p.append('span').text('IGP');
+                    p.append('br');
+                    p.append('input').attr({
+                        id: 'vn-id-update-cost-te-val',
+                        type: 'radio',
+                        name: 'vn-id-update-cost-val',
+                        checked: 'checked',
+                        class: 'radioButtonSpace'
+                    });
+                    p.append('span').text('TE');
+                    p.append('br');
+                }
+            }
+        } );
+
+        return content;
+    }
+
+    function createUserTextQueryUpdEnd(data) {
+
+        var content = ds.createDiv(),
+            form = content.append('form'),
+            p = form.append('p');
+        var constType = 'none';
+
+        function addAttribute(name, id, nameField, type) {
+            p.append('input').attr({
+                type: type,
+                name: name,
+                id: id,
+                checked: 'checked'
+            });
+
+            p.append('span').text(nameField);
+            p.append('br');
+        }
+
+        data.a.forEach( function (val, idx) {
+            if (val == 'VnName') {
+                constType = 'VN';
+                return;
+            }
+
             if (val == 'SRC') {
                 constType = 'SRC';
                 p.append('span').text('SRC:');
@@ -294,54 +402,6 @@
             if (constType == 'VN') {
                 p.append('span').text('VN Name: ');
                 p.append('span').text(val);
-                p.append('br');
-            }
-
-            if (constType == 'BW') {
-                addAttribute('vn-id-update-bwbox-name', 'vn-id-update-bw', 'Band Width', 'checkbox');
-                p.append('input').attr({
-                    id: 'vn-id-update-bw-val',
-                    type: 'number',
-                    name: 'vn-id-update-bwv-name',
-                    value: val
-                });
-                p.append('br');
-                p.append('input').attr({
-                    id: 'vn-id-update-bw-kbps-val',
-                    type: 'radio',
-                    name: 'vn-id-update-bw-val-name',
-                    checked: 'checked',
-                    class: 'radioButtonSpace'
-                });
-                p.append('span').text('kbps');
-                p.append('input').attr({
-                    id: 'vn-id-update-bw-mbps-val',
-                    type: 'radio',
-                    name: 'vn-id-update-bw-val-name',
-                    class: 'radioButtonSpace'
-                });
-                p.append('span').text('kbps');
-                p.append('br');
-            }
-
-            if (constType == 'CT') {
-                addAttribute('vn-id-update-cost-name', 'vn-id-update-cost', 'Cost Type', 'checkbox');
-                p.append('input').attr({
-                    id: 'vn-id-update-cost-igp-val',
-                    type: 'radio',
-                    name: 'vn-id-update-cost-val',
-                    class: 'radioButtonSpace'
-                });
-                p.append('span').text('IGP');
-                p.append('br');
-                p.append('input').attr({
-                    id: 'vn-id-update-cost-te-val',
-                    type: 'radio',
-                    name: 'vn-id-update-cost-val',
-                    checked: 'checked',
-                    class: 'radioButtonSpace'
-                });
-                p.append('span').text('TE');
                 p.append('br');
             }
 
@@ -386,12 +446,62 @@
 
         wss.unbindHandlers(handlerMapUpd);
         tunnelNameDataQueryUpd = data;
+
+        function dOkUpdate() {
+            tunnelNameDataQueryUpd.a.forEach( function (val, idx) {
+                var vnIdVal = isChecked('vn-id-update-'+idx);
+                if (vnIdVal) {
+                    constraintsUpdateDialog(val);
+                }
+            } );
+
+            flash.flash('update VN path message');
+        }
+
         tds.openDialog()
             .setTitle('Available VNs for update')
             .addContent(createUserTextQueryUpd(data))
-            .addOk(dOkUpdate, 'OK')
+            .addOkChained(dOkUpdate, 'OK')
             .addCancel(dClose, 'Close')
             .bindKeys();
+    }
+
+    function constraintsUpdateDialog(vnName) {
+
+        // invoked when the OK button is pressed on this dialog
+        function dOkUpdateEvent() {
+            $log.debug('Select constraints for update path Dialog OK button pressed');
+            //TODO
+            var endPoint = isChecked('vn-update-endpoints-val');
+            var constraints = isChecked('vn-update-endpoints-val');
+            if (endPoint) {
+                var type = 'endpoints';
+            } else if (constraints) {
+                var type = 'constraints';
+            }
+
+            handlerMapUpdConstr[showVnInfoMsgUpdateCnstrs] = showVnQueryInfoUpdateConstrts;
+            wss.bindHandlers(handlerMapUpdConstr);
+
+            handlerMapUpdEnd[showVnInfoMsgUpdateEndpts] = showVnQueryInfoUpdateEndptsHandle;
+            wss.bindHandlers(handlerMapUpdEnd);
+
+            wss.sendEvent(vnUpdatemsgHandle, {
+                vnid: vnName,
+                type: type
+            });
+
+            flash.flash('update path message');
+
+        }
+
+        tds.openDialog()
+            .setTitle('Select type for update')
+            .addContent(createUserTextTypeOfUpdate(vnName))
+            .addOk(dOkUpdateEvent, 'OK')     // NOTE: NOT the "chained" version!
+            .addCancel(dClose, 'Close')
+            .bindKeys();
+
     }
 
     function showVnQueryInfoUpdateConstrts(data) {
@@ -402,6 +512,18 @@
             .setTitle('User inputs for VN path update')
             .addContent(createUserTextQueryUpdConstr(data))
             .addOk(dOkUpdateConstr, 'OK')
+            .addCancel(dClose, 'Close')
+            .bindKeys();
+    }
+
+    function showVnQueryInfoUpdateEndptsHandle(data) {
+
+        wss.unbindHandlers(handlerMapUpdEnd);
+        tunnelNameDataQueryUpdEndpts = data;
+        tds.openDialog()
+            .setTitle('User inputs for VN path update')
+            .addContent(createUserTextQueryUpdEnd(data))
+            .addOk(dOkUpdateEndpts, 'OK')
             .addCancel(dClose, 'Close')
             .bindKeys();
     }
@@ -436,6 +558,7 @@
         addAttribute('vn-band-width-value-name', 'vn-band-width-value', null, 'number');
         addAttribute('vn-band-type', 'vn-band-kpbs-val', 'kbps', 'radio');
         addAttribute('vn-band-type', 'vn-band-mpbs-val', 'mbps', 'radio');
+        addAttribute('vn-band-type', 'vn-band-bps-val', 'bps', 'radio');
         //Add the cost type related inputs.
         addAttribute('vn-cost-type-name', 'vn-cost-type', 'Cost Type', 'checkbox');
         addAttribute('vn-cost-type-valname', 'vn-cost-type-igp', 'IGP', 'radio');
@@ -446,6 +569,30 @@
         return content;
     }
 
+    function createUserTextTypeOfUpdate(vnName) {
+        var content = ds.createDiv('constraints-type'),
+            form = content.append('form'),
+            p = form.append('p');
+
+        p.append('span').text(vnName);
+        p.append('br');
+        function addAttribute(name, id, nameField) {
+                p.append('input').attr({
+                    type: 'radio',
+                    name: name,
+                    id: id,
+                    class: 'radioButtonSpace'
+                });
+            p.append('span').text(nameField);
+            p.append('br');
+        }
+
+        //Add the bandwidth related inputs.
+        addAttribute('vn-update-type-name', 'vn-update-endpoints-val', 'End Points Update');
+        addAttribute('vn-update-type-name', 'vn-update-const-val', 'Constraint Update');
+
+        return content;
+    }
     // === Main API functions
 
     function setSrc(node, type) {
@@ -500,6 +647,8 @@
                     bandType = 'kbps';
                 } else if (isChecked('vn-band-mpbs-val')) {
                     bandType = 'mbps';
+                } else if (isChecked('vn-band-bps-val')) {
+                    bandType = 'bps';
                 }
             }
 
