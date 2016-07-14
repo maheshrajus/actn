@@ -532,7 +532,10 @@ public class BgpTopologyProvider extends AbstractProvider implements DeviceProvi
         //Configure bandwidth for src and dst port
         TeLinkConfig config = networkConfigService.addConfig(LinkKey.linkKey(linkDes.src(), linkDes.dst()),
                                                              TeLinkConfig.class);
-        Double bw = unreservedBw.get(unreservedBw.size()-1).doubleValue();
+        Double bw = 0.0;
+        if (unreservedBw.size() > 0) {
+            bw = unreservedBw.get(unreservedBw.size() - 1).doubleValue();
+        }
 
         config.maxResvBandwidth(maxReservableBw)
                 .unResvBandwidth(bw);
