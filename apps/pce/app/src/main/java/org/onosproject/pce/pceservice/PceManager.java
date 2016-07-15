@@ -836,10 +836,11 @@ public class PceManager implements PceService {
         TunnelId updatedTunnelId = tunnelService.setupTunnel(appId, links.get(0).src().deviceId(), updatedTunnel,
                 computedPath);
 
-        if (updatedTunnelId == null && lspType != WITH_SIGNALLING) {
-            if (bwConstraintValue != 0) {
+        if (updatedTunnelId == null) {
+            if (bwConstraintValue != 0 && lspType != WITH_SIGNALLING) {
                 //resourceService.release(consumerId);
-                releaseSharedBandwidth(updatedTunnel, tunnel);
+                releaseSharedBwForNewTunnel(computedPath, bwConstraintValue, shBwConstraint);
+                //releaseSharedBandwidth(updatedTunnel, tunnel);
             }
             return PathErr.ERROR;
         }
@@ -1327,6 +1328,37 @@ public class PceManager implements PceService {
          * consumer id should be done by caller of bandwidth releasing function. This will prevent ambiguities related
          * to who is supposed to store/delete.
          */
+        return true;
+    }
+
+    private boolean releaseSharedBwForNewTunnel(Path computedPath, double bandwidthConstraint,
+                                     SharedBandwidthConstraint shBwConstraint) {
+        checkNotNull(computedPath);
+        checkNotNull(bandwidthConstraint);
+        double bwToAllocate;
+        Map<Link, Double> linkMap = new HashMap<>();
+
+        Double additionalBwValue = null;
+        if (shBwConstraint != null) {
+            additionalBwValue = ((bandwidthConstraint - shBwConstraint.sharedBwValue().bps()) <= 0) ? null
+                : (bandwidthConstraint - shBwConstraint.sharedBwValue().bps());
+        }
+
+        for (Link link : computedPath.links()) {
+            bwToAllocate = 0;
+            if ((shBwConstraint != null) && (shBwConstraint.links().contains(link))) {
+                if (additionalBwValue != null) {
+                    bwToAllocate = additionalBwValue;
+                }
+            } else {
+                bwToAllocate = bandwidthConstraint;
+            }
+
+            if (bwToAllocate != 0) {
+                linkMap.forEach((ln, aDouble) -> pceStore.releaseLocalReservedBw(LinkKey.linkKey(ln), aDouble));
+                linkMap.put(link, bwToAllocate);
+            }
+        }
         return true;
     }
 
