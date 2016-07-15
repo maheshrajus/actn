@@ -478,6 +478,10 @@ public class BgpTopologyProvider extends AbstractProvider implements DeviceProvi
             }
 
             linkProviderService.linkVanished(linkDes);
+
+            linkDes = new DefaultLinkDescription(linkDes.dst(), linkDes.src(), Link.Type.DIRECT,
+                    false, linkDes.annotations());
+            linkProviderService.linkVanished(linkDes);
         }
     }
 

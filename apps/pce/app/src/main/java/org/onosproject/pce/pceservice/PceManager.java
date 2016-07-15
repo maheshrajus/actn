@@ -971,6 +971,13 @@ public class PceManager implements PceService {
             });
             return true;
         }
+
+        LspType lspType = LspType.valueOf(tunnel.annotations().value(LSP_SIG_TYPE));
+        // Release basic PCECC labels.
+        if (lspType == WITHOUT_SIGNALLING_AND_WITHOUT_SR) {
+            crHandler.releaseLabel(tunnel);
+        }
+
         // 2. Call tunnel service.
         return tunnelService.downTunnel(appId, tunnel.tunnelId());
     }
@@ -1690,6 +1697,22 @@ public class PceManager implements PceService {
                     }
                 }
 
+                //In CR case, release labels when new tunnel for it is updated.
+                if (lspType == WITHOUT_SIGNALLING_AND_WITHOUT_SR && tunnel.state() == ACTIVE
+                        && mastershipService.getLocalRole(tunnel.path().src().deviceId()) == MastershipRole.MASTER) {
+                    Collection<Tunnel> tunnels = tunnelService.queryTunnel(tunnel.src(), tunnel.dst());
+
+                    for (Tunnel t : tunnels) {
+                          if (tunnel.annotations().value(PLSP_ID).equals(t.annotations().value(PLSP_ID))
+                              && !tunnel.annotations().value(LOCAL_LSP_ID)
+                                  .equals(t.annotations().value(LOCAL_LSP_ID))) {
+                              // Release basic PCECC labels.
+                              crHandler.releaseLabel(t);
+                              break;
+                          }
+                    }
+                }
+
                 if (tunnel.state() == UNSTABLE) {
                     /*
                      * During LSP DB sync if PCC doesn't report LSP which was PCE initiated, it's state is turned into
@@ -1824,11 +1847,7 @@ public class PceManager implements PceService {
                         releaseBandwidth(event.subject());
                     }
                 }
-                // Release basic PCECC labels.
-                if (lspType == WITHOUT_SIGNALLING_AND_WITHOUT_SR) {
-                    if (mastershipService.getLocalRole(tunnel.path().src().deviceId()) == MastershipRole.MASTER) {
-                            crHandler.releaseLabel(tunnel);
-                    }
+                if (pceStore.getTunnelInfo(tunnel.tunnelId()) != null) {
                     pceStore.removeTunnelInfo(tunnel.tunnelId());
                 }
 
