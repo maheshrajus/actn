@@ -25,6 +25,7 @@ import org.onosproject.core.ApplicationId;
 import org.onosproject.core.CoreService;
 import org.onosproject.incubator.net.tunnel.Tunnel;
 import org.onosproject.net.DeviceId;
+import org.onosproject.net.Path;
 import org.onosproject.net.intent.Constraint;
 import org.onosproject.pce.pceservice.LspType;
 import org.onosproject.pce.pceservice.api.PceService;
@@ -39,6 +40,7 @@ import org.slf4j.LoggerFactory;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -210,5 +212,65 @@ public class VnManager implements VnService {
             return service.queryPath(vnName);
         }
         return null;
+    }
+
+    @Override
+    public boolean computeOptimalPath(String vnName, List<Constraint> constraints,
+                                      DeviceId src, List<DeviceId> dstPoints) {
+        double leastCost = 0.0;
+        boolean bcomputeFirst = true;
+        DeviceId leastCostDst = null;
+
+        for (DeviceId dst : dstPoints) {
+
+            Set<Path> computedPathSet = service.computePath(src, dst, constraints);
+
+            // NO-PATH
+            if (computedPathSet.isEmpty()) {
+                log.info("Path not found for given destination: " + dst);
+                continue;
+            }
+
+            Path computedPath = computedPathSet.iterator().next();
+
+            log.info("Path found for the destination: " + dst + ", cost: " + computedPath.cost()
+                             + ", No of links: " + computedPath.links().size());
+
+            if (bcomputeFirst) {
+                leastCostDst = dst;
+                leastCost = computedPath.cost();
+                bcomputeFirst = false;
+            } else if (computedPath.cost() < leastCost) {
+                leastCostDst = dst;
+                leastCost = computedPath.cost();
+            }
+        }
+
+        if (leastCostDst == null) {
+            log.error("No optimal path fund for given source to destinations!!");
+            return false;
+        }
+
+        log.info("Optimal path destination: " + leastCostDst);
+
+        String tunnelName = vnName.concat(Long.toString(service.generatePathId()));
+        PceService.PathErr pathErr = service.setupPath(src, leastCostDst,
+                                                       tunnelName, constraints, LspType.WITH_SIGNALLING, vnName);
+        if (PceService.PathErr.SUCCESS != pathErr) {
+            log.error("SetupPath failed!! pathErr: " + pathErr);
+            return false;
+        }
+
+        List<DeviceId> srcId = new LinkedList<>();
+        List<DeviceId> dstId = new LinkedList<>();
+        srcId.add(src);
+        dstId.add(leastCostDst);
+        VnEndPoints endPoint = new VnEndPoints(srcId, dstId);
+        if (!vnStore.add(vnName, endPoint, constraints)) {
+            log.error("Create vnName failed!! : " + vnName);
+            return false;
+        }
+
+        return true;
     }
 }

@@ -16,6 +16,7 @@
 package org.onosproject.vn.vnservice.api;
 
 import org.onosproject.incubator.net.tunnel.Tunnel;
+import org.onosproject.net.DeviceId;
 import org.onosproject.net.intent.Constraint;
 import org.onosproject.vn.api.VnEndPoints;
 import org.onosproject.vn.store.VirtualNetworkInfo;
@@ -92,4 +93,11 @@ public interface VnService {
      * @return tunnels if exists, otherwise null
      */
     Iterable<Tunnel> queryVnTunnels(String vnName);
+
+    /**
+     * Support compute optimal path from source to multi destinations.
+     *
+     * @return Virtual networks if exists, otherwise empty list
+     */
+    boolean computeOptimalPath(String vnName, List<Constraint> constraints, DeviceId src, List<DeviceId> dst);
 }

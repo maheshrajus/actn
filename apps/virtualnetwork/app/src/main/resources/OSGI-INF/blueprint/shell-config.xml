@@ -30,5 +30,8 @@
     <command>
       <action class="org.onosproject.vn.cli.VnQueryCommand"/>
     </command>
+    <command>
+      <action class="org.onosproject.vn.cli.VnComputeOptimalPathCommand"/>
+    </command>
   </command-bundle>
 </blueprint>
