@@ -755,7 +755,7 @@ public class PceManager implements PceService {
             }
 
             if (existingBwValue != null) {
-                if (bwConstraintValue == 0) {
+                if (bwConstraintValue == 0 && bwConstraint != null) {
                     bwConstraintValue = existingBwValue.bps();
                 }
                 //If bandwidth constraints not specified , take existing bandwidth for shared bandwidth calculation

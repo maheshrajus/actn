@@ -47,7 +47,7 @@ public class PceUpdatePathCommand extends AbstractShellCommand {
 
     @Option(name = "-c", aliases = "--cost", description = "The cost attribute IGP cost (1) or TE cost (2).",
             required = false, multiValued = false)
-    int cost = 0;
+    int cost = -1;
 
     @Option(name = "-b", aliases = "--bandwidth", description = "The bandwidth attribute of path. "
             + "Data rate unit is in Bps.", required = false, multiValued = false)
@@ -65,9 +65,8 @@ public class PceUpdatePathCommand extends AbstractShellCommand {
             constrntList.add(PceBandwidthConstraint.of(Double.valueOf(bandwidth), DataRateUnit.valueOf("BPS")));
         }
 
-        // Assign cost
-        if (cost != 0) {
-            // Cost validation
+        // Cost validation
+        if (cost != -1) {
             if ((cost < 1) || (cost > 2)) {
                 error("The cost attribute value is either IGP cost(1) or TE cost(2).");
                 return;
