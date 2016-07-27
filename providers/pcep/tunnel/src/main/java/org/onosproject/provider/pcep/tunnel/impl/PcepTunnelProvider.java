@@ -1907,7 +1907,7 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
                     temoCostType = oldTunnelAnnotations.value(COST_TYPE);
                 }
                 annotations = getAnnotations(lspObj, ipv4LspIdenTlv, tempBandwidth, lspType,
-                    temoCostType, lspObj.getCFlag());
+                    temoCostType, lspObj.getCFlag(), null);
                 Collection<Tunnel>  tempTunnel = tunnelService.queryTunnel(TunnelName.
                         tunnelName(new String(pathNameTlv.getValue())));
                 Tunnel.Type tempType;
