@@ -34,6 +34,7 @@
         <bundle>mvn:${project.groupId}/onos-pcep-provider-packet/${project.version}</bundle>
         <bundle>mvn:${project.groupId}/onos-bgpcep-provider-flow/${project.version}</bundle>
         <bundle>mvn:${project.groupId}/onos-bgp-provider-linkcfg/${project.version}</bundle>
+        <bundle>mvn:${project.groupId}/onos-app-pcerest/${project.version}</bundle>
         <bundle>mvn:${project.groupId}/onos-bgp-provider-cli/${project.version}</bundle>
     </feature>
 </features>

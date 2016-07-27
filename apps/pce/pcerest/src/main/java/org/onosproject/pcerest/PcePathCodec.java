@@ -13,18 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.onosproject.pce.rest;
+package org.onosproject.pcerest;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import org.onosproject.codec.CodecContext;
 import org.onosproject.codec.JsonCodec;
-import org.onosproject.pce.pceservice.DefaultPcePath;
 import org.onosproject.pce.pceservice.PcePath;
+import org.onosproject.pce.pceservice.DefaultPcePath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * PCE path json codec.
@@ -33,8 +34,6 @@ public final class PcePathCodec extends JsonCodec<PcePath> {
     private final Logger log = LoggerFactory.getLogger(PcePathCodec.class);
     private static final String SOURCE = "source";
     private static final String DESTINATION = "destination";
-    private static final String DEFAULT_LSP_TYPE = "defaultPathType";
-    private static final String PCE_MODE = "pceMode";
     private static final String LSP_TYPE = "pathType";
     private static final String SYMBOLIC_PATH_NAME = "name";
     private static final String CONSTRAINT = "constraint";
@@ -52,22 +51,6 @@ public final class PcePathCodec extends JsonCodec<PcePath> {
 
         // build pce-path
         PcePath.Builder resultBuilder = new DefaultPcePath.Builder();
-
-        // retrieve pce mode
-        JsonNode jPceMode = json.get(PCE_MODE);
-        if (jPceMode != null) {
-            String mode = jPceMode.asText();
-            resultBuilder.pceMode(mode);
-            return resultBuilder.build();
-        }
-
-        // retrieve default lsp-type
-        JsonNode jDefaultNode = json.get(DEFAULT_LSP_TYPE);
-        if (jDefaultNode != null) {
-            String lspType = jDefaultNode.asText();
-            resultBuilder.lspType(lspType);
-            return resultBuilder.build();
-        }
 
         // retrieve source
         JsonNode jNode = json.get(SOURCE);
@@ -121,31 +104,20 @@ public final class PcePathCodec extends JsonCodec<PcePath> {
     @Override
     public ObjectNode encode(PcePath path, CodecContext context) {
         checkNotNull(path, "path output cannot be null");
-        ObjectNode result;
-        if (path.defaultLspType() != null) {
-            result = context.mapper()
-                    .createObjectNode()
-                    .put(DEFAULT_LSP_TYPE, path.defaultLspType().type());
-        } else if (path.getMode() != null) {
-            result = context.mapper().createObjectNode()
-                    .put(PCE_MODE, path.getMode());
-        } else {
-            result = context.mapper()
-                    .createObjectNode()
-                    .put(PATH_ID, path.id().id())
-                    .put(SOURCE, path.source())
-                    .put(DESTINATION, path.destination())
-                    .put(LSP_TYPE, path.lspType().type())
-                    .put(SYMBOLIC_PATH_NAME, path.name());
+        ObjectNode result = context.mapper()
+                .createObjectNode()
+                .put(PATH_ID, path.id().id())
+                .put(SOURCE, path.source())
+                .put(DESTINATION, path.destination())
+                .put(LSP_TYPE, path.lspType().type())
+                .put(SYMBOLIC_PATH_NAME, path.name());
 
-            ObjectNode constraintNode = context.mapper()
-                    .createObjectNode()
-                    .put(COST, path.costConstraint().toString())
-                    .put(BANDWIDTH, path.bandwidthConstraint().toString());
+        ObjectNode constraintNode = context.mapper()
+                .createObjectNode()
+                .put(COST, path.costConstraint().toString())
+                .put(BANDWIDTH, path.bandwidthConstraint().toString());
 
-            result.set(CONSTRAINT, constraintNode);
-        }
-
+        result.set(CONSTRAINT, constraintNode);
         return result;
     }
 }
