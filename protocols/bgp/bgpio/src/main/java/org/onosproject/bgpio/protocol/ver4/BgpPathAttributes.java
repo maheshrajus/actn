@@ -95,10 +95,11 @@ public class BgpPathAttributes {
      * Reads from channelBuffer and parses BGP path attributes.
      *
      * @param cb channelBuffer
+     * @param as4Octet true if 4 octet AS capability is negiotated
      * @return object of BgpPathAttributes
      * @throws BgpParseException while parsing BGP path attributes
      */
-    public static BgpPathAttributes read(ChannelBuffer cb)
+    public static BgpPathAttributes read(ChannelBuffer cb, boolean as4Octet)
             throws BgpParseException {
 
         BgpValueType pathAttribute = null;
@@ -119,11 +120,12 @@ public class BgpPathAttributes {
                 isOrigin = ((Origin) pathAttribute).isOriginSet();
                 break;
             case AsPath.ASPATH_TYPE:
-                pathAttribute = AsPath.read(cb);
+                pathAttribute = AsPath.read(cb, as4Octet);
                 isAsPath = ((AsPath) pathAttribute).isaspathSet();
                 break;
             case As4Path.AS4PATH_TYPE:
                 pathAttribute = As4Path.read(cb);
+                isAsPath = ((As4Path) pathAttribute).isAs4Path();
                 break;
             case NextHop.NEXTHOP_TYPE:
                 pathAttribute = NextHop.read(cb);

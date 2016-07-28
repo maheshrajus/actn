@@ -14,11 +14,15 @@
 package org.onosproject.bgp.controller.impl;
 
 import java.util.List;
-
+import java.util.ListIterator;
+import org.onosproject.bgp.controller.BgpCfg;
 import org.onosproject.bgp.controller.BgpId;
 import org.onosproject.bgp.controller.BgpSessionInfo;
 import org.onosproject.bgpio.protocol.BgpVersion;
 import org.onosproject.bgpio.types.BgpValueType;
+import org.onosproject.bgpio.types.FourOctetAsNumCapabilityTlv;
+import org.onosproject.bgpio.types.MultiProtocolExtnCapabilityTlv;
+import org.onosproject.bgpio.types.RpdCapabilityTlv;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +39,9 @@ public class BgpSessionInfoImpl implements BgpSessionInfo {
     private int remoteBgpIdentifier;
     private short negotiatedholdTime;
     private boolean isIbgpSession;
-    List<BgpValueType> remoteBgpCapability;
+    private List<BgpValueType> remoteBgpCapability;
+    private BgpCfg bgpConfig;
+    private Boolean is4octetCapable;
 
     /**
      * Initialize session info.
@@ -48,10 +54,12 @@ public class BgpSessionInfoImpl implements BgpSessionInfo {
      *@param negotiatedholdTime negotiated hold time
      *@param isIbgpSession session type ibgp/ebgp
      *@param remoteBgpCapability remote peer capabilities
+     *@param bgpConfig BGP configurations
      */
     public BgpSessionInfoImpl(BgpId remoteBgpId, BgpVersion remoteBgpVersion, long remoteBgpASNum,
                               short remoteBgpholdTime, int remoteBgpIdentifier, short negotiatedholdTime,
-                              boolean isIbgpSession, List<BgpValueType> remoteBgpCapability) {
+                              boolean isIbgpSession, List<BgpValueType> remoteBgpCapability,
+                              BgpCfg bgpConfig) {
         this.remoteBgpId = remoteBgpId;
         this.remoteBgpVersion = remoteBgpVersion;
         this.remoteBgpASNum = remoteBgpASNum;
@@ -60,6 +68,51 @@ public class BgpSessionInfoImpl implements BgpSessionInfo {
         this.negotiatedholdTime = negotiatedholdTime;
         this.isIbgpSession = isIbgpSession;
         this.remoteBgpCapability = remoteBgpCapability;
+        this.bgpConfig = bgpConfig;
+    }
+
+    @Override
+    public boolean is4octetCapable() {
+        if (is4octetCapable != null) {
+            return is4octetCapable;
+        }
+        is4octetCapable = false;
+        if (!bgpConfig.getLargeASCapability()) {
+            return is4octetCapable;
+        }
+        for (BgpValueType attr : remoteBgpCapability) {
+            if (attr instanceof FourOctetAsNumCapabilityTlv) {
+                is4octetCapable = true;
+                return true;
+            }
+        }
+        return is4octetCapable;
+    }
+
+    @Override
+    public final boolean isCapabilitySupported(short type, short afi, byte sAfi) {
+
+        List<BgpValueType> capability = remoteBgpCapability;
+        ListIterator<BgpValueType> listIterator = capability.listIterator();
+
+        while (listIterator.hasNext()) {
+            BgpValueType tlv = listIterator.next();
+
+            if (tlv.getType() == type) {
+                if (tlv.getType() == MultiProtocolExtnCapabilityTlv.TYPE) {
+                    MultiProtocolExtnCapabilityTlv temp = (MultiProtocolExtnCapabilityTlv) tlv;
+                    if ((temp.getAfi() == afi) && (temp.getSafi() == sAfi)) {
+                        return true;
+                    }
+                } else if (tlv.getType() == RpdCapabilityTlv.TYPE) {
+                    RpdCapabilityTlv temp = (RpdCapabilityTlv) tlv;
+                    if ((temp.getAfi() == afi) && (temp.getSafi() == sAfi)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     @Override

@@ -160,7 +160,7 @@ public class BgpUpdateMsgVer4 implements BgpUpdateMsg {
                                          cb.readableBytes());
                 }
                 tempCb = cb.readBytes(totPathAttrLen);
-                bgpPathAttributes = BgpPathAttributes.read(tempCb);
+                bgpPathAttributes = BgpPathAttributes.read(tempCb, bgpHeader.isAs4OctetCapalility());
             }
             if (cb.readableBytes() > 0) {
                 // Parsing NLRI

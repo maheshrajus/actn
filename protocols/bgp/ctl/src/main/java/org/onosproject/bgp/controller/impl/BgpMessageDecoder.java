@@ -21,6 +21,7 @@ import java.util.List;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.handler.codec.frame.FrameDecoder;
 import org.onosproject.bgpio.protocol.BgpMessage;
 import org.onlab.util.HexDump;
@@ -39,6 +40,7 @@ public class BgpMessageDecoder extends FrameDecoder {
 
     @Override
     protected Object decode(ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer) throws Exception {
+        boolean is4octetCapable = false;
         log.debug("MESSAGE IS RECEIVED.");
         if (!channel.isConnected()) {
             log.info("Channel is not connected.");
@@ -46,6 +48,14 @@ public class BgpMessageDecoder extends FrameDecoder {
         }
 
         HexDump.dump(buffer);
+        ChannelPipeline pipeline = channel.getPipeline();
+        BgpChannelHandler handler = (BgpChannelHandler) pipeline.get("ActiveHandler");
+        if (handler == null) {
+            handler = (BgpChannelHandler) pipeline.get("PassiveHandler");
+        }
+        if ((handler != null) && (handler.sessionInfo() != null)) {
+            is4octetCapable = handler.sessionInfo().is4octetCapable();
+        }
 
         BgpMessageReader<BgpMessage> reader = BgpFactories.getGenericReader();
         List<BgpMessage> msgList = (List<BgpMessage>) ctx.getAttachment();
@@ -58,6 +68,7 @@ public class BgpMessageDecoder extends FrameDecoder {
             while (buffer.readableBytes() > 0) {
                 buffer.markReaderIndex();
                 BgpHeader bgpHeader = new BgpHeader();
+                bgpHeader.setAs4OctetCapalility(is4octetCapable);
                 BgpMessage message = reader.readFrom(buffer, bgpHeader);
                 msgList.add(message);
             }

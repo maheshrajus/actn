@@ -142,8 +142,8 @@ public class BgpUpdateLinkStateAttrTest {
         //compare Aspath
         testPathAttribute = listIterator.next();
         aspath = (AsPath) testPathAttribute;
-        ListIterator<Short> listIterator2 = aspath.asPathSeq().listIterator();
-        assertThat(listIterator2.next(), is((short) 65001));
+        ListIterator<Integer> listIterator2 = aspath.asPathSeq().listIterator();
+        assertThat(listIterator2.next(), is(65001));
 
         //compare MED
         testPathAttribute = listIterator.next();
@@ -258,8 +258,8 @@ public class BgpUpdateLinkStateAttrTest {
 
         testPathAttribute = listIterator.next();
         asPath = (AsPath) testPathAttribute;
-        ListIterator<Short> listIterator2 = asPath.asPathSeq().listIterator();
-        assertThat(listIterator2.next(), is((short) 65001));
+        ListIterator<Integer> listIterator2 = asPath.asPathSeq().listIterator();
+        assertThat(listIterator2.next(), is(65001));
 
         testPathAttribute = listIterator.next();
         med = (Med) testPathAttribute;
@@ -371,8 +371,8 @@ public class BgpUpdateLinkStateAttrTest {
 
         testPathAttribute = listIterator.next();
         aspath = (AsPath) testPathAttribute;
-        ListIterator<Short> listIterator2 = aspath.asPathSeq().listIterator();
-        assertThat(listIterator2.next(), is((short) 65001));
+        ListIterator<Integer> listIterator2 = aspath.asPathSeq().listIterator();
+        assertThat(listIterator2.next(), is(65001));
 
         testPathAttribute = listIterator.next();
         med = (Med) testPathAttribute;
@@ -485,8 +485,8 @@ public class BgpUpdateLinkStateAttrTest {
 
         testPathAttribute = listIterator.next();
         aspath = (AsPath) testPathAttribute;
-        ListIterator<Short> listIterator2 = aspath.asPathSeq().listIterator();
-        assertThat(listIterator2.next(), is((short) 65001));
+        ListIterator<Integer> listIterator2 = aspath.asPathSeq().listIterator();
+        assertThat(listIterator2.next(), is(65001));
 
         testPathAttribute = listIterator.next();
         med = (Med) testPathAttribute;
@@ -602,8 +602,8 @@ public class BgpUpdateLinkStateAttrTest {
 
         testPathAttribute = listIterator.next();
         aspath = (AsPath) testPathAttribute;
-        ListIterator<Short> listIterator2 = aspath.asPathSeq().listIterator();
-        assertThat(listIterator2.next(), is((short) 65001));
+        ListIterator<Integer> listIterator2 = aspath.asPathSeq().listIterator();
+        assertThat(listIterator2.next(), is(65001));
 
         testPathAttribute = listIterator.next();
         med = (Med) testPathAttribute;
@@ -721,8 +721,8 @@ public class BgpUpdateLinkStateAttrTest {
 
         testPathAttribute = listIterator.next();
         aspath = (AsPath) testPathAttribute;
-        ListIterator<Short> listIterator2 = aspath.asPathSeq().listIterator();
-        assertThat(listIterator2.next(), is((short) 65001));
+        ListIterator<Integer> listIterator2 = aspath.asPathSeq().listIterator();
+        assertThat(listIterator2.next(), is(65001));
 
         testPathAttribute = listIterator.next();
         med = (Med) testPathAttribute;
@@ -835,8 +835,8 @@ public class BgpUpdateLinkStateAttrTest {
 
         testPathAttribute = listIterator.next();
         aspath = (AsPath) testPathAttribute;
-        ListIterator<Short> listIterator2 = aspath.asPathSeq().listIterator();
-        assertThat(listIterator2.next(), is((short) 65001));
+        ListIterator<Integer> listIterator2 = aspath.asPathSeq().listIterator();
+        assertThat(listIterator2.next(), is(65001));
 
         testPathAttribute = listIterator.next();
         med = (Med) testPathAttribute;
@@ -953,8 +953,8 @@ public class BgpUpdateLinkStateAttrTest {
 
         testPathAttribute = listIterator.next();
         aspath = (AsPath) testPathAttribute;
-        ListIterator<Short> listIterator2 = aspath.asPathSeq().listIterator();
-        assertThat(listIterator2.next(), is((short) 65001));
+        ListIterator<Integer> listIterator2 = aspath.asPathSeq().listIterator();
+        assertThat(listIterator2.next(), is(65001));
 
         testPathAttribute = listIterator.next();
         med = (Med) testPathAttribute;
@@ -1071,8 +1071,8 @@ public class BgpUpdateLinkStateAttrTest {
 
         testPathAttribute = listIterator.next();
         aspath = (AsPath) testPathAttribute;
-        ListIterator<Short> listIterator2 = aspath.asPathSeq().listIterator();
-        assertThat(listIterator2.next(), is((short) 65001));
+        ListIterator<Integer> listIterator2 = aspath.asPathSeq().listIterator();
+        assertThat(listIterator2.next(), is(65001));
 
         testPathAttribute = listIterator.next();
         med = (Med) testPathAttribute;
@@ -1183,8 +1183,8 @@ public class BgpUpdateLinkStateAttrTest {
 
         testPathAttribute = listIterator.next();
         aspath = (AsPath) testPathAttribute;
-        ListIterator<Short> listIterator2 = aspath.asPathSeq().listIterator();
-        assertThat(listIterator2.next(), is((short) 65001));
+        ListIterator<Integer> listIterator2 = aspath.asPathSeq().listIterator();
+        assertThat(listIterator2.next(), is(65001));
 
         testPathAttribute = listIterator.next();
         med = (Med) testPathAttribute;
@@ -1296,8 +1296,8 @@ public class BgpUpdateLinkStateAttrTest {
 
         testPathAttribute = listIterator.next();
         aspath = (AsPath) testPathAttribute;
-        ListIterator<Short> listIterator2 = aspath.asPathSeq().listIterator();
-        assertThat(listIterator2.next(), is((short) 65001));
+        ListIterator<Integer> listIterator2 = aspath.asPathSeq().listIterator();
+        assertThat(listIterator2.next(), is(65001));
 
         testPathAttribute = listIterator.next();
         med = (Med) testPathAttribute;
@@ -1408,8 +1408,8 @@ public class BgpUpdateLinkStateAttrTest {
 
         testPathAttribute = listIterator.next();
         aspath = (AsPath) testPathAttribute;
-        ListIterator<Short> listIterator2 = aspath.asPathSeq().listIterator();
-        assertThat(listIterator2.next(), is((short) 65001));
+        ListIterator<Integer> listIterator2 = aspath.asPathSeq().listIterator();
+        assertThat(listIterator2.next(), is(65001));
 
         testPathAttribute = listIterator.next();
         med = (Med) testPathAttribute;
@@ -1521,8 +1521,8 @@ public class BgpUpdateLinkStateAttrTest {
 
         testPathAttribute = listIterator.next();
         aspath = (AsPath) testPathAttribute;
-        ListIterator<Short> listIterator2 = aspath.asPathSeq().listIterator();
-        assertThat(listIterator2.next(), is((short) 65001));
+        ListIterator<Integer> listIterator2 = aspath.asPathSeq().listIterator();
+        assertThat(listIterator2.next(), is(65001));
 
         testPathAttribute = listIterator.next();
         med = (Med) testPathAttribute;
@@ -1634,8 +1634,8 @@ public class BgpUpdateLinkStateAttrTest {
 
         testPathAttribute = listIterator.next();
         aspath = (AsPath) testPathAttribute;
-        ListIterator<Short> listIterator2 = aspath.asPathSeq().listIterator();
-        assertThat(listIterator2.next(), is((short) 65001));
+        ListIterator<Integer> listIterator2 = aspath.asPathSeq().listIterator();
+        assertThat(listIterator2.next(), is(65001));
 
         testPathAttribute = listIterator.next();
         med = (Med) testPathAttribute;
@@ -1747,8 +1747,8 @@ public class BgpUpdateLinkStateAttrTest {
 
         testPathAttribute = listIterator.next();
         aspath = (AsPath) testPathAttribute;
-        ListIterator<Short> listIterator2 = aspath.asPathSeq().listIterator();
-        assertThat(listIterator2.next(), is((short) 65001));
+        ListIterator<Integer> listIterator2 = aspath.asPathSeq().listIterator();
+        assertThat(listIterator2.next(), is(65001));
 
         testPathAttribute = listIterator.next();
         med = (Med) testPathAttribute;
@@ -1848,8 +1848,8 @@ public class BgpUpdateLinkStateAttrTest {
 
         testPathAttribute = listIterator.next();
         aspath = (AsPath) testPathAttribute;
-        ListIterator<Short> listIterator2 = aspath.asPathSeq().listIterator();
-        assertThat(listIterator2.next(), is((short) 65001));
+        ListIterator<Integer> listIterator2 = aspath.asPathSeq().listIterator();
+        assertThat(listIterator2.next(), is(65001));
 
         testPathAttribute = listIterator.next();
         med = (Med) testPathAttribute;
@@ -1943,8 +1943,8 @@ public class BgpUpdateLinkStateAttrTest {
 
         testPathAttribute = listIterator.next();
         aspath = (AsPath) testPathAttribute;
-        ListIterator<Short> listIterator2 = aspath.asPathSeq().listIterator();
-        assertThat(listIterator2.next(), is((short) 65001));
+        ListIterator<Integer> listIterator2 = aspath.asPathSeq().listIterator();
+        assertThat(listIterator2.next(), is(65001));
 
         testPathAttribute = listIterator.next();
         med = (Med) testPathAttribute;

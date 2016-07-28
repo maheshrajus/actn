@@ -488,7 +488,8 @@ public class BgpTopologyProvider extends AbstractProvider implements DeviceProvi
     // Creates label resource pool for the specific device. For all devices label range is 5122-9217
     private void createDevicePool(DeviceId deviceId) {
         if (labelResourceAdminService == null) {
-            log.error("Label resource admin service not available. Abort device pool creation for device {}.", deviceId);
+            log.error("Label resource admin service not available. Abort device pool creation for device {}.",
+                        deviceId);
             return;
         }
 

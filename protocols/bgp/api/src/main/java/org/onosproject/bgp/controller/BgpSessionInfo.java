@@ -77,4 +77,21 @@ public interface BgpSessionInfo {
      * @return BGP peer capabilities.
      */
     List<BgpValueType> remoteBgpCapability();
+
+    /**
+     * Returns 4 octet AS capability.
+     *
+     * @return true if 4 octet AS is supported otherwise false
+     */
+    boolean is4octetCapable();
+
+    /**
+     * Check if peer support capability.
+     *
+     * @param type capability type
+     * @param afi address family identifier
+     * @param sAfi subsequent address family identifier
+     * @return true if capability is supported, otherwise false
+     */
+    boolean isCapabilitySupported(short type, short afi, byte sAfi);
 }

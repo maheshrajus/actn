@@ -45,6 +45,7 @@ public class BgpHeader {
     public static final int MARKER_LENGTH = 16;
     public static final short DEFAULT_HEADER_LENGTH = 19;
 
+    private boolean isAs4OctetCapalility;
     private byte[] marker;
     private byte type;
     private short length;
@@ -56,6 +57,24 @@ public class BgpHeader {
         this.marker = null;
         this.length = 0;
         this.type = 0;
+    }
+
+    /**
+     * Returns 4 octet AS number capability.
+     *
+     * @return 4 octet AS number capability
+     */
+    public boolean isAs4OctetCapalility() {
+        return isAs4OctetCapalility;
+    }
+
+    /**
+     * Sets 4 octet AS number capability.
+     *
+     * @param isAs4OctetCapalility 4 octet AS number capability
+     */
+    public void setAs4OctetCapalility(boolean isAs4OctetCapalility) {
+        this.isAs4OctetCapalility = isAs4OctetCapalility;
     }
 
     /**

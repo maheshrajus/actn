@@ -41,7 +41,6 @@ import org.onosproject.bgpio.protocol.linkstate.BgpPrefixIPv4LSNlriVer4;
 import org.onosproject.bgpio.protocol.linkstate.BgpPrefixLSIdentifier;
 import org.onosproject.bgpio.protocol.linkstate.PathAttrNlriDetails;
 import org.onosproject.bgpio.types.AsPath;
-import org.onosproject.bgpio.types.As4Path;
 import org.onosproject.bgpio.protocol.linkstate.PathAttrNlriDetailsLocalRib;
 import org.onosproject.bgpio.types.BgpExtendedCommunity;
 import org.onosproject.bgpio.types.BgpValueType;
@@ -128,39 +127,6 @@ public class BgpPeerImpl implements BgpPeer {
         this.bgplocalRibVpn =  bgpController.bgpLocalRibVpn();
         this.adjRib = new AdjRibIn();
         this.vpnAdjRib = new VpnAdjRibIn();
-    }
-
-    /**
-     * Check if peer support capability.
-     *
-     * @param type capability type
-     * @param afi address family identifier
-     * @param sAfi subsequent address family identifier
-     * @return true if capability is supported, otherwise false
-     */
-    public final boolean isCapabilitySupported(short type, short afi, byte sAfi) {
-
-        List<BgpValueType> capability = sessionInfo.remoteBgpCapability();
-        ListIterator<BgpValueType> listIterator = capability.listIterator();
-
-        while (listIterator.hasNext()) {
-            BgpValueType tlv = listIterator.next();
-
-            if (tlv.getType() == type) {
-                if (tlv.getType() == MultiProtocolExtnCapabilityTlv.TYPE) {
-                    MultiProtocolExtnCapabilityTlv temp = (MultiProtocolExtnCapabilityTlv) tlv;
-                    if ((temp.getAfi() == afi) && (temp.getSafi() == sAfi)) {
-                        return true;
-                    }
-                } else if (tlv.getType() == RpdCapabilityTlv.TYPE) {
-                    RpdCapabilityTlv temp = (RpdCapabilityTlv) tlv;
-                    if ((temp.getAfi() == afi) && (temp.getSafi() == sAfi)) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
     }
 
     /**
@@ -260,19 +226,19 @@ public class BgpPeerImpl implements BgpPeer {
         byte sessionType = sessionInfo.isIbgpSession() ? (byte) 0 : (byte) 1;
         byte sAfi = Constants.SAFI_FLOWSPEC_VALUE;
 
-        boolean isFsCapabilitySet = isCapabilitySupported(MultiProtocolExtnCapabilityTlv.TYPE,
+        boolean isFsCapabilitySet = sessionInfo().isCapabilitySupported(MultiProtocolExtnCapabilityTlv.TYPE,
                                                         Constants.AFI_FLOWSPEC_VALUE,
                                                         Constants.SAFI_FLOWSPEC_VALUE);
 
-        boolean isVpnFsCapabilitySet = isCapabilitySupported(MultiProtocolExtnCapabilityTlv.TYPE,
+        boolean isVpnFsCapabilitySet = sessionInfo().isCapabilitySupported(MultiProtocolExtnCapabilityTlv.TYPE,
                                                         Constants.AFI_FLOWSPEC_VALUE,
                                                         Constants.VPN_SAFI_FLOWSPEC_VALUE);
 
-        boolean isRpdCapabilitySet = isCapabilitySupported(RpdCapabilityTlv.TYPE,
+        boolean isRpdCapabilitySet = sessionInfo().isCapabilitySupported(RpdCapabilityTlv.TYPE,
                                                         Constants.AFI_FLOWSPEC_RPD_VALUE,
                                                         Constants.SAFI_FLOWSPEC_RPD_VALUE);
 
-        boolean isVpnRpdCapabilitySet = isCapabilitySupported(RpdCapabilityTlv.TYPE,
+        boolean isVpnRpdCapabilitySet = sessionInfo().isCapabilitySupported(RpdCapabilityTlv.TYPE,
                                                         Constants.AFI_FLOWSPEC_RPD_VALUE,
                                                         Constants.VPN_SAFI_FLOWSPEC_RDP_VALUE);
 
@@ -290,21 +256,13 @@ public class BgpPeerImpl implements BgpPeer {
 
         if (sessionType != 0) {
             // EBGP
-            if (!bgpController.getConfig().getLargeASCapability()) {
-                List<Short> aspathSet = new ArrayList<>();
-                List<Short> aspathSeq = new ArrayList<>();
-                aspathSeq.add((short) bgpController.getConfig().getAsNumber());
+            List<Integer> aspathSet = new ArrayList<>();
+            List<Integer> aspathSeq = new ArrayList<>();
+            aspathSeq.add(bgpController.getConfig().getAsNumber());
 
-                AsPath asPath = new AsPath(aspathSet, aspathSeq);
-                attributesList.add(asPath);
-            } else {
-                List<Integer> aspathSet = new ArrayList<>();
-                List<Integer> aspathSeq = new ArrayList<>();
-                aspathSeq.add(bgpController.getConfig().getAsNumber());
+            AsPath asPath = new AsPath(aspathSet, aspathSeq, sessionInfo().is4octetCapable());
+            attributesList.add(asPath);
 
-                As4Path as4Path = new As4Path(aspathSet, aspathSeq);
-                attributesList.add(as4Path);
-            }
             attributesList.add(new Med(0));
         } else {
             attributesList.add(new AsPath());

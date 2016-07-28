@@ -63,11 +63,13 @@ public class AsPath implements BgpValueType {
     public static final byte ASPATH_SET_TYPE = 1;
     public static final byte ASPATH_SEQ_TYPE = 2;
     public static final byte ASNUM_SIZE = 2;
+    public static final byte AS4NUM_SIZE = 4;
     public static final byte FLAGS = (byte) 0x40;
+    private boolean as4OctetCapable = false;
 
     private boolean isAsPath = false;
-    private List<Short> aspathSet;
-    private List<Short> aspathSeq;
+    private List<Integer> aspathSet;
+    private List<Integer> aspathSeq;
 
     /**
      * Initialize Fields.
@@ -75,6 +77,7 @@ public class AsPath implements BgpValueType {
     public AsPath() {
         this.aspathSeq = null;
         this.aspathSet = null;
+        this.as4OctetCapable = false;
     }
 
     /**
@@ -82,23 +85,26 @@ public class AsPath implements BgpValueType {
      *
      * @param aspathSet ASpath Set type
      * @param aspathSeq ASpath Sequence type
+     * @param as4OctetCapable 4 octet AS capable
      */
-    public AsPath(List<Short> aspathSet, List<Short> aspathSeq) {
+    public AsPath(List<Integer> aspathSet, List<Integer> aspathSeq, boolean as4OctetCapable) {
         this.aspathSeq = aspathSeq;
         this.aspathSet = aspathSet;
         this.isAsPath = true;
+        this.as4OctetCapable = as4OctetCapable;
     }
 
     /**
      * Reads from the channel buffer and parses AsPath.
      *
      * @param cb ChannelBuffer
+     * @param as4Octet 4 AS octet
      * @return object of AsPath
      * @throws BgpParseException while parsing AsPath
      */
-    public static AsPath read(ChannelBuffer cb) throws BgpParseException {
-        List<Short> aspathSet = new ArrayList<>();
-        List<Short> aspathSeq = new ArrayList<>();
+    public static AsPath read(ChannelBuffer cb, boolean as4Octet) throws BgpParseException {
+        List<Integer> aspathSet = new ArrayList<>();
+        List<Integer> aspathSeq = new ArrayList<>();
         ChannelBuffer tempCb = cb.copy();
         Validation validation = Validation.parseAttributeHeader(cb);
 
@@ -119,15 +125,27 @@ public class AsPath implements BgpValueType {
             byte pathSegType = tempBuf.readByte();
             //no of ASes
             byte pathSegLen = tempBuf.readByte();
-            int length = pathSegLen * ASNUM_SIZE;
+            int length;
+            if (as4Octet) {
+                length = pathSegLen * AS4NUM_SIZE;
+            } else {
+                length = pathSegLen * ASNUM_SIZE;
+            }
+
             if (tempBuf.readableBytes() < length) {
                 Validation.validateLen(BgpErrorType.UPDATE_MESSAGE_ERROR,
                         BgpErrorType.ATTRIBUTE_LENGTH_ERROR, length);
             }
             ChannelBuffer aspathBuf = tempBuf.readBytes(length);
             while (aspathBuf.readableBytes() > 0) {
-                short asNum;
-                asNum = aspathBuf.readShort();
+                int asNum;
+                if (as4Octet) {
+                    asNum = aspathBuf.readInt();
+                } else {
+                    asNum = aspathBuf.readShort();
+                    asNum = asNum & 0xFFFF;
+                }
+
                 switch (pathSegType) {
                 case ASPATH_SET_TYPE:
                     aspathSet.add(asNum);
@@ -139,7 +157,7 @@ public class AsPath implements BgpValueType {
                 }
             }
         }
-        return new AsPath(aspathSet, aspathSeq);
+        return new AsPath(aspathSet, aspathSeq, as4Octet);
     }
 
     @Override
@@ -161,7 +179,7 @@ public class AsPath implements BgpValueType {
      *
      * @return list of ASNum in ASpath Sequence
      */
-    public List<Short> asPathSeq() {
+    public List<Integer> asPathSeq() {
         return this.aspathSeq;
     }
 
@@ -170,7 +188,7 @@ public class AsPath implements BgpValueType {
      *
      * @return list of ASNum in ASpath SET
      */
-    public List<Short> asPathSet() {
+    public List<Integer> asPathSet() {
         return this.aspathSet;
     }
 
@@ -213,7 +231,11 @@ public class AsPath implements BgpValueType {
                 cb.writeByte(aspathSeq.size());
 
                 for (int j = 0; j < aspathSeq.size(); j++) {
-                    cb.writeShort(aspathSeq.get(j));
+                    if (as4OctetCapable) {
+                        cb.writeInt(aspathSeq.get(j));
+                    } else {
+                        cb.writeShort(aspathSeq.get(j));
+                    }
                 }
                 int asLen = cb.writerIndex() - iAsLenIndex;
                 cb.setByte(iAsLenIndex, (byte) (asLen - 1));

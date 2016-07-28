@@ -60,7 +60,7 @@ public class BgpSelectionAlgoTest {
         byte[] asPath = new byte[] {0x40, 0x02, 0x04, 0x02, 0x01, (byte) 0xfd,
                 (byte) 0xea };
         buffer.writeBytes(asPath);
-        pathAttribute1 = AsPath.read(buffer);
+        pathAttribute1 = AsPath.read(buffer, false);
         pathAttributes1.add(pathAttribute1);
 
         IpAddress ipAddress = IpAddress.valueOf(Version.INET, peerIp);
@@ -87,7 +87,7 @@ public class BgpSelectionAlgoTest {
         asPath = new byte[] {0x40, 0x02, 0x04, 0x02, 0x01, (byte) 0xfd,
                 (byte) 0xe9 };
         buffer.writeBytes(asPath);
-        pathAttribute2 = AsPath.read(buffer);
+        pathAttribute2 = AsPath.read(buffer, false);
         pathAttributes2.add(pathAttribute2);
 
         ipAddress = IpAddress.valueOf(Version.INET, peerIp);
@@ -123,7 +123,7 @@ public class BgpSelectionAlgoTest {
         byte[] asPath = new byte[] {0x40, 0x02, 0x04, 0x02, 0x01, (byte) 0xfd,
                 (byte) 0xe9 };
         buffer.writeBytes(asPath);
-        pathAttribute1 = AsPath.read(buffer);
+        pathAttribute1 = AsPath.read(buffer, false);
         pathAttributes1.add(pathAttribute1);
 
         IpAddress ipAddress = IpAddress.valueOf(Version.INET, peerIp);
@@ -148,7 +148,7 @@ public class BgpSelectionAlgoTest {
         asPath = new byte[] {0x40, 0x02, 0x08, 0x02, 0x01, (byte) 0xfd,
                 (byte) 0xea, 0x02, 0x01, (byte) 0xfd, (byte) 0xea };
         buffer.writeBytes(asPath);
-        pathAttribute2 = AsPath.read(buffer);
+        pathAttribute2 = AsPath.read(buffer, false);
         pathAttributes2.add(pathAttribute2);
 
         ipAddress = IpAddress.valueOf(Version.INET, peerIp);
@@ -184,7 +184,7 @@ public class BgpSelectionAlgoTest {
         byte[] asPath = new byte[] {0x40, 0x02, 0x04, 0x02, 0x01, (byte) 0xfd,
                 (byte) 0xe9 };
         buffer.writeBytes(asPath);
-        pathAttribute1 = AsPath.read(buffer);
+        pathAttribute1 = AsPath.read(buffer, false);
         pathAttributes1.add(pathAttribute1);
 
         IpAddress ipAddress = IpAddress.valueOf(Version.INET, peerIp);
@@ -209,7 +209,7 @@ public class BgpSelectionAlgoTest {
         asPath = new byte[] {0x40, 0x02, 0x04, 0x02, 0x01, (byte) 0xfd,
                 (byte) 0xe9 };
         buffer.writeBytes(asPath);
-        pathAttribute2 = AsPath.read(buffer);
+        pathAttribute2 = AsPath.read(buffer, false);
         pathAttributes2.add(pathAttribute2);
 
         ipAddress = IpAddress.valueOf(Version.INET, peerIp);
@@ -249,7 +249,7 @@ public class BgpSelectionAlgoTest {
         byte[] asPath = new byte[] {0x40, 0x02, 0x04, 0x02, 0x01, (byte) 0xfd,
                 (byte) 0xe9 };
         buffer.writeBytes(asPath);
-        pathAttribute1 = AsPath.read(buffer);
+        pathAttribute1 = AsPath.read(buffer, false);
         pathAttributes1.add(pathAttribute1);
 
         IpAddress ipAddress = IpAddress.valueOf(Version.INET, peerIp);
@@ -278,7 +278,7 @@ public class BgpSelectionAlgoTest {
         asPath = new byte[] {0x40, 0x02, 0x04, 0x02, 0x01, (byte) 0xfd,
                 (byte) 0xe9 };
         buffer.writeBytes(asPath);
-        pathAttribute2 = AsPath.read(buffer);
+        pathAttribute2 = AsPath.read(buffer, false);
         pathAttributes2.add(pathAttribute2);
 
         ipAddress = IpAddress.valueOf(Version.INET, peerIp);
@@ -364,7 +364,7 @@ public class BgpSelectionAlgoTest {
         byte[] asPath = new byte[] {0x40, 0x02, 0x04, 0x02, 0x01, (byte) 0xfd,
                 (byte) 0xe9 };
         buffer.writeBytes(asPath);
-        pathAttribute1 = AsPath.read(buffer);
+        pathAttribute1 = AsPath.read(buffer, false);
         pathAttributes1.add(pathAttribute1);
 
         IpAddress ipAddress = IpAddress.valueOf(Version.INET, peerIp);
@@ -389,7 +389,7 @@ public class BgpSelectionAlgoTest {
         asPath = new byte[] {0x40, 0x02, 0x04, 0x02, 0x01, (byte) 0xfd,
                 (byte) 0xe9 };
         buffer.writeBytes(asPath);
-        pathAttribute2 = AsPath.read(buffer);
+        pathAttribute2 = AsPath.read(buffer, false);
         pathAttributes2.add(pathAttribute2);
 
         ipAddress = IpAddress.valueOf(Version.INET, peerIp);
@@ -424,7 +424,7 @@ public class BgpSelectionAlgoTest {
         byte[] asPath = new byte[] {0x40, 0x02, 0x04, 0x02, 0x01, (byte) 0xfd,
                 (byte) 0xe9 };
         buffer.writeBytes(asPath);
-        pathAttribute1 = AsPath.read(buffer);
+        pathAttribute1 = AsPath.read(buffer, false);
         pathAttributes1.add(pathAttribute1);
 
         IpAddress ipAddress = IpAddress.valueOf(Version.INET, peerIp);
@@ -450,7 +450,7 @@ public class BgpSelectionAlgoTest {
         asPath = new byte[] {0x40, 0x02, 0x04, 0x02, 0x01, (byte) 0xfd,
                 (byte) 0xe9 };
         buffer.writeBytes(asPath);
-        pathAttribute2 = AsPath.read(buffer);
+        pathAttribute2 = AsPath.read(buffer, false);
         pathAttributes2.add(pathAttribute2);
 
         ipAddress = IpAddress.valueOf(Version.INET, peerIp);
@@ -486,7 +486,7 @@ public class BgpSelectionAlgoTest {
         byte[] asPath = new byte[] {0x40, 0x02, 0x04, 0x02, 0x01, (byte) 0xfd,
                 (byte) 0xe9 };
         buffer.writeBytes(asPath);
-        pathAttribute1 = AsPath.read(buffer);
+        pathAttribute1 = AsPath.read(buffer, false);
         pathAttributes1.add(pathAttribute1);
 
         IpAddress ipAddress = IpAddress.valueOf(Version.INET, peerIp);
@@ -512,7 +512,7 @@ public class BgpSelectionAlgoTest {
         asPath = new byte[] {0x40, 0x02, 0x04, 0x02, 0x01, (byte) 0xfd,
                 (byte) 0xe9 };
         buffer.writeBytes(asPath);
-        pathAttribute2 = AsPath.read(buffer);
+        pathAttribute2 = AsPath.read(buffer, false);
         pathAttributes2.add(pathAttribute2);
 
         ipAddress = IpAddress.valueOf(Version.INET, peerIp);
@@ -548,7 +548,7 @@ public class BgpSelectionAlgoTest {
         byte[] asPath = new byte[] {0x40, 0x02, 0x04, 0x02, 0x01, (byte) 0xfd,
                 (byte) 0xe9 };
         buffer.writeBytes(asPath);
-        pathAttribute1 = AsPath.read(buffer);
+        pathAttribute1 = AsPath.read(buffer, false);
         pathAttributes1.add(pathAttribute1);
 
         IpAddress ipAddress = IpAddress.valueOf(Version.INET, peerIp);
@@ -574,7 +574,7 @@ public class BgpSelectionAlgoTest {
         asPath = new byte[] {0x40, 0x02, 0x04, 0x02, 0x01, (byte) 0xfd,
                 (byte) 0xe9 };
         buffer.writeBytes(asPath);
-        pathAttribute2 = AsPath.read(buffer);
+        pathAttribute2 = AsPath.read(buffer, false);
         pathAttributes2.add(pathAttribute2);
 
         ipAddress = IpAddress.valueOf(Version.INET, peerIp);

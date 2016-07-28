@@ -110,8 +110,7 @@ public class BgpCfgProvider extends AbstractProvider {
      * Reads the configuration and set it to the BGP-LS south bound protocol.
      */
     private void readConfiguration() {
-        BgpCfg bgpConfig = null;
-        List<BgpAppConfig.BgpPeerConfig> nodes;
+        BgpCfg bgpConfig;
         bgpConfig = bgpController.getConfig();
         BgpAppConfig config = configRegistry.getConfig(appId, BgpAppConfig.class);
 
@@ -127,26 +126,50 @@ public class BgpCfgProvider extends AbstractProvider {
         bgpConfig.setHoldTime(config.holdTime());
         bgpConfig.setMaxSession(config.maxSession());
         bgpConfig.setLargeASCapability(config.largeAsCapability());
+        BgpCfg.FlowSpec fsCapability = flowSpecCapabilityType(config);
+        bgpConfig.setFlowSpecCapability(fsCapability);
+        bgpConfig.setFlowSpecRpdCapability(config.rpdCapability());
+        if (fsCapability.equals(BgpCfg.FlowSpec.NONE)) {
+            bgpConfig.setFlowSpecRpdCapability(false);
+        }
+        configureBgpPeers(config, bgpConfig);
+    }
+
+    /**
+     * Returns flow specification capability.
+     *
+     * @param config configuration
+     * @return flow spec capability
+     */
+    private BgpCfg.FlowSpec flowSpecCapabilityType(BgpAppConfig config) {
         if (config.flowSpecCapability() != null) {
             if (config.flowSpecCapability().equals("IPV4")) {
-                bgpConfig.setFlowSpecCapability(BgpCfg.FlowSpec.IPV4);
+                return BgpCfg.FlowSpec.IPV4;
             } else if (config.flowSpecCapability().equals("VPNV4")) {
-                bgpConfig.setFlowSpecCapability(BgpCfg.FlowSpec.VPNV4);
+                return BgpCfg.FlowSpec.VPNV4;
             } else if (config.flowSpecCapability().equals("IPV4_VPNV4")) {
-                bgpConfig.setFlowSpecCapability(BgpCfg.FlowSpec.IPV4_VPNV4);
-            } else {
-                bgpConfig.setFlowSpecCapability(BgpCfg.FlowSpec.NONE);
+                return BgpCfg.FlowSpec.IPV4_VPNV4;
             }
-            bgpConfig.setFlowSpecRpdCapability(config.rpdCapability());
         }
+        return BgpCfg.FlowSpec.NONE;
+    }
 
-        nodes = config.bgpPeer();
-        for (int i = 0; i < nodes.size(); i++) {
-            String connectMode = nodes.get(i).connectMode();
-            bgpConfig.addPeer(nodes.get(i).hostname(), nodes.get(i).asNumber(), nodes.get(i).holdTime(),
-                              nodes.get(i).exportRoute());
+    /**
+     * Add BGP peers into to local config store.
+     *
+     * @param config BGP configuration
+     * @param bgpConfig BGP peer configuration
+     */
+    private void configureBgpPeers(BgpAppConfig config, BgpCfg bgpConfig) {
+        List<BgpAppConfig.BgpPeerConfig> peers;
+
+        peers = config.bgpPeer();
+        for (int i = 0; i < peers.size(); i++) {
+            String connectMode = peers.get(i).connectMode();
+            bgpConfig.addPeer(peers.get(i).hostname(), peers.get(i).asNumber(), peers.get(i).holdTime(),
+                              peers.get(i).exportRoute());
             if (connectMode.equals(BgpAppConfig.PEER_CONNECT_ACTIVE)) {
-                bgpConfig.connectPeer(nodes.get(i).hostname());
+                bgpConfig.connectPeer(peers.get(i).hostname());
             }
         }
     }
@@ -155,41 +178,46 @@ public class BgpCfgProvider extends AbstractProvider {
      * Read the configuration and update it to the BGP-LS south bound protocol.
      */
     private void updateConfiguration() {
-        BgpCfg bgpConfig = null;
-        List<BgpAppConfig.BgpPeerConfig> nodes;
+        BgpCfg bgpConfig;
+        List<BgpAppConfig.BgpPeerConfig> peers;
         TreeMap<String, BgpPeerCfg> bgpPeerTree;
         bgpConfig = bgpController.getConfig();
-        BgpPeerCfg peer = null;
+        BgpPeerCfg peer;
         BgpAppConfig config = configRegistry.getConfig(appId, BgpAppConfig.class);
+        boolean resetPeerSession;
 
         if (config == null) {
             log.warn("No configuration found");
             return;
         }
 
+        if (!(bgpConfig.getRouterId().equals(config.routerId())) || (bgpConfig.getAsNumber() != config.localAs())
+                || (bgpConfig.getLsCapability() != config.lsCapability())
+                || (bgpConfig.getHoldTime() != config.holdTime())
+                || (bgpConfig.getMaxSession() != config.maxSession())
+                || (bgpConfig.getMaxSession() != config.maxSession())
+                || (bgpConfig.getLargeASCapability() != config.largeAsCapability())
+                || !(bgpConfig.flowSpecCapability().equals(config.flowSpecCapability()))
+                || (bgpConfig.flowSpecRpdCapability() != config.rpdCapability())) {
 
-        /* Update the self configuration */
-        if (bgpController.connectedPeerCount() != 0) {
-            //TODO: If connections already exist, disconnect
-            bgpController.closeConnectedPeers();
-        }
-        bgpConfig.setRouterId(config.routerId());
-        bgpConfig.setAsNumber(config.localAs());
-        bgpConfig.setLsCapability(config.lsCapability());
-        bgpConfig.setHoldTime(config.holdTime());
-        bgpConfig.setMaxSession(config.maxSession());
-        bgpConfig.setLargeASCapability(config.largeAsCapability());
-        if (config.flowSpecCapability() != null) {
-            if (config.flowSpecCapability().equals("IPV4")) {
-                bgpConfig.setFlowSpecCapability(BgpCfg.FlowSpec.IPV4);
-            } else if (config.flowSpecCapability().equals("VPNV4")) {
-                bgpConfig.setFlowSpecCapability(BgpCfg.FlowSpec.VPNV4);
-            } else if (config.flowSpecCapability().equals("IPV4_VPNV4")) {
-                bgpConfig.setFlowSpecCapability(BgpCfg.FlowSpec.IPV4_VPNV4);
-            } else {
-                bgpConfig.setFlowSpecCapability(BgpCfg.FlowSpec.NONE);
+            /* Update the self configuration */
+            if (bgpController.connectedPeerCount() != 0) {
+                //TODO: If connections already exist, disconnect
+                bgpController.closeConnectedPeers();
             }
+
+            bgpConfig.setRouterId(config.routerId());
+            bgpConfig.setAsNumber(config.localAs());
+            bgpConfig.setLsCapability(config.lsCapability());
+            bgpConfig.setHoldTime(config.holdTime());
+            bgpConfig.setMaxSession(config.maxSession());
+            bgpConfig.setLargeASCapability(config.largeAsCapability());
+            BgpCfg.FlowSpec fsCapability = flowSpecCapabilityType(config);
+            bgpConfig.setFlowSpecCapability(fsCapability);
             bgpConfig.setFlowSpecRpdCapability(config.rpdCapability());
+            if (fsCapability.equals(BgpCfg.FlowSpec.NONE)) {
+                bgpConfig.setFlowSpecRpdCapability(false);
+            }
         }
 
         /* update the peer configuration */
@@ -197,26 +225,32 @@ public class BgpCfgProvider extends AbstractProvider {
         if (bgpPeerTree.isEmpty()) {
             log.info("There are no BGP peers to iterate");
         } else {
-            Set set = bgpPeerTree.entrySet();
-            Iterator i = set.iterator();
-            List<BgpPeerCfg> absPeerList = new ArrayList<BgpPeerCfg>();
+            Set peerSet = bgpPeerTree.entrySet();
+            Iterator peerIterator = peerSet.iterator();
+            List<BgpPeerCfg> absPeerList = new ArrayList<>();
 
             boolean exists = false;
 
-            while (i.hasNext()) {
-                Map.Entry me = (Map.Entry) i.next();
-                peer = (BgpPeerCfg) me.getValue();
+            while (peerIterator.hasNext()) {
+                Map.Entry peerEntry = (Map.Entry) peerIterator.next();
+                peer = (BgpPeerCfg) peerEntry.getValue();
+                resetPeerSession = false;
 
-                nodes = config.bgpPeer();
-                for (int j = 0; j < nodes.size(); j++) {
-                    String peerIp = nodes.get(j).hostname();
+                peers = config.bgpPeer();
+                for (int j = 0; j < peers.size(); j++) {
+                    String peerIp = peers.get(j).hostname();
                     if (peerIp.equals(peer.getPeerRouterId())) {
 
-                        peer.setAsNumber(nodes.get(j).asNumber());
-                        peer.setHoldtime(nodes.get(j).holdTime());
-                        peer.setExportRoute(nodes.get(j).exportRoute());
+                        if ((peer.getAsNumber() != peers.get(j).asNumber())
+                            || (peer.getHoldtime() != peers.get(j).holdTime())) {
+                            /*Reset peer connection */
+                            resetPeerSession = true;
+                            peer.setAsNumber(peers.get(j).asNumber());
+                            peer.setHoldtime(peers.get(j).holdTime());    
+                        }
+                        peer.setExportRoute(peers.get(j).exportRoute());
 
-                        nodes.remove(j);
+                        peers.remove(j);
                         exists = true;
                         break;
                     }
@@ -227,7 +261,7 @@ public class BgpCfgProvider extends AbstractProvider {
                     exists = false;
                 }
 
-                if (peer.connectPeer() != null) {
+                if (resetPeerSession && peer.connectPeer() != null) {
                     peer.connectPeer().disconnectPeer();
                     peer.setConnectPeer(null);
                 }
@@ -238,18 +272,7 @@ public class BgpCfgProvider extends AbstractProvider {
                 bgpConfig.removePeer(absPeerList.get(j).getPeerRouterId());
             }
         }
-
-
-        nodes = config.bgpPeer();
-        for (int i = 0; i < nodes.size(); i++) {
-            String connectMode = nodes.get(i).connectMode();
-            bgpConfig.addPeer(nodes.get(i).hostname(), nodes.get(i).asNumber(), nodes.get(i).holdTime(),
-                              nodes.get(i).exportRoute());
-            if (connectMode.equals(BgpAppConfig.PEER_CONNECT_ACTIVE)) {
-                bgpConfig.connectPeer(nodes.get(i).hostname());
-            }
-        }
-
+        configureBgpPeers(config, bgpConfig);
     }
 
     /**

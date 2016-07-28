@@ -27,24 +27,24 @@ import com.google.common.testing.EqualsTester;
  */
 public class AsPathTest {
     //Two scenarios aspath set and sequence
-    private final List<Short> aspathSet1 = new ArrayList<>();
-    private final List<Short> aspathSet2 = new ArrayList<>();
-    private final List<Short> aspathSeq1 = new ArrayList<>();
-    private final List<Short> aspathSeq2 = new ArrayList<>();
-    private final AsPath attr1 = new AsPath(aspathSet1, null);
-    private final AsPath sameAsAttr1 = new AsPath(aspathSet1, null);
-    private final AsPath attr2 = new AsPath(aspathSet2, null);
-    private final AsPath attr3 = new AsPath(null, aspathSeq1);
-    private final AsPath sameAsAttr3 = new AsPath(null, aspathSeq1);
-    private final AsPath attr4 = new AsPath(null, aspathSeq2);
+    private final List<Integer> aspathSet1 = new ArrayList<>();
+    private final List<Integer> aspathSet2 = new ArrayList<>();
+    private final List<Integer> aspathSeq1 = new ArrayList<>();
+    private final List<Integer> aspathSeq2 = new ArrayList<>();
+    private final AsPath attr1 = new AsPath(aspathSet1, null, false);
+    private final AsPath sameAsAttr1 = new AsPath(aspathSet1, null, false);
+    private final AsPath attr2 = new AsPath(aspathSet2, null, false);
+    private final AsPath attr3 = new AsPath(null, aspathSeq1, false);
+    private final AsPath sameAsAttr3 = new AsPath(null, aspathSeq1, false);
+    private final AsPath attr4 = new AsPath(null, aspathSeq2, false);
 
     @Test
     public void basics() {
-        aspathSet1.add((short) 100);
-        aspathSet1.add((short) 300);
-        aspathSet2.add((short) 200);
-        aspathSeq2.add((short) 400);
-        aspathSeq1.add((short) 300);
+        aspathSet1.add(100);
+        aspathSet1.add(300);
+        aspathSet2.add(200);
+        aspathSeq2.add(400);
+        aspathSeq1.add(300);
         new EqualsTester()
         .addEqualityGroup(attr1, sameAsAttr1)
         .addEqualityGroup(attr2)

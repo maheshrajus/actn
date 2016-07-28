@@ -263,7 +263,7 @@ public class BgpUpdateMsgTest {
 
         testPathAttribute = listIterator.next(); // AS PATH value is empty in hex dump
         asPath = (AsPath) testPathAttribute;
-        List<Short> asPathValues = asPath.asPathSeq();
+        List<Integer> asPathValues = asPath.asPathSeq();
         assertThat(asPathValues.isEmpty(), is(true));
 
         testPathAttribute = listIterator.next();
@@ -647,8 +647,8 @@ public class BgpUpdateMsgTest {
 
         testPathAttribute = listIterator.next();
         asPath = (AsPath) testPathAttribute;
-        ListIterator<Short> listIterator2 = asPath.asPathSeq().listIterator();
-        assertThat(listIterator2.next(), is((short) 65001));
+        ListIterator<Integer> listIterator2 = asPath.asPathSeq().listIterator();
+        assertThat(listIterator2.next(), is(65001));
 
         testPathAttribute = listIterator.next();
         med = (Med) testPathAttribute;
@@ -771,8 +771,8 @@ public class BgpUpdateMsgTest {
 
         testPathAttribute = listIterator.next();
         asPath = (AsPath) testPathAttribute;
-        ListIterator<Short> listIterator2 = asPath.asPathSeq().listIterator();
-        assertThat(listIterator2.next(), is((short) 65001));
+        ListIterator<Integer> listIterator2 = asPath.asPathSeq().listIterator();
+        assertThat(listIterator2.next(), is(65001));
 
         testPathAttribute = listIterator.next();
         med = (Med) testPathAttribute;
@@ -893,8 +893,8 @@ public class BgpUpdateMsgTest {
 
         testPathAttribute = listIterator.next();
         asPath = (AsPath) testPathAttribute;
-        ListIterator<Short> listIterator2 = asPath.asPathSeq().listIterator();
-        assertThat(listIterator2.next(), is((short) 65001));
+        ListIterator<Integer> listIterator2 = asPath.asPathSeq().listIterator();
+        assertThat(listIterator2.next(), is(65001));
 
         testPathAttribute = listIterator.next();
         med = (Med) testPathAttribute;
@@ -1244,8 +1244,8 @@ public class BgpUpdateMsgTest {
 
         testPathAttribute = listIterator.next();
         asPath = (AsPath) testPathAttribute;
-        ListIterator<Short> listIterator3 = asPath.asPathSeq().listIterator();
-        assertThat(listIterator3.next(), is((short) 23456));
+        ListIterator<Integer> listIterator3 = asPath.asPathSeq().listIterator();
+        assertThat(listIterator3.next(), is(23456));
 
         testPathAttribute = listIterator.next();
         nextHop = (NextHop) testPathAttribute;
@@ -1317,8 +1317,8 @@ public class BgpUpdateMsgTest {
 
         testPathAttribute = listIterator.next();
         asPath = (AsPath) testPathAttribute;
-        ListIterator<Short> listIterator2 = asPath.asPathSeq().listIterator();
-        assertThat(listIterator2.next(), is((short) 65001));
+        ListIterator<Integer> listIterator2 = asPath.asPathSeq().listIterator();
+        assertThat(listIterator2.next(), is(65001));
 
         testPathAttribute = listIterator.next();
         med = (Med) testPathAttribute;
@@ -1761,8 +1761,8 @@ public class BgpUpdateMsgTest {
 
         testPathAttribute = listIterator.next();
         aspath = (AsPath) testPathAttribute;
-        ListIterator<Short> listIterator2 = aspath.asPathSeq().listIterator();
-        assertThat(listIterator2.next(), is((short) 65001));
+        ListIterator<Integer> listIterator2 = aspath.asPathSeq().listIterator();
+        assertThat(listIterator2.next(), is(65001));
 
         testPathAttribute = listIterator.next();
         med = (Med) testPathAttribute;
@@ -1865,8 +1865,8 @@ public class BgpUpdateMsgTest {
 
         testPathAttribute = listIterator.next();
         aspath = (AsPath) testPathAttribute;
-        ListIterator<Short> listIterator2 = aspath.asPathSeq().listIterator();
-        assertThat(listIterator2.next(), is((short) 65001));
+        ListIterator<Integer> listIterator2 = aspath.asPathSeq().listIterator();
+        assertThat(listIterator2.next(), is(65001));
 
         testPathAttribute = listIterator.next();
         med = (Med) testPathAttribute;
@@ -1962,8 +1962,8 @@ public class BgpUpdateMsgTest {
 
         testPathAttribute = listIterator.next();
         aspath = (AsPath) testPathAttribute;
-        ListIterator<Short> listIterator2 = aspath.asPathSeq().listIterator();
-        assertThat(listIterator2.next(), is((short) 65001));
+        ListIterator<Integer> listIterator2 = aspath.asPathSeq().listIterator();
+        assertThat(listIterator2.next(), is(65001));
 
         testPathAttribute = listIterator.next();
         med = (Med) testPathAttribute;

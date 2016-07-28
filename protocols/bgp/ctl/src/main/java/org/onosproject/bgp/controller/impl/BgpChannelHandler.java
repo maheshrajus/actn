@@ -128,6 +128,10 @@ class BgpChannelHandler extends IdleStateAwareChannelHandler {
         this.bgpconfig = bgpController.getConfig();
     }
 
+    public BgpSessionInfoImpl sessionInfo() {
+        return sessionInfo;
+    }
+
     // To disconnect peer session.
     public void disconnectPeer() {
         bgpPeer.disconnectPeer();
@@ -284,7 +288,7 @@ class BgpChannelHandler extends IdleStateAwareChannelHandler {
                                                                                         : h.bgpconfig.getHoldTime();
                     h.sessionInfo = new BgpSessionInfoImpl(h.thisbgpId, h.bgpVersion, h.peerAsNum, h.peerHoldTime,
                                                            h.peerIdentifier, h.negotiatedHoldTime, h.isIbgpSession,
-                                                           h.remoteBgpCapability);
+                                                           h.remoteBgpCapability, h.bgpconfig);
 
                     h.bgpPeer = h.peerManager.getBgpPeerInstance(h.bgpController, h.sessionInfo, h.bgpPacketStats);
                     // set the status of bgp as connected

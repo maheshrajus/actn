@@ -35,7 +35,7 @@ public class As4Path implements BgpValueType {
     public static final byte AS4PATH_TYPE = 17;
     public static final byte ASNUM_SIZE = 4;
     public static final byte FLAGS = (byte) 0x40;
-
+    private boolean isAs4Path = false;
     private List<Integer> as4pathSet;
     private List<Integer> as4pathSeq;
 
@@ -48,6 +48,15 @@ public class As4Path implements BgpValueType {
     }
 
     /**
+     * Returns whether AS4path path attribute is present.
+     *
+     * @return whether AS4path path attribute is present
+     */
+    public boolean isAs4Path() {
+        return isAs4Path;
+    }
+
+    /**
      * Constructor to initialize parameters.
      *
      * @param as4pathSet AS4path Set
@@ -56,6 +65,7 @@ public class As4Path implements BgpValueType {
     public As4Path(List<Integer> as4pathSet, List<Integer> as4pathSeq) {
         this.as4pathSeq = as4pathSeq;
         this.as4pathSet = as4pathSet;
+        this.isAs4Path = true;
     }
 
     /**
