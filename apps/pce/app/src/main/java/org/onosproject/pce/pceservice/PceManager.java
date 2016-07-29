@@ -652,14 +652,16 @@ public class PceManager implements PceService {
         }*/
 
         CapabilityConstraint capabilityConstraint = null;
-
-        Iterator<Constraint> iterator = constraints.iterator();
-
-        while (iterator.hasNext()) {
-            Constraint constraint = iterator.next();
-            if (constraint instanceof CapabilityConstraint) {
-                capabilityConstraint = ((CapabilityConstraint) constraint);
+        if (constraints != null) {
+            Iterator<Constraint> iterator = constraints.iterator();
+            while (iterator.hasNext()) {
+                Constraint constraint = iterator.next();
+                if (constraint instanceof CapabilityConstraint) {
+                    capabilityConstraint = ((CapabilityConstraint) constraint);
+                }
             }
+        } else {
+            constraints = new LinkedList<>();
         }
 
         if (capabilityConstraint != null) {

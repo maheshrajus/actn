@@ -276,19 +276,39 @@ public class PcepClientControllerImpl implements PcepClientController {
                     pceSrpStore.addSrpIdMapping(pathName, srpIdMapping);
                     log.info("Adding into SrpID map, symName: " + pathName + ", SrpId: " + srpObj.getSrpID());
                 } else {
-                    pc.sendMessage(Collections.singletonList(getErrMsg(pc.factory(), ERROR_TYPE_10,
+                    if (!srpObj.getRFlag()) {
+                        pc.sendMessage(Collections.singletonList(getErrMsg(pc.factory(), ERROR_TYPE_10,
                                                                        ERROR_VALUE_8, srpObj.getSrpID())));
-                    continue;
+                        continue;
+                    }
                 }
 
                 endPointObj = initLsp.getEndPointsObject();
 
                 if (srpObj.getRFlag()) {
                     log.info("Remove path with PLSPID " + lspObj.getPlspId());
-                    assert lspIdentifierTlv != null;
-                    pathErr = pceService.releasePath(IpAddress.valueOf(lspIdentifierTlv.getIpv4IngressAddress()),
-                            IpAddress.valueOf(lspIdentifierTlv.getIpv4EgressAddress()),
-                                    String.valueOf(lspObj.getPlspId()));
+
+                    if (lspIdentifierTlv == null) {
+                        Iterable<Tunnel> tunnels = pceService.queryAllPath();
+
+                        if (tunnels != null) {
+                            for (final Tunnel tunnel: tunnels) {
+                                if (tunnel.annotations().value(PLSP_ID).equals(String.valueOf(lspObj.getPlspId()))) {
+                                    pathErr = pathErr.SUCCESS;
+                                    if (true != pceService.releasePath(tunnel.tunnelId())) {
+                                        pathErr = pathErr.ERROR;
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    else {
+                        //assert lspIdentifierTlv != null;
+                        pathErr = pceService.releasePath(IpAddress.valueOf(lspIdentifierTlv.getIpv4IngressAddress()),
+                                IpAddress.valueOf(lspIdentifierTlv.getIpv4EgressAddress()),
+                                String.valueOf(lspObj.getPlspId()));
+                    }
                 } else {
 
                     if (initLsp.getAssociationObjectList() != null) {
@@ -317,17 +337,18 @@ public class PcepClientControllerImpl implements PcepClientController {
                             if (virtualNetworklv != null) {
 
                                 initConstrntList = new LinkedList<>();
-                                PcepBandwidthObject initBandwidthObject
-                                        = initLsp.getPcepAttribute().getBandwidthObject();
-
-                                // Assign bandwidth
-                                if ((initBandwidthObject != null) && (initBandwidthObject.getBandwidth() != 0.0)) {
-                                    initConstrntList.add(PceBandwidthConstraint.of(
-                                            (double) initBandwidthObject.getBandwidth(),
-                                            DataRateUnit.valueOf("BPS")));
+                                PcepAttribute initAttributes = initLsp.getPcepAttribute();
+                                if (initAttributes != null) {
+                                    PcepBandwidthObject initBandwidthObject
+                                            = initAttributes.getBandwidthObject();
+                                    // Assign bandwidth
+                                    if ((initBandwidthObject != null) && (initBandwidthObject.getBandwidth() != 0.0)) {
+                                        initConstrntList.add(PceBandwidthConstraint.of(
+                                                (double) initBandwidthObject.getBandwidth(),
+                                                DataRateUnit.valueOf("BPS")));
+                                    }
                                 }
 
-                                PcepAttribute initAttributes = initLsp.getPcepAttribute();
                                 if (initAttributes != null && initAttributes.getMetricObjectList() != null) {
                                     ListIterator<PcepMetricObject> metricIterator
                                             = initAttributes.getMetricObjectList().listIterator();
@@ -347,6 +368,14 @@ public class PcepClientControllerImpl implements PcepClientController {
                         }
                     }
 
+                    //temp begin : ericssion
+                    if (virtualNetworklv == null) {
+                        byte[] vnName = ("VN-" + pathNameTlv.getValue().toString()).getBytes();
+
+                        virtualNetworklv = new VirtualNetworkTlv(vnName);
+                    }
+                    // temp end
+
                     assert virtualNetworklv != null;
                     pathErr = pceService.setupPath(new String(virtualNetworklv.getValue()),
                                                            IpAddress.valueOf(endPointObj.getSourceIpAddress()),
@@ -356,12 +385,17 @@ public class PcepClientControllerImpl implements PcepClientController {
                 }
 
                 if (pathErr == PathErr.COMPUTATION_FAIL) {
-                    PcepSrpIdMap.remove(pathNameTlv.getValue());
+                    log.info("computation failed");
+                    if (pathNameTlv != null) {
+                        PcepSrpIdMap.remove(pathNameTlv.getValue());
+                    }
                     pc.sendMessage(Collections.singletonList(getErrMsg(pc.factory(), ERROR_TYPE_24,
                                                                        ERROR_VALUE_3, srpObj.getSrpID())));
                 }  else if (pathErr != PathErr.SUCCESS) {
                     log.info("setupPath failed, ErrorValue: " + pathErr);
-                    PcepSrpIdMap.remove(pathNameTlv.getValue());
+                    if (pathNameTlv != null) {
+                        PcepSrpIdMap.remove(pathNameTlv.getValue());
+                    }
                     pc.sendMessage(Collections.singletonList(getErrMsg(pc.factory(), ERROR_TYPE_24,
                                                                        ERROR_VALUE_2, srpObj.getSrpID())));
                 }
@@ -417,7 +451,7 @@ public class PcepClientControllerImpl implements PcepClientController {
                     String pathName = new String(pathNameTlv.getValue());
                     SrpIdMapping srpIdMapping = new SrpIdMapping(srpObj.getSrpID(), 0, 0);
                     pceSrpStore.addSrpIdMapping(pathName, srpIdMapping);
-                    log.info("Adding symbalicName: " + pathName + ", SrpId: " + srpObj.getSrpID());
+                    log.info("Adding symbolicName: " + pathName + ", SrpId: " + srpObj.getSrpID());
                 } else {
                     TunnelEndPoint src = IpTunnelEndPoint
                             .ipTunnelPoint(IpAddress.valueOf(lspIdentifier.getIpv4EgressAddress()));
@@ -447,16 +481,18 @@ public class PcepClientControllerImpl implements PcepClientController {
                 }
 
                 constrntList = new LinkedList<>();
-                PcepBandwidthObject bandwidthObject
-                        = updReq.getMsgPath().getPcepAttribute().getBandwidthObject();
+                PcepAttribute attributes = updReq.getMsgPath().getPcepAttribute();
+                if (attributes != null) {
+                    PcepBandwidthObject bandwidthObject
+                            = updReq.getMsgPath().getPcepAttribute().getBandwidthObject();
 
-                // Assign bandwidth
-                if (bandwidthObject.getBandwidth() != 0.0) {
-                    constrntList.add(PceBandwidthConstraint.of((double) bandwidthObject.getBandwidth(),
-                                                            DataRateUnit.valueOf("BPS")));
+                    // Assign bandwidth
+                    if (bandwidthObject != null && bandwidthObject.getBandwidth() != 0.0) {
+                        constrntList.add(PceBandwidthConstraint.of((double) bandwidthObject.getBandwidth(),
+                                DataRateUnit.valueOf("BPS")));
+                    }
                 }
 
-                PcepAttribute attributes = updReq.getMsgPath().getPcepAttribute();
                 if (attributes != null && attributes.getMetricObjectList() != null) {
                     ListIterator<PcepMetricObject> iterator = attributes.getMetricObjectList().listIterator();
 
