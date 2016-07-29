@@ -356,9 +356,21 @@ public class PcepClientImpl implements PcepClientDriver {
         tlv = new SymbolicPathNameTlv(reportInfo.pathName().getBytes());
         llOptionalTlv.add(tlv);
 
+        int pncPlspId = 0;
+        int plspId = Integer.parseInt(reportInfo.plspId());
+
+        if (!reportInfo.isRemoved()) {
+            pncPlspId = PcepPncPlspIdDb.getPncPlspId(reportInfo.ingress().getIp4Address(), plspId);
+            if (pncPlspId == 0) {
+                pncPlspId = PcepPncPlspIdDb.add(reportInfo.ingress().getIp4Address(), plspId);
+            }
+        } else {
+            pncPlspId = PcepPncPlspIdDb.remove(reportInfo.ingress().getIp4Address(), plspId);
+        }
+
         PcepLspObject.Builder lspObjBldr = this.factory().buildLspObject();
         lspObjBldr.setAFlag((reportInfo.adminState() == PcePathReport.State.UP));
-        lspObjBldr.setPlspId(Integer.parseInt(reportInfo.plspId()))
+        lspObjBldr.setPlspId(pncPlspId)
                 .setRFlag(reportInfo.isRemoved()).setDFlag(reportInfo.isDelegate())
                 .setSFlag(synchFlag)
                 .setOptionalTlv(llOptionalTlv);

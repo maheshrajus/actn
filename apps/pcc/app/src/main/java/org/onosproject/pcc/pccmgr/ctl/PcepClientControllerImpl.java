@@ -22,11 +22,13 @@ import org.apache.felix.scr.annotations.Deactivate;
 import org.apache.felix.scr.annotations.Reference;
 import org.apache.felix.scr.annotations.ReferenceCardinality;
 import org.apache.felix.scr.annotations.Service;
+import org.onlab.packet.Ip4Address;
 import org.onlab.packet.IpAddress;
 import org.onlab.util.DataRateUnit;
 import org.onosproject.incubator.net.tunnel.IpTunnelEndPoint;
 import org.onosproject.incubator.net.tunnel.Tunnel;
 import org.onosproject.incubator.net.tunnel.TunnelEndPoint;
+import org.onosproject.incubator.net.tunnel.TunnelId;
 import org.onosproject.net.intent.Constraint;
 import org.onosproject.pcc.pccmgr.api.PceId;
 import org.onosproject.pcc.pccmgr.api.PcepAgent;
@@ -288,15 +290,22 @@ public class PcepClientControllerImpl implements PcepClientController {
                 if (srpObj.getRFlag()) {
                     log.info("Remove path with PLSPID " + lspObj.getPlspId());
 
+                    int plspId = PcepPncPlspIdDb.getPlspIdByPncPlspId(lspObj.getPlspId());
+
+
                     if (lspIdentifierTlv == null) {
+                        Ip4Address ingress = PcepPncPlspIdDb.getIngressByPncPlspId(lspObj.getPlspId());
+                        TunnelEndPoint src = IpTunnelEndPoint.ipTunnelPoint(ingress);
+
                         Iterable<Tunnel> tunnels = pceService.queryAllPath();
 
-                        if (tunnels != null) {
-                            for (final Tunnel tunnel: tunnels) {
-                                if (tunnel.annotations().value(PLSP_ID).equals(String.valueOf(lspObj.getPlspId()))) {
-                                    pathErr = pathErr.SUCCESS;
-                                    if (true != pceService.releasePath(tunnel.tunnelId())) {
-                                        pathErr = pathErr.ERROR;
+                        if ((tunnels != null) && (src != null)) {
+                            for (final Tunnel tunnel : tunnels) {
+                                if ((tunnel.annotations().value(PLSP_ID).equals(String.valueOf(plspId)))
+                                        && (tunnel.src().equals(src))) {
+                                    pathErr = PathErr.SUCCESS;
+                                    if (!pceService.releasePath(tunnel.tunnelId())) {
+                                        pathErr = PathErr.ERROR;
                                     }
                                     break;
                                 }
@@ -307,7 +316,7 @@ public class PcepClientControllerImpl implements PcepClientController {
                         //assert lspIdentifierTlv != null;
                         pathErr = pceService.releasePath(IpAddress.valueOf(lspIdentifierTlv.getIpv4IngressAddress()),
                                 IpAddress.valueOf(lspIdentifierTlv.getIpv4EgressAddress()),
-                                String.valueOf(lspObj.getPlspId()));
+                                String.valueOf(plspId));
                     }
                 } else {
 
@@ -407,13 +416,17 @@ public class PcepClientControllerImpl implements PcepClientController {
 
     private void processUpdateMsg(PceId pceId, PcepMessage msg) {
 
-        PathErr pathErr;
+        PathErr pathErr = null;
         StatefulIPv4LspIdentifiersTlv lspIdentifier = null;
         SymbolicPathNameTlv pathNameTlv = null;
         PcepLspObject lspObj = null;
         List<Constraint> constrntList = null;
 
         PcepClient pc = getClient(pceId);
+
+        int plspId = 0;
+        TunnelId tnlId = null;
+        String pathName = null;
 
         ListIterator<PcepUpdateRequest> listIterator
                 = ((PcepUpdateMsg) msg).getUpdateRequestList().listIterator();
@@ -422,6 +435,11 @@ public class PcepClientControllerImpl implements PcepClientController {
             PcepSrpObject srpObj = updReq.getSrpObject();
             if (0 != srpObj.getSrpID()) {
                 lspObj = updReq.getLspObject();
+
+                plspId = PcepPncPlspIdDb.getPlspIdByPncPlspId(lspObj.getPlspId());
+                Ip4Address ingress = PcepPncPlspIdDb.getIngressByPncPlspId(lspObj.getPlspId());
+                TunnelEndPoint srcEp = IpTunnelEndPoint.ipTunnelPoint(ingress);
+
                 ListIterator<PcepValueType> listTlvIterator = lspObj.getOptionalTlv().listIterator();
                 lspIdentifier = null;
 
@@ -439,33 +457,49 @@ public class PcepClientControllerImpl implements PcepClientController {
                     }
                 }
 
+                /*
                 if (lspIdentifier == null) {
                     //Attempted LSP Update Request without stateful PCE capability being advertised
                     pc.sendMessage(Collections.singletonList(getErrMsg(pc.factory(), ERROR_TYPE_6,
                                                                        ERROR_VALUE_11, srpObj.getSrpID())));
                     return;
                 }
+                */
 
                 if (pathNameTlv != null) {
                     //PcepSrpIdMap.INSTANCE.add(pathNameTlv.getValue(), srpObj.getSrpID());
-                    String pathName = new String(pathNameTlv.getValue());
+                    pathName = new String(pathNameTlv.getValue());
                     SrpIdMapping srpIdMapping = new SrpIdMapping(srpObj.getSrpID(), 0, 0);
                     pceSrpStore.addSrpIdMapping(pathName, srpIdMapping);
                     log.info("Adding symbolicName: " + pathName + ", SrpId: " + srpObj.getSrpID());
                 } else {
-                    TunnelEndPoint src = IpTunnelEndPoint
-                            .ipTunnelPoint(IpAddress.valueOf(lspIdentifier.getIpv4EgressAddress()));
-                    TunnelEndPoint dst = IpTunnelEndPoint
-                            .ipTunnelPoint(IpAddress.valueOf(lspIdentifier.getIpv4EgressAddress()));
 
-                    Collection<Tunnel> existingTunnels = pceService.queryPath(src, dst);
-                    String rptPlspId = String.valueOf(lspObj.getPlspId());
-                    String pathName = null;
+                    if (lspIdentifier != null) {
+                        TunnelEndPoint src = IpTunnelEndPoint
+                                .ipTunnelPoint(IpAddress.valueOf(lspIdentifier.getIpv4EgressAddress()));
+                        TunnelEndPoint dst = IpTunnelEndPoint
+                                .ipTunnelPoint(IpAddress.valueOf(lspIdentifier.getIpv4EgressAddress()));
 
-                    for (Tunnel tunnel : existingTunnels) {
-                        if (rptPlspId.equals(tunnel.annotations().value(PLSP_ID))) {
-                            pathName = tunnel.tunnelName().value();
-                            break;
+                        Collection<Tunnel> existingTunnels = pceService.queryPath(src, dst);
+
+                        for (Tunnel tunnel : existingTunnels) {
+                            if (tunnel.annotations().value(PLSP_ID).equals(String.valueOf(plspId))) {
+                                pathName = tunnel.tunnelName().value();
+                                break;
+                            }
+                        }
+                    } else {
+                        Iterable<Tunnel> tunnels = pceService.queryAllPath();
+
+                        if (tunnels != null) {
+                            for (final Tunnel tunnel : tunnels) {
+                                if (tunnel.annotations().value(PLSP_ID).equals(String.valueOf(plspId))
+                                        && (tunnel.src().equals(srcEp))) {
+                                    pathName = tunnel.tunnelName().value();
+                                    tnlId = tunnel.tunnelId();
+                                    break;
+                                }
+                            }
                         }
                     }
 
@@ -510,18 +544,21 @@ public class PcepClientControllerImpl implements PcepClientController {
                 }
             }
 
-            assert lspIdentifier != null;
-            pathErr = pceService.updatePath(IpAddress.valueOf(lspIdentifier.getIpv4IngressAddress()),
-                                            IpAddress.valueOf(lspIdentifier.getIpv4EgressAddress()),
-                                            String.valueOf(lspObj.getPlspId()), constrntList);
+            if (lspIdentifier != null) {
+                pathErr = pceService.updatePath(IpAddress.valueOf(lspIdentifier.getIpv4IngressAddress()),
+                            IpAddress.valueOf(lspIdentifier.getIpv4EgressAddress()),
+                            String.valueOf(plspId), constrntList);
+            } else if (tnlId != null) {
+                pathErr = pceService.updatePath(tnlId, constrntList);
+            }
 
             if (pathErr == PathErr.COMPUTATION_FAIL) {
-                PcepSrpIdMap.remove(pathNameTlv.getValue());
+                PcepSrpIdMap.remove(pathName.getBytes());
                 pc.sendMessage(Collections.singletonList(getErrMsg(pc.factory(), ERROR_TYPE_24,
                                                                    ERROR_VALUE_3, srpObj.getSrpID())));
             } else if (pathErr != PathErr.SUCCESS) {
                 log.info("setupPath failed, ErrorValue: " + pathErr);
-                PcepSrpIdMap.remove(pathNameTlv.getValue());
+                PcepSrpIdMap.remove(pathName.getBytes());
                 pc.sendMessage(Collections.singletonList(getErrMsg(pc.factory(), ERROR_TYPE_24,
                                                                    ERROR_VALUE_2, srpObj.getSrpID())));
             }
