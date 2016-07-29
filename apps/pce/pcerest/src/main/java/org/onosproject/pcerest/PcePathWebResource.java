@@ -42,6 +42,7 @@ import org.onosproject.pce.pceservice.api.PceService;
 import org.onosproject.pce.pceservice.PcePath;
 import org.onosproject.pce.pceservice.DefaultPcePath;
 import org.onosproject.pce.pceservice.LspType;
+import org.onosproject.pce.pceservice.api.PceService.PathErr;
 import org.onosproject.rest.AbstractWebResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -130,9 +131,9 @@ public class PcePathWebResource extends AbstractWebResource {
 
             // Add cost
             listConstrnt.add(path.costConstraint());
-
-            Boolean issuccess = nullIsNotFound(get(PceService.class)
-                                               .setupPath(srcDevice, dstDevice, path.name(), listConstrnt, lspType),
+            PathErr issuccess = null;
+            issuccess = nullIsNotFound(get(PceService.class)
+                                               .setupPath(srcDevice, dstDevice, path.name(), listConstrnt, lspType, null),
                                                PCE_SETUP_PATH_FAILED);
             return Response.status(OK).entity(issuccess.toString()).build();
         } catch (IOException e) {
@@ -169,8 +170,8 @@ public class PcePathWebResource extends AbstractWebResource {
             if (path.costConstraint() != null) {
                 constrntList.add(path.costConstraint());
             }
-
-            Boolean result = nullIsNotFound(get(PceService.class).updatePath(TunnelId.valueOf(id), constrntList),
+            PathErr result = null;
+            result = nullIsNotFound(get(PceService.class).updatePath(TunnelId.valueOf(id), constrntList),
                                             PCE_PATH_NOT_FOUND);
             return Response.status(OK).entity(result.toString()).build();
         } catch (IOException e) {
