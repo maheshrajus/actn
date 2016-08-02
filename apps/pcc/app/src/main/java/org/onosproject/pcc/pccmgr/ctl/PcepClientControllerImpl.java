@@ -226,7 +226,9 @@ public class PcepClientControllerImpl implements PcepClientController {
         SymbolicPathNameTlv pathNameTlv = null;
         List<Constraint> initConstrntList = null;
         LspType lspType = null;
-        PathErr pathErr = null;
+        PathErr pathErr = PathErr.ERROR;
+        String pathName = null;
+
         PcepClient pc = getClient(pceId);
         ListIterator<PcInitiatedLspRequest> listIterator
                 = ((PcepInitiateMsg) msg).getPcInitiatedLspRequestList().listIterator();
@@ -262,6 +264,7 @@ public class PcepClientControllerImpl implements PcepClientController {
                     switch (tlv.getType()) {
                         case SymbolicPathNameTlv.TYPE:
                             pathNameTlv = (SymbolicPathNameTlv) tlv;
+                            pathName = new String(pathNameTlv.getValue());
                             break;
                         case StatefulIPv4LspIdentifiersTlv.TYPE:
                             lspIdentifierTlv = (StatefulIPv4LspIdentifiersTlv) tlv;
@@ -271,27 +274,12 @@ public class PcepClientControllerImpl implements PcepClientController {
                     }
                 }
 
-                if (pathNameTlv != null) {
-                    // PcepSrpIdMap.INSTANCE.add(pathNameTlv.getValue(), srpObj.getSrpID());
-                    String pathName = new String(pathNameTlv.getValue());
-                    SrpIdMapping srpIdMapping = new SrpIdMapping(srpObj.getSrpID(), 0, 0);
-                    pceSrpStore.addSrpIdMapping(pathName, srpIdMapping);
-                    log.info("Adding into SrpID map, symName: " + pathName + ", SrpId: " + srpObj.getSrpID());
-                } else {
-                    if (!srpObj.getRFlag()) {
-                        pc.sendMessage(Collections.singletonList(getErrMsg(pc.factory(), ERROR_TYPE_10,
-                                                                       ERROR_VALUE_8, srpObj.getSrpID())));
-                        continue;
-                    }
-                }
-
                 endPointObj = initLsp.getEndPointsObject();
 
                 if (srpObj.getRFlag()) {
                     log.info("Remove path with PLSPID " + lspObj.getPlspId());
 
                     int plspId = PcepPncPlspIdDb.getPlspIdByPncPlspId(lspObj.getPlspId());
-
 
                     if (lspIdentifierTlv == null) {
                         Ip4Address ingress = PcepPncPlspIdDb.getIngressByPncPlspId(lspObj.getPlspId());
@@ -303,16 +291,30 @@ public class PcepClientControllerImpl implements PcepClientController {
                             for (final Tunnel tunnel : tunnels) {
                                 if ((tunnel.annotations().value(PLSP_ID).equals(String.valueOf(plspId)))
                                         && (tunnel.src().equals(src))) {
+
+                                    pathName = tunnel.tunnelName().value();
+
+                                    SrpIdMapping srpIdMapping = new SrpIdMapping(srpObj.getSrpID(), 0, 0);
+                                    pceSrpStore.addSrpIdMapping(pathName, srpIdMapping);
+                                    log.info("Adding into SrpID map, symName: " + pathName + ", SrpId: " + srpObj.getSrpID());
+
                                     pathErr = PathErr.SUCCESS;
                                     if (!pceService.releasePath(tunnel.tunnelId())) {
                                         pathErr = PathErr.ERROR;
                                     }
+
+
                                     break;
                                 }
                             }
                         }
                     }
                     else {
+                        // PcepSrpIdMap.INSTANCE.add(pathNameTlv.getValue(), srpObj.getSrpID());
+                        SrpIdMapping srpIdMapping = new SrpIdMapping(srpObj.getSrpID(), 0, 0);
+                        pceSrpStore.addSrpIdMapping(pathName, srpIdMapping);
+                        log.info("Adding into SrpID map, symName: " + pathName + ", SrpId: " + srpObj.getSrpID());
+
                         //assert lspIdentifierTlv != null;
                         pathErr = pceService.releasePath(IpAddress.valueOf(lspIdentifierTlv.getIpv4IngressAddress()),
                                 IpAddress.valueOf(lspIdentifierTlv.getIpv4EgressAddress()),
@@ -384,6 +386,10 @@ public class PcepClientControllerImpl implements PcepClientController {
                         virtualNetworklv = new VirtualNetworkTlv(vnName);
                     }
                     // temp end
+
+                    SrpIdMapping srpIdMapping = new SrpIdMapping(srpObj.getSrpID(), 0, 0);
+                    pceSrpStore.addSrpIdMapping(pathName, srpIdMapping);
+                    log.info("Adding into SrpID map, symName: " + pathName + ", SrpId: " + srpObj.getSrpID());
 
                     assert virtualNetworklv != null;
                     pathErr = pceService.setupPath(new String(virtualNetworklv.getValue()),

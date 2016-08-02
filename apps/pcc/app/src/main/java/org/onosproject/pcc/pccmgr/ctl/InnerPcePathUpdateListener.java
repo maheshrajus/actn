@@ -11,6 +11,8 @@ import org.onosproject.pcep.pcepio.protocol.PcepFactory;
 
 import org.onosproject.pcep.pcepio.protocol.PcepReportMsg;
 import org.onosproject.pcep.pcepio.types.PcepErrorDetailInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 
@@ -23,6 +25,7 @@ public class InnerPcePathUpdateListener implements PcePathUpdateListener {
     //protected PcepFactory factory = PcepConfig.getInstance().getController().getPcepMessageFactory1();
     public static final long IDENTIFIER_SET = 0x100000000L;
     public static final long SET = 0xFFFFFFFFL;
+    protected final Logger log = LoggerFactory.getLogger(InnerPcePathUpdateListener.class);
 
     @Override
     public void updatePath(PcePathReport reportInfo) {
@@ -38,6 +41,9 @@ public class InnerPcePathUpdateListener implements PcePathUpdateListener {
         }
 
          //build PCRpt message
+        log.info("PNC sending PCRpt message for PathName: " + reportInfo.pathName() + " R Flag: " + reportInfo.isRemoved()
+                + " reportSrpId: " + reportInfo.srpId());
+
         boolean syncState = (pc.lspDbSyncStatus() == PcepSyncStatus.IN_SYNC);
         PcepReportMsg pcRptMsg = pc.buildPCRptMsg(reportInfo, syncState);
 

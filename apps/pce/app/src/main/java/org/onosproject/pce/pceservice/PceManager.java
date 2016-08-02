@@ -1132,17 +1132,22 @@ public class PceManager implements PceService {
     }
 
     private int getMdscSrpId(String pathName) {
+        log.info(" getMdscSrpId pathname: " + pathName);
         SrpIdMapping srpIdMapping = pceSrpStore.getSrpIdMapping(pathName);
         if (srpIdMapping == null) {
+            log.info("srpId map not exists");
             return 0;
         }
 
-        if (srpIdMapping.pncSrpId() == srpIdMapping.rptSrpId()) {
+        if ((srpIdMapping.pncSrpId() == srpIdMapping.rptSrpId())
+            && (srpIdMapping.rptSrpId() != 0)) {
             int mdscSrpId = srpIdMapping.mdscSrpId();
             pceSrpStore.removeSrpIdMapping(pathName);
+            log.info("srpID: " + mdscSrpId);
             return mdscSrpId;
         }
 
+        log.info("srpId match not exist");
         return 0;
     }
 
@@ -1272,6 +1277,7 @@ public class PceManager implements PceService {
                 && !tunnel.state().equals(Tunnel.State.FAILED)) {
 
             if (tunnel.annotations().value(VN_NAME) != null && tunnel.type() == MPLS) {
+                log.info("updateFailedPath flow");
                 reportTunnelToListeners(tunnel, false, false, 0);
                 // send admin down over protocol.
                 tunnelAdminService.updateTunnel(tunnel, tunnel.path(), FAILED);
@@ -1677,6 +1683,7 @@ public class PceManager implements PceService {
             case TUNNEL_ADDED:
                 if (tunnel.state() == ACTIVE) {
                     int srpId = getMdscSrpId(tunnel.tunnelName().value());
+                    log.info("Tunnel added flow");
                     reportTunnelToListeners(tunnel, true, false, srpId);
                     // This means that PNC gone through MBB and come up with new tunnel.
                     if (tunnel.type() == SDMPLS) {
@@ -1741,6 +1748,7 @@ public class PceManager implements PceService {
                                                                   tunnel.tunnelName().value(), constraints, lspType));
                 } else if (tunnel.state() == ACTIVE) {
                     int srpId = getMdscSrpId(tunnel.tunnelName().value());
+                    log.info("Tunnel updated, state active, flow");
                     reportTunnelToListeners(tunnel, true, false, srpId);
                     if (tunnel.type() == SDMPLS) {
                         pceStore.updateTunnelStatus(tunnel.tunnelId(), tunnel.state());
@@ -1854,6 +1862,7 @@ public class PceManager implements PceService {
                 }
 
                 int srpId = getMdscSrpId(tunnel.tunnelName().value());
+                log.info("Tunnel removed flow");
                 reportTunnelToListeners(tunnel, true, true, srpId);
                 if (tunnel.type() == SDMPLS) {
                     TunnelId pTunnelId = pceStore.parentTunnel(tunnel.tunnelId());

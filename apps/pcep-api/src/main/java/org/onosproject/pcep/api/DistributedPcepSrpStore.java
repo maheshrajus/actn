@@ -58,6 +58,8 @@ public class DistributedPcepSrpStore implements PcepSrpStore {
         checkNotNull(srpIdMapping);
         checkNotNull(pathName);
         srpIdCorrelation.put(pathName, srpIdMapping);
+        log.info("addSrpIdMapping pathName: " + pathName + " SrpIdMapping MdscSrpId: " + srpIdMapping.mdscSrpId()
+                + " PncSrpId: " + srpIdMapping.pncSrpId() + " RptSrpId: " + srpIdMapping.rptSrpId());
     }
 
     @Override
@@ -65,11 +67,14 @@ public class DistributedPcepSrpStore implements PcepSrpStore {
         checkNotNull(pathName);
         checkNotNull(srpIdMapping);
         srpIdCorrelation.replace(pathName, srpIdMapping);
+        log.info("updateSrpIdMapping pathName: " + pathName + " SrpIdMapping MdscSrpId: " + srpIdMapping.mdscSrpId()
+                         + " PncSrpId: " + srpIdMapping.pncSrpId() + " RptSrpId: " + srpIdMapping.rptSrpId());
     }
 
     @Override
     public void removeSrpIdMapping(String pathName) {
         checkNotNull(pathName);
         srpIdCorrelation.remove(pathName);
+        log.info("removeSrpIdMapping pathName: " + pathName);
     }
 }

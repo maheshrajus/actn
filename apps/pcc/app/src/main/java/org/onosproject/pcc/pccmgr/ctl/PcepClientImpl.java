@@ -337,8 +337,7 @@ public class PcepClientImpl implements PcepClientDriver {
         if (srpId != null) {
             // build SRP object
             try {
-                srpObj = this.factory().buildSrpObject().setSrpID(Integer.parseInt(srpId))
-                        .setRFlag(reportInfo.isRemoved()).build();
+                srpObj = this.factory().buildSrpObject().setSrpID(Integer.parseInt(srpId)).build();
             } catch (PcepParseException e) {
                 e.printStackTrace();
             }

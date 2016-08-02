@@ -421,6 +421,7 @@ class PcepChannelHandler extends IdleStateAwareChannelHandler {
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
         PcepErrorMsg errMsg;
         log.info("exceptionCaught: " + e.toString());
+        e.getCause().printStackTrace();
 
         if (e.getCause() instanceof ReadTimeoutException) {
             if (ChannelState.OPENSENT == state) {

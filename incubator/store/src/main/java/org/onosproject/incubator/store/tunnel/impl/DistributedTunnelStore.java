@@ -175,6 +175,8 @@ public class DistributedTunnelStore
                                             old.resource(),
                                             DefaultAnnotations.merge(oldAnno, newAnno));
             tunnelIdAsKeyStore.put(tunnel.tunnelId(), newT);
+            log.info("handleCreateOrUpdateTunnel TUNNEL_UPDATED for " + tunnel.tunnelName().value());
+
             TunnelEvent event = new TunnelEvent(TunnelEvent.Type.TUNNEL_UPDATED,
                                                 tunnel);
             notifyDelegate(event);
