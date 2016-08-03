@@ -21,17 +21,7 @@ import java.util.ListIterator;
 
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.onosproject.pcep.pcepio.exceptions.PcepParseException;
-import org.onosproject.pcep.pcepio.protocol.PcepLspObject;
-import org.onosproject.pcep.pcepio.protocol.PcepMessageReader;
-import org.onosproject.pcep.pcepio.protocol.PcepMessageWriter;
-import org.onosproject.pcep.pcepio.protocol.PcepReportMsg;
-import org.onosproject.pcep.pcepio.protocol.PcepSrpObject;
-import org.onosproject.pcep.pcepio.protocol.PcepStateReport;
-import org.onosproject.pcep.pcepio.protocol.PcepType;
-import org.onosproject.pcep.pcepio.protocol.PcepVersion;
-import org.onosproject.pcep.pcepio.protocol.PcepRroObject;
-import org.onosproject.pcep.pcepio.protocol.PcepAttribute;
-import org.onosproject.pcep.pcepio.protocol.PcepEroObject;
+import org.onosproject.pcep.pcepio.protocol.*;
 import org.onosproject.pcep.pcepio.types.PcepObjectHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -266,6 +256,16 @@ class PcepReportMsgVer1 implements PcepReportMsg {
                     throw new PcepParseException("LSP Object is mandatory object for PcRpt message.");
                 } else {
                     lspObj.write(cb);
+                }
+
+                //PCEP Association list is optional
+                LinkedList<PcepAssociationObject> llAssociationObj = stateRpt.getAssociationObjectList();
+                if (llAssociationObj != null) {
+                    ListIterator<PcepAssociationObject> listAssIterator
+                            = llAssociationObj.listIterator();
+                    while (listAssIterator.hasNext()) {
+                        listAssIterator.next().write(cb);
+                    }
                 }
 
                 /*

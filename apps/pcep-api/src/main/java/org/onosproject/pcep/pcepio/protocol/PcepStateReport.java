@@ -19,6 +19,8 @@ package org.onosproject.pcep.pcepio.protocol;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.onosproject.pcep.pcepio.exceptions.PcepParseException;
 
+import java.util.LinkedList;
+
 /**
  * Abstraction of an entity provides State Report for PCEP Report Message.
  */
@@ -125,6 +127,13 @@ public interface PcepStateReport {
     PcepLspObject getLspObject();
 
     /**
+     * Returns PcepAssociationbject List.
+     *
+     * @return list of PCEP ASSOCIATION object
+     */
+    LinkedList<PcepAssociationObject> getAssociationObjectList();
+
+    /**
      * Returns PcepMsgPath.
      *
      * @return msgPath
@@ -151,6 +160,13 @@ public interface PcepStateReport {
      * @param msgPath Pcep MsgPath object
      */
     void setMsgPath(PcepMsgPath msgPath);
+
+    /**
+     * Sets PcepAssociationObject list.
+     *
+     * @param llAssociationObj list of PCEP ASSOCIATION object
+     */
+    void setAssociationObjectList(LinkedList<PcepAssociationObject> llAssociationObj);
 
     /**
      * Builder interface with get and set functions to build PcepStateReport.
@@ -224,6 +240,8 @@ public interface PcepStateReport {
          * @param pcepAttribute Pcep Attribute object
          */
         Builder setPcepAttribute(PcepAttribute pcepAttribute);
+
+        Builder setAssociationObjectList(LinkedList<PcepAssociationObject> llAssociationObj);
 
         /**
          * Sets the Path Object.

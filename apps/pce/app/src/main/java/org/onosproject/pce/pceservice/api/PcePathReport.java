@@ -149,6 +149,8 @@ public interface PcePathReport {
      */
     Path xroPath();
 
+    String vnName();
+
     /**
      * Builder for pce path report.
      */
@@ -282,6 +284,7 @@ public interface PcePathReport {
          */
         Builder xroPath(Path path);
 
+        Builder vnName(String vnName);
         /**
          * Builds object of pce path report.
          *

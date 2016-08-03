@@ -43,6 +43,7 @@ public final class DefaultPcePathReport implements PcePathReport {
     private Path eroPath;
     private Path rroPath;
     private Path xroPath;
+    private String vnName;
 
     /**
      * Initializes PCE path report attributes.
@@ -62,11 +63,12 @@ public final class DefaultPcePathReport implements PcePathReport {
      * @param eroPath path ero
      * @param rroPath path rro
      * @param xroPath path xro
+     * @param vnName vn name
      */
     private DefaultPcePathReport(String pathName, String srpId, String plspId, String localLspId, String pceTunnelId,
                                  boolean isDelegate, boolean isSync, boolean isRemoved, State adminState,
                                  State state, IpAddress ingress, IpAddress egress, String errorInfo,
-                                 Path eroPath, Path rroPath, Path xroPath) {
+                                 Path eroPath, Path rroPath, Path xroPath, String vnName) {
         this.pathName = pathName;
         this.srpId = srpId;
         this.plspId = plspId;
@@ -83,6 +85,7 @@ public final class DefaultPcePathReport implements PcePathReport {
         this.eroPath = eroPath;
         this.rroPath = rroPath;
         this.xroPath = xroPath;
+        this.vnName = vnName;
     }
 
     @Override
@@ -166,9 +169,14 @@ public final class DefaultPcePathReport implements PcePathReport {
     }
 
     @Override
+    public String vnName() {
+        return vnName;
+    }
+
+    @Override
     public int hashCode() {
         return Objects.hash(pathName, srpId, plspId, localLspId, pceTunnelId, isDelegate, isSync, isRemoved, adminState,
-                state, ingress, egress, errorInfo, eroPath, rroPath, xroPath);
+                state, ingress, egress, errorInfo, eroPath, rroPath, xroPath, vnName);
     }
 
     @Override
@@ -193,7 +201,8 @@ public final class DefaultPcePathReport implements PcePathReport {
                     && Objects.equals(errorInfo, that.errorInfo)
                     && Objects.equals(eroPath, that.eroPath)
                     && Objects.equals(rroPath, that.rroPath)
-                    && Objects.equals(xroPath, that.xroPath);
+                    && Objects.equals(xroPath, that.xroPath)
+                    && Objects.equals(vnName, that.vnName);
         }
         return false;
     }
@@ -217,6 +226,7 @@ public final class DefaultPcePathReport implements PcePathReport {
                 .add("eroPath", eroPath().toString())
                 .add("rroPath", rroPath().toString())
                 .add("xroPath", xroPath().toString())
+                .add("vnName", vnName())
                 .toString();
     }
 
@@ -249,6 +259,7 @@ public final class DefaultPcePathReport implements PcePathReport {
         private Path eroPath;
         private Path rroPath;
         private Path xroPath;
+        private String vnName;
 
         @Override
         public Builder pathName(String name) {
@@ -347,9 +358,15 @@ public final class DefaultPcePathReport implements PcePathReport {
         }
 
         @Override
+        public PcePathReport.Builder vnName(String vnName) {
+            this.vnName = vnName;
+            return this;
+        }
+
+        @Override
         public PcePathReport build() {
             return new DefaultPcePathReport(pathName, srpId, plspId, localLspId, pceTunnelId, isDelegate, isSync,
-                    isRemoved, adminState, state, ingress, egress, errorInfo, eroPath, rroPath, xroPath);
+                    isRemoved, adminState, state, ingress, egress, errorInfo, eroPath, rroPath, xroPath, vnName);
         }
     }
 }

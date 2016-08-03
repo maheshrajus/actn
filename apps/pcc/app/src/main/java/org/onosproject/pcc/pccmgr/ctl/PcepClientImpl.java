@@ -44,23 +44,9 @@ import org.onosproject.pcc.pccmgr.api.PcepClientDriver;
 import org.onosproject.pce.pceservice.api.PcePathReport;
 import org.onosproject.pce.pceservice.api.PceService;
 import org.onosproject.pcep.pcepio.exceptions.PcepParseException;
-import org.onosproject.pcep.pcepio.protocol.PcepAttribute;
-import org.onosproject.pcep.pcepio.protocol.PcepEroObject;
-import org.onosproject.pcep.pcepio.protocol.PcepFactories;
-import org.onosproject.pcep.pcepio.protocol.PcepFactory;
-import org.onosproject.pcep.pcepio.protocol.PcepLspObject;
-import org.onosproject.pcep.pcepio.protocol.PcepMessage;
-import org.onosproject.pcep.pcepio.protocol.PcepReportMsg;
-import org.onosproject.pcep.pcepio.protocol.PcepRroObject;
-import org.onosproject.pcep.pcepio.protocol.PcepSrpObject;
-import org.onosproject.pcep.pcepio.protocol.PcepStateReport;
-import org.onosproject.pcep.pcepio.protocol.PcepVersion;
-import org.onosproject.pcep.pcepio.protocol.PcepXroObject;
+import org.onosproject.pcep.pcepio.protocol.*;
 import org.onosproject.pcep.pcepio.protocol.ver1.PcepStateReportVer1;
-import org.onosproject.pcep.pcepio.types.IPv4SubObject;
-import org.onosproject.pcep.pcepio.types.PcepValueType;
-import org.onosproject.pcep.pcepio.types.StatefulIPv4LspIdentifiersTlv;
-import org.onosproject.pcep.pcepio.types.SymbolicPathNameTlv;
+import org.onosproject.pcep.pcepio.types.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -378,6 +364,26 @@ public class PcepClientImpl implements PcepClientDriver {
         }
         lspObjBldr.setOFlag(operState);
 
+        // build Association Object
+        if (reportInfo.vnName() != null) {
+            LinkedList<PcepAssociationObject> llAssociationObj = new LinkedList<PcepAssociationObject>();
+            llOptionalTlv = new LinkedList<PcepValueType>();
+
+            VirtualNetworkTlv vnTlv = new VirtualNetworkTlv(reportInfo.vnName().getBytes());
+            llOptionalTlv.add(vnTlv);
+
+            // TODO : need to set vn Association Type, ID, Source may need to get from tunnel
+            PcepAssociationObject associationObj = null;
+            try {
+                associationObj = this.factory().buildAssociationObject().setAssociationID((short) 1)
+                        .setAssociationSource(0x01010101).setAssociationType((short) 224)
+                        .setOptionalTlv(llOptionalTlv).build();
+            } catch (PcepParseException e) {
+                e.printStackTrace();
+            }
+            llAssociationObj.add(associationObj);
+            stateRptBldr.setAssociationObjectList(llAssociationObj);
+        }
 
         //build ERO object
         llSubObjects = createPcepPath(reportInfo.eroPath());

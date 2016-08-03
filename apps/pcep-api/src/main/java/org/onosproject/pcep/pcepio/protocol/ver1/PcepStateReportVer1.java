@@ -18,19 +18,15 @@ package org.onosproject.pcep.pcepio.protocol.ver1;
 
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.onosproject.pcep.pcepio.exceptions.PcepParseException;
-import org.onosproject.pcep.pcepio.protocol.PcepAttribute;
-import org.onosproject.pcep.pcepio.protocol.PcepBandwidthObject;
-import org.onosproject.pcep.pcepio.protocol.PcepEroObject;
-import org.onosproject.pcep.pcepio.protocol.PcepLspObject;
-import org.onosproject.pcep.pcepio.protocol.PcepRroObject;
-import org.onosproject.pcep.pcepio.protocol.PcepSrpObject;
-import org.onosproject.pcep.pcepio.protocol.PcepStateReport;
+import org.onosproject.pcep.pcepio.protocol.*;
 import org.onosproject.pcep.pcepio.types.PcepObjectHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.MoreObjects.ToStringHelper;
+
+import java.util.LinkedList;
 
 /**
  * Provide the State Report for the Pcep Report Message.
@@ -282,7 +278,8 @@ public class PcepStateReportVer1 implements PcepStateReport {
     private PcepLspObject lspObject;
     //PcepMsgPath
     private PcepStateReport.PcepMsgPath msgPath;
-
+    //PCEP Association list
+    private LinkedList<PcepAssociationObject> llAssociationObjectList;
     //PCEP ERO Object
     private PcepEroObject eroObject;
     //PCEP RRO Object
@@ -299,15 +296,17 @@ public class PcepStateReportVer1 implements PcepStateReport {
         this.eroObject = null;
         this.rroObject = null;
         this.pcepAttr = null;
+        this.llAssociationObjectList = null;
     }
 
     public PcepStateReportVer1(PcepSrpObject srpObject, PcepLspObject lspObject, PcepEroObject eroObject,
-                               PcepRroObject rroObject, PcepAttribute pcepAttribute) {
+                               PcepRroObject rroObject, PcepAttribute pcepAttribute, LinkedList<PcepAssociationObject> llAssociationObj) {
         this.srpObject = srpObject;
         this.lspObject = lspObject;
         this.eroObject = eroObject;
         this.rroObject = rroObject;
         this.pcepAttr = pcepAttribute;
+        this.llAssociationObjectList = llAssociationObj;
     }
 
     @Override
@@ -333,6 +332,16 @@ public class PcepStateReportVer1 implements PcepStateReport {
     @Override
     public PcepLspObject getLspObject() {
         return lspObject;
+    }
+
+    @Override
+    public LinkedList<PcepAssociationObject> getAssociationObjectList() {
+        return llAssociationObjectList;
+    }
+
+    @Override
+    public void setAssociationObjectList(LinkedList<PcepAssociationObject> llAssociationObj) {
+        this.llAssociationObjectList = llAssociationObj;
     }
 
     @Override
@@ -380,6 +389,7 @@ public class PcepStateReportVer1 implements PcepStateReport {
         private PcepRroObject rroObject;
         //PCEP Attribute
         private PcepAttribute pcepAttr;
+        private LinkedList<PcepAssociationObject> llAssociationObj;
 
         @Override
         public PcepStateReport build() throws PcepParseException {
@@ -427,7 +437,7 @@ public class PcepStateReportVer1 implements PcepStateReport {
                 msgPath = this.msgPath;
             }
 
-            return new PcepStateReportVer1(srpObject, lspObject, eroObject, rroObject, pcepAttr);
+            return new PcepStateReportVer1(srpObject, lspObject, eroObject, rroObject, pcepAttr, this.llAssociationObj);
         }
 
         @Override
@@ -477,6 +487,12 @@ public class PcepStateReportVer1 implements PcepStateReport {
         public PcepStateReport.Builder setPcepAttribute(PcepAttribute pcepAttribute) {
             this.pcepAttr = pcepAttribute;
             this.bIsPcepAttrSet = true;
+            return this;
+        }
+
+        @Override
+        public PcepStateReport.Builder setAssociationObjectList(LinkedList<PcepAssociationObject> llAssociationObj) {
+            this.llAssociationObj = llAssociationObj;
             return this;
         }
 

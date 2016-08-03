@@ -1085,6 +1085,7 @@ public class PceManager implements PceService {
                         .egress(((IpTunnelEndPoint) tunnel.dst()).ip())
                         .eroPath(tunnel.path())
                         .rroPath(tunnel.path())
+                        .vnName(tunnel.annotations().value(PcepAnnotationKeys.VN_NAME))
                         .build();
 
                 pcePathList.add(pcePath);
@@ -1125,6 +1126,7 @@ public class PceManager implements PceService {
                     .egress(((IpTunnelEndPoint) tunnel.dst()).ip())
                     .eroPath(tunnel.path())
                     .rroPath(tunnel.path())
+                    .vnName(tunnel.annotations().value(PcepAnnotationKeys.VN_NAME))
                     .build();
 
             pcePathUpdateListener.forEach(item -> item.updatePath(report));
