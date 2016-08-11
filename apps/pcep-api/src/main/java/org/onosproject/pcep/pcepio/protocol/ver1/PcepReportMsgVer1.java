@@ -20,9 +20,12 @@ import java.util.LinkedList;
 import java.util.ListIterator;
 
 import org.jboss.netty.buffer.ChannelBuffer;
+import org.onlab.packet.Ip4Address;
 import org.onosproject.pcep.pcepio.exceptions.PcepParseException;
 import org.onosproject.pcep.pcepio.protocol.*;
 import org.onosproject.pcep.pcepio.types.PcepObjectHeader;
+import org.onosproject.pcep.pcepio.types.PcepValueType;
+import org.onosproject.pcep.pcepio.types.VirtualNetworkTlv;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,6 +61,7 @@ class PcepReportMsgVer1 implements PcepReportMsg {
     protected static final Logger log = LoggerFactory.getLogger(PcepReportMsgVer1.class);
 
     public static final byte PACKET_VERSION = 1;
+    public static final short OBJECT_HEADER_LENGTH = 4;
     //PACKET_MINIMUM_LENGTH = CommonHeaderLen(4)+LspObjMinLen(8)+EroObjMinLen(4)
     public static final int PACKET_MINIMUM_LENGTH = 16;
     public static final PcepType MSG_TYPE = PcepType.REPORT;
@@ -73,6 +77,7 @@ class PcepReportMsgVer1 implements PcepReportMsg {
     static class Reader implements PcepMessageReader<PcepReportMsg> {
 
         LinkedList<PcepStateReport> llStateReportList;
+        private LinkedList<PcepAssociationObject> llAssociationList;
 
         @Override
         public PcepReportMsg readFrom(ChannelBuffer cb) throws PcepParseException {
@@ -156,6 +161,60 @@ class PcepReportMsgVer1 implements PcepReportMsg {
                 PcepLspObject lspObj;
                 lspObj = PcepLspObjectVer1.read(cb);
                 pcestateReq.setLspObject(lspObj);
+
+                //decode Association Object
+                if (cb.readableBytes() > OBJECT_HEADER_LENGTH) {
+                    cb.markReaderIndex();
+                    tempObjHeader = PcepObjectHeader.read(cb);
+                    // cb.resetReaderIndex();
+
+                    // store Association object
+                    llAssociationList = new LinkedList<>();
+                    PcepAssociationObject associationObj;
+                    byte yObjClass = tempObjHeader.getObjClass();
+                    byte yObjType = tempObjHeader.getObjType();
+
+                    boolean resetIndex = true;
+
+                    while ((yObjClass == PcepAssociationObjectVer1.ASSOCIATION_OBJ_CLASS)
+                            && (yObjType == PcepAssociationObjectVer1.ASSOCIATION_OBJ_TYPE)) {
+
+                        resetIndex = false;
+
+                        cb.resetReaderIndex();
+                        associationObj = PcepAssociationObjectVer1.read(cb);
+                        llAssociationList.add(associationObj);
+
+                        yObjClass = 0;
+                        yObjType = 0;
+
+                        if (cb.readableBytes() > OBJECT_HEADER_LENGTH) {
+                            resetIndex = true;
+                            cb.markReaderIndex();
+                            tempObjHeader = PcepObjectHeader.read(cb);
+                            // cb.resetReaderIndex();
+                            yObjClass = tempObjHeader.getObjClass();
+                            yObjType = tempObjHeader.getObjType();
+                        }
+                        PcepValueType tlv = associationObj.getOptionalTlv()
+                                .getFirst();
+                        VirtualNetworkTlv vnTlv = (VirtualNetworkTlv) tlv;
+                        log.info("Parsing Association Object, Type: "
+                                + associationObj.getAssociationType()
+                                + ", ID: "
+                                + associationObj.getAssociationID()
+                                + ", Source: "
+                                + Ip4Address.valueOf(associationObj
+                                .getAssociationSource())
+                                + ", VnTlv: "
+                                + new String(vnTlv.getValue()));
+                    }
+
+                    pcestateReq.setAssociationObjectList(llAssociationList);
+                    if (resetIndex) {
+                        cb.resetReaderIndex();
+                    }
+                }
 
                 //store path
                 PcepStateReport.PcepMsgPath msgPath = new PcepStateReportVer1().new PcepMsgPath().read(cb);

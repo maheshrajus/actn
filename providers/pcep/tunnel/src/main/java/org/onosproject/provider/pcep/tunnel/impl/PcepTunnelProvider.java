@@ -2187,6 +2187,12 @@ public class PcepTunnelProvider extends AbstractProvider implements TunnelProvid
         // Find PCC deviceID from lsrId stored as annotations
         Iterable<Device> devices = deviceService.getAvailableDevices();
         for (Device dev : devices) {
+            if (null == dev.annotations().value(AnnotationKeys.TYPE)) {
+                return null;
+            }
+            if (null == dev.annotations().value(LSRID)) {
+                return null;
+            }
             if (dev.annotations().value(AnnotationKeys.TYPE).equals("L3")
                     && dev.annotations().value(LSRID).equals(lsrIdentifier)) {
                 return dev.id();
