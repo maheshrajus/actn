@@ -110,6 +110,17 @@ public class DistributedPceStore implements PceStore {
     private HashSet<DeviceId> pendinglabelDbSyncPccMap = new HashSet();
     // Locally maintain unreserved bandwidth of each link.
     private Map<LinkKey, Set<Double>> unResvBw = new HashMap<>();
+    private static final Serializer SERIALIZER = Serializer
+            .using(new KryoNamespace.Builder().register(KryoNamespaces.API)
+                    .register(PcePathInfo.class)
+                    .register(CostConstraint.class)
+                    .register(CostConstraint.Type.class)
+                    .register(BandwidthConstraint.class)
+                    .register(SharedBandwidthConstraint.class)
+                    .register(CapabilityConstraint.class)
+                    .register(CapabilityConstraint.CapabilityType.class)
+                    .register(LspType.class)
+                    .build());
     @Activate
     protected void activate() {
         globalNodeLabelMap = storageService.<DeviceId, LabelResourceId>consistentMapBuilder()
@@ -146,19 +157,7 @@ public class DistributedPceStore implements PceStore {
 
         failedPathSet = storageService.<PcePathInfo>setBuilder()
                 .withName("failed-path-info")
-                .withSerializer(Serializer.using(
-                        new KryoNamespace.Builder()
-                                .register(KryoNamespaces.API)
-                                .register(PcePathInfo.class,
-                                        CostConstraint.class,
-                                        CostConstraint.Type.class,
-                                        PceBandwidthConstraint.class,
-                                        SharedBandwidthConstraint.class,
-                                        CapabilityConstraint.class,
-                                        CapabilityConstraint.CapabilityType.class,
-                                        LspType.class)
-                                .build()))
-
+                .withSerializer(SERIALIZER)
                 .build()
                 .asDistributedSet();
 

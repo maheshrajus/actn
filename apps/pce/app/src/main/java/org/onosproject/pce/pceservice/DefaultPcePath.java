@@ -181,6 +181,7 @@ public final class DefaultPcePath implements PcePath {
     @Override
     public String toString() {
         return toStringHelper(this)
+                .omitNullValues()
                 .add("id", id())
                 .add("source", source)
                 .add("destination", destination)
@@ -188,8 +189,8 @@ public final class DefaultPcePath implements PcePath {
                 .add("defaultLspType", defaultLspType)
                 .add("pceMode", pceMode)
                 .add("name", name)
-                .add("costConstraint", costConstraint.toString())
-                .add("bandwidthConstraint", bandwidthConstraint.toString())
+                .add("costConstraint", costConstraint)
+                .add("bandwidthConstraint", bandwidthConstraint)
                 .toString();
     }
 
@@ -279,8 +280,8 @@ public final class DefaultPcePath implements PcePath {
         @Override
         public Builder of(Tunnel tunnel) {
             this.id = TunnelId.valueOf(tunnel.tunnelId().id());
-            this.source = tunnel.src().toString();
-            this.destination = tunnel.dst().toString();
+            this.source = tunnel.path().src().deviceId().toString();
+            this.destination = tunnel.path().dst().deviceId().toString();
             this.name = tunnel.tunnelName().toString();
             // LSP type
             String lspType = tunnel.annotations().value(PcepAnnotationKeys.LSP_SIG_TYPE);

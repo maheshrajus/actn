@@ -123,6 +123,9 @@ public class PcePathWebResource extends AbstractWebResource {
             JsonNode port = jsonTree.get("path");
             TunnelService tunnelService = get(TunnelService.class);
             PcePath path = codec(PcePath.class).decode((ObjectNode) port, this);
+            if (path == null) {
+                return Response.status(OK).entity(PCE_SETUP_PATH_FAILED).build();
+            }
 
             //Validating tunnel name, duplicated tunnel names not allowed
             Collection<Tunnel> existingTunnels = tunnelService.queryTunnel(Tunnel.Type.MPLS);

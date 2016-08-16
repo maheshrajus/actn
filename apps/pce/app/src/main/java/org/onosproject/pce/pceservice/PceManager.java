@@ -778,6 +778,11 @@ public class PceManager implements PceService {
 
         if (costConstraint != null) {
             constraints.add(costConstraint);
+        } else {
+            //Take cost constraint from old tunnel if it is not specified in update flow
+            costType = tunnel.annotations().value(COST_TYPE);
+            costConstraint = CostConstraint.of(CostConstraint.Type.valueOf(costType));
+            constraints.add(costConstraint);
         }
 
         computedPathSet = computePath(tunnel.path().src().deviceId(), tunnel.path().dst().deviceId(), constraints);

@@ -623,7 +623,10 @@ public class PceManagerTest {
         build4RouterTopo(false, true, true, true, 100);
 
         // Setup tunnel.
-        PathErr result = pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T123", null, WITH_SIGNALLING, null);
+        List<Constraint> constraints = new LinkedList<Constraint>();
+        CostConstraint costConstraint = new CostConstraint(TE_COST);
+        constraints.add(costConstraint);
+        PathErr result = pceManager.setupPath(D1.deviceId(), D2.deviceId(), "T123", constraints, WITH_SIGNALLING, null);
         assertThat(result, is(PathErr.SUCCESS));
 
         Collection<Tunnel> tunnels = (Collection<Tunnel>) pceManager.queryAllPath();
