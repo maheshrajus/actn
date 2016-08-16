@@ -21,7 +21,7 @@ import org.onosproject.codec.CodecContext;
 import org.onosproject.codec.JsonCodec;
 import org.onosproject.pce.pceservice.PcePath;
 import org.onosproject.pce.pceservice.DefaultPcePath;
-import org.onosproject.net.intent.constraint.BandwidthConstraint;
+import org.onosproject.pce.pceservice.constraint.PceBandwidthConstraint;
 import org.onosproject.pce.pceservice.constraint.CostConstraint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -131,7 +131,7 @@ public final class PcePathCodec extends JsonCodec<PcePath> {
         ObjectNode constraintNode = context.mapper()
                 .createObjectNode()
                 .put(COST, ((CostConstraint) path.costConstraint()).type().type())
-                .put(BANDWIDTH, ((BandwidthConstraint) path.bandwidthConstraint()).bandwidth().bps());
+                .put(BANDWIDTH, ((PceBandwidthConstraint) path.bandwidthConstraint()).bandwidth().bps());
 
         result.set(CONSTRAINT, constraintNode);
         return result;

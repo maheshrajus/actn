@@ -115,7 +115,7 @@ public class DistributedPceStore implements PceStore {
                     .register(PcePathInfo.class)
                     .register(CostConstraint.class)
                     .register(CostConstraint.Type.class)
-                    .register(BandwidthConstraint.class)
+                    .register(PceBandwidthConstraint.class)
                     .register(SharedBandwidthConstraint.class)
                     .register(CapabilityConstraint.class)
                     .register(CapabilityConstraint.CapabilityType.class)
