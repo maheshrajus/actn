@@ -253,7 +253,10 @@ public class PcepSrpObjectVer1 implements PcepSrpObject {
                 tlv = PathSetupTypeTlv.of(cb.readInt());
                 break;
             default:
-                throw new PcepParseException("Unsupported TLV received in SRP Object.");
+                // Skip the unknown TLV.
+                cb.skipBytes(hLength);
+                tlv = null;
+                log.info("Received unsupported TLV type :" + hType + " in SRP object.");
             }
 
             // Check for the padding
@@ -264,7 +267,10 @@ public class PcepSrpObjectVer1 implements PcepSrpObject {
                     cb.skipBytes(pad);
                 }
             }
-            llOutOptionalTlv.add(tlv);
+
+            if (tlv != null) {
+                llOutOptionalTlv.add(tlv);
+            }
         }
 
         return llOutOptionalTlv;

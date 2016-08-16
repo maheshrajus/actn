@@ -216,9 +216,25 @@ class PcepReportMsgVer1 implements PcepReportMsg {
                     }
                 }
 
-                //store path
-                PcepStateReport.PcepMsgPath msgPath = new PcepStateReportVer1().new PcepMsgPath().read(cb);
-                pcestateReq.setMsgPath(msgPath);
+                if (cb.readableBytes() > 0) {
+
+                    //mark the reader index to reset
+                    cb.markReaderIndex();
+                    tempObjHeader = PcepObjectHeader.read(cb);
+
+                    yObjectClass = tempObjHeader.getObjClass();
+                    yObjectType = tempObjHeader.getObjType();
+
+                    //reset reader index
+                    cb.resetReaderIndex();
+
+                    if ((PcepEroObjectVer1.ERO_OBJ_CLASS == yObjectClass)
+                            && (PcepEroObjectVer1.ERO_OBJ_TYPE == yObjectType)) {
+                        // store path
+                        PcepStateReport.PcepMsgPath msgPath = new PcepStateReportVer1().new PcepMsgPath().read(cb);
+                        pcestateReq.setMsgPath(msgPath);
+                    }
+                }
 
                 llStateReportList.add(pcestateReq);
             }
